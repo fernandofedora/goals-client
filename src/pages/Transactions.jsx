@@ -369,7 +369,7 @@ const DELETE_TRANSACTION_LEGACY = async () => { /* replaced by modal-based delet
               <th className="px-3 py-2 text-left text-sm font-semibold text-gray-700">Amount</th>
               <th className="px-3 py-2 text-left text-sm font-semibold text-gray-700">Date</th>
               <th className="px-3 py-2 text-left text-sm font-semibold text-gray-700">Method</th>
-              <th className="px-3 py-2 text-left text-sm font-semibold text-gray-700">Actions</th>
+              <th className="px-3 py-2 text-left text-sm font-semibold text-gray-700 w-40">Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -416,10 +416,10 @@ const DELETE_TRANSACTION_LEGACY = async () => { /* replaced by modal-based delet
                         <span className="text-gray-500">Cash</span>
                       )}
                     </td>
-                    <td>
-                      <div className="flex gap-2">
-                        <button className="px-3 py-2 rounded-md bg-emerald-600 text-white hover:bg-emerald-700" onClick={saveEdit}>Save</button>
-                        <button className="px-3 py-2 rounded-md bg-gray-200 text-gray-800 hover:bg-gray-300" onClick={cancelEdit}>Cancel</button>
+                    <td className="w-40">
+                      <div className="flex items-center gap-3 flex-wrap">
+                        <button className="inline-flex items-center justify-center h-8 px-3 min-w-[72px] rounded-md bg-emerald-600 text-white hover:bg-emerald-700" onClick={saveEdit}>Save</button>
+                        <button className="inline-flex items-center justify-center h-8 px-3 min-w-[72px] rounded-md bg-gray-200 text-gray-800 hover:bg-gray-300" onClick={cancelEdit}>Cancel</button>
                       </div>
                     </td>
                   </>
@@ -431,12 +431,35 @@ const DELETE_TRANSACTION_LEGACY = async () => { /* replaced by modal-based delet
                     <td className={`text-sm ${t.type==='expense' ? 'text-rose-600' : 'text-emerald-600'}`}>${parseFloat(t.amount ?? 0).toFixed(2)}</td>
                     <td>{t.date}</td>
                     <td>{t.paymentMethod==='card' ? (t.Card?.name || 'Card') : 'Cash'}</td>
-                    <td>
-                      <div className="flex gap-2">
-                        <button className="px-3 py-2 rounded-md bg-indigo-600 text-white hover:bg-indigo-700" onClick={()=>startEdit(t)}>Edit</button>
-                        <button className="px-3 py-2 rounded-md bg-rose-600 text-white hover:bg-rose-700" onClick={()=>setDeleteTargetId(t.id)}>Delete</button>
-                      </div>
-                    </td>
+                    <td className="w-40">
+                       <div className="flex items-center gap-3">
+                         <button
+                           className="p-2 rounded-md hover:bg-indigo-100 text-indigo-600"
+                           aria-label="Edit"
+                           title="Edit"
+                           onClick={()=>startEdit(t)}
+                         >
+                           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                             <path d="M12 20h9" />
+                             <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L8 18l-4 1 1-4 11.5-11.5z" />
+                           </svg>
+                         </button>
+                         <button
+                           className="p-2 rounded-md hover:bg-rose-100 text-rose-600"
+                           aria-label="Delete"
+                           title="Delete"
+                           onClick={()=>setDeleteTargetId(t.id)}
+                         >
+                           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                             <path d="M3 6h18" />
+                             <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+                             <path d="M10 11v6" />
+                             <path d="M14 11v6" />
+                             <path d="M15 6V4a2 2 0 0 0-2-2h-2a2 2 0 0 0-2 2v2" />
+                           </svg>
+                         </button>
+                       </div>
+                     </td>
                   </>
                 )}
               </tr>
