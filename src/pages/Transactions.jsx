@@ -16,6 +16,11 @@ export default function Transactions() {
   const [budget, setBudget] = useState({ month:'', year:'', amount:'' });
   const [budgets, setBudgets] = useState([]);
 
+  // Budget editing state
+  const [editingBudgetId, setEditingBudgetId] = useState(null);
+  const [editBudgetData, setEditBudgetData] = useState({ month:'', year:'', amount:'' });
+  const [deleteBudgetId, setDeleteBudgetId] = useState(null);
+
   // Inline editing state
   const [editingId, setEditingId] = useState(null);
   const [editData, setEditData] = useState({ type:'expense', description:'', categoryId:'', amount:'', date:'', paymentMethod:'cash', cardId:'' });
@@ -69,6 +74,52 @@ export default function Transactions() {
       setSuccess('Budget set');
       load();
     } catch{ setSuccess(''); setError('Failed to set budget'); }
+  };
+
+  // Budget editing functions
+  const startEditBudget = (b) => {
+    setEditingBudgetId(b.id);
+    setEditBudgetData({
+      month: b.month,
+      year: b.year,
+      amount: b.amount.toString()
+    });
+  };
+
+  const cancelEditBudget = () => {
+    setEditingBudgetId(null);
+    setEditBudgetData({ month:'', year:'', amount:'' });
+  };
+
+  const saveEditBudget = async () => {
+    try {
+      await api.put(`/budgets/${editingBudgetId}`, {
+        month: editBudgetData.month,
+        year: editBudgetData.year,
+        amount: parseFloat(editBudgetData.amount || 0)
+      });
+      setEditingBudgetId(null);
+      setEditBudgetData({ month:'', year:'', amount:'' });
+      setError('');
+      setSuccess('Budget updated');
+      load();
+    } catch {
+      setSuccess('');
+      setError('Failed to update budget');
+    }
+  };
+
+  const deleteBudget = async () => {
+    try {
+      await api.delete(`/budgets/${deleteBudgetId}`);
+      setDeleteBudgetId(null);
+      setError('');
+      setSuccess('Budget deleted');
+      load();
+    } catch {
+      setSuccess('');
+      setError('Failed to delete budget');
+    }
   };
 
 const DELETE_TRANSACTION_LEGACY = async () => { /* replaced by modal-based delete flow */ };
@@ -149,6 +200,15 @@ const DELETE_TRANSACTION_LEGACY = async () => { /* replaced by modal-based delet
         onConfirm={confirmDelete}
         onCancel={()=>setDeleteTargetId(null)}
       />
+      <ConfirmModal
+        open={deleteBudgetId !== null}
+        title="Delete budget"
+        message="Are you sure you want to delete this budget? This action cannot be undone."
+        confirmText="Delete"
+        cancelText="Cancel"
+        onConfirm={deleteBudget}
+        onCancel={()=>setDeleteBudgetId(null)}
+      />
       {deleteTargetId !== null && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
           <div className="bg-white rounded-xl shadow-lg p-6 max-w-sm w-full">
@@ -176,7 +236,73 @@ const DELETE_TRANSACTION_LEGACY = async () => { /* replaced by modal-based delet
         </form>
         <ul className="divide-y divide-gray-100 mt-3">
           {budgets.map(b => (
-            <li key={b.id}><span>{b.month}/{b.year}</span><span className="ml-auto font-medium">${Number(b.amount).toFixed(2)}</span></li>
+            <li key={b.id} className="flex items-center justify-between py-2">
+              {editingBudgetId === b.id ? (
+                <div className="flex gap-2 flex-wrap items-center flex-1">
+                  <select 
+                    className="border border-gray-300 rounded-md px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" 
+                    value={editBudgetData.month} 
+                    onChange={(e)=>setEditBudgetData(v=>({ ...v, month:e.target.value }))} 
+                    required
+                  >
+                    <option value="">Month</option>
+                    {Array.from({length:12},(_,i)=> <option key={i+1} value={String(i+1).padStart(2,'0')}>{new Date(0,i).toLocaleString('en',{ month:'long'})}</option>)}
+                  </select>
+                  <input 
+                    className="border border-gray-300 rounded-md px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 w-20" 
+                    type="number" 
+                    placeholder="Year" 
+                    value={editBudgetData.year} 
+                    onChange={(e)=>setEditBudgetData(v=>({ ...v, year:e.target.value }))} 
+                    required 
+                  />
+                  <input 
+                    className="border border-gray-300 rounded-md px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 w-24" 
+                    type="number" 
+                    step="0.01" 
+                    placeholder="Amount" 
+                    value={editBudgetData.amount} 
+                    onChange={(e)=>setEditBudgetData(v=>({ ...v, amount:e.target.value }))} 
+                    required 
+                  />
+                  <div className="flex gap-1">
+                    <button 
+                      className="px-2 py-1 text-xs rounded bg-green-600 text-white hover:bg-green-700" 
+                      onClick={saveEditBudget}
+                    >
+                      Save
+                    </button>
+                    <button 
+                      className="px-2 py-1 text-xs rounded bg-gray-600 text-white hover:bg-gray-700" 
+                      onClick={cancelEditBudget}
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <span>{b.month}/{b.year}</span>
+                  <div className="flex items-center gap-2">
+                    <span className="font-medium">${Number(b.amount).toFixed(2)}</span>
+                    <div className="flex gap-1">
+                      <button 
+                        className="px-2 py-1 text-xs rounded bg-blue-600 text-white hover:bg-blue-700" 
+                        onClick={() => startEditBudget(b)}
+                      >
+                        Edit
+                      </button>
+                      <button 
+                        className="px-2 py-1 text-xs rounded bg-red-600 text-white hover:bg-red-700" 
+                        onClick={() => setDeleteBudgetId(b.id)}
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  </div>
+                </>
+              )}
+            </li>
           ))}
         </ul>
       </div>
@@ -243,7 +369,7 @@ const DELETE_TRANSACTION_LEGACY = async () => { /* replaced by modal-based delet
               <th className="px-3 py-2 text-left text-sm font-semibold text-gray-700">Amount</th>
               <th className="px-3 py-2 text-left text-sm font-semibold text-gray-700">Date</th>
               <th className="px-3 py-2 text-left text-sm font-semibold text-gray-700">Method</th>
-              <th className="px-3 py-2 text-left text-sm font-semibold text-gray-700">Actions</th>
+              <th className="px-3 py-2 text-left text-sm font-semibold text-gray-700 w-40">Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -290,10 +416,10 @@ const DELETE_TRANSACTION_LEGACY = async () => { /* replaced by modal-based delet
                         <span className="text-gray-500">Cash</span>
                       )}
                     </td>
-                    <td>
-                      <div className="flex gap-2">
-                        <button className="px-3 py-2 rounded-md bg-emerald-600 text-white hover:bg-emerald-700" onClick={saveEdit}>Save</button>
-                        <button className="px-3 py-2 rounded-md bg-gray-200 text-gray-800 hover:bg-gray-300" onClick={cancelEdit}>Cancel</button>
+                    <td className="w-40">
+                      <div className="flex items-center gap-3 flex-wrap">
+                        <button className="inline-flex items-center justify-center h-8 px-3 min-w-[72px] rounded-md bg-emerald-600 text-white hover:bg-emerald-700" onClick={saveEdit}>Save</button>
+                        <button className="inline-flex items-center justify-center h-8 px-3 min-w-[72px] rounded-md bg-gray-200 text-gray-800 hover:bg-gray-300" onClick={cancelEdit}>Cancel</button>
                       </div>
                     </td>
                   </>
@@ -305,12 +431,35 @@ const DELETE_TRANSACTION_LEGACY = async () => { /* replaced by modal-based delet
                     <td className={`text-sm ${t.type==='expense' ? 'text-rose-600' : 'text-emerald-600'}`}>${parseFloat(t.amount ?? 0).toFixed(2)}</td>
                     <td>{t.date}</td>
                     <td>{t.paymentMethod==='card' ? (t.Card?.name || 'Card') : 'Cash'}</td>
-                    <td>
-                      <div className="flex gap-2">
-                        <button className="px-3 py-2 rounded-md bg-indigo-600 text-white hover:bg-indigo-700" onClick={()=>startEdit(t)}>Edit</button>
-                        <button className="px-3 py-2 rounded-md bg-rose-600 text-white hover:bg-rose-700" onClick={()=>setDeleteTargetId(t.id)}>Delete</button>
-                      </div>
-                    </td>
+                    <td className="w-40">
+                       <div className="flex items-center gap-3">
+                         <button
+                           className="p-2 rounded-md hover:bg-indigo-100 text-indigo-600"
+                           aria-label="Edit"
+                           title="Edit"
+                           onClick={()=>startEdit(t)}
+                         >
+                           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                             <path d="M12 20h9" />
+                             <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L8 18l-4 1 1-4 11.5-11.5z" />
+                           </svg>
+                         </button>
+                         <button
+                           className="p-2 rounded-md hover:bg-rose-100 text-rose-600"
+                           aria-label="Delete"
+                           title="Delete"
+                           onClick={()=>setDeleteTargetId(t.id)}
+                         >
+                           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                             <path d="M3 6h18" />
+                             <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+                             <path d="M10 11v6" />
+                             <path d="M14 11v6" />
+                             <path d="M15 6V4a2 2 0 0 0-2-2h-2a2 2 0 0 0-2 2v2" />
+                           </svg>
+                         </button>
+                       </div>
+                     </td>
                   </>
                 )}
               </tr>
