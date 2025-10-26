@@ -29,7 +29,10 @@ export default function Login() {
         <input className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500" type="password" placeholder="Password" value={password} onChange={(e)=>setPassword(e.target.value)} required />
         <button className="w-full px-4 py-2 rounded-md bg-indigo-600 text-white hover:bg-indigo-700" type="submit">Sign In</button>
       </form>
-      <p className="text-sm text-gray-600 mt-3">No account? <Link className="text-indigo-600 hover:underline" to="/register">Create one</Link></p>
+      <div className="flex items-center justify-between mt-3 text-sm text-gray-600">
+        <span>No account? <Link className="text-indigo-600 hover:underline" to="/register">Create one</Link></span>
+        <Link className="text-indigo-600 hover:underline" to="/reset-password">Forgot password?</Link>
+      </div>
     </div>
   );
 }
