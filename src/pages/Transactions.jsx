@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import api from '../api';
+import DateInput from '../components/DateInput.jsx';
 
 export default function Transactions() {
   const [categories, setCategories] = useState([]);
@@ -317,7 +318,7 @@ const DELETE_TRANSACTION_LEGACY = async () => { /* replaced by modal-based delet
               {categories.filter(c=>c.type==='expense').map(c=> <option key={c.id} value={c.id}>{c.name}</option>)}
             </select>
             <input className="border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500" type="number" step="0.01" placeholder="Amount" value={expense.amount} onChange={(e)=>setExpense(v=>({ ...v, amount:e.target.value }))} required />
-            <input className="border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500" type="date" value={expense.date} onChange={(e)=>setExpense(v=>({ ...v, date:e.target.value }))} required />
+            <DateInput className="border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500" value={expense.date} onChange={(e)=>setExpense(v=>({ ...v, date:e.target.value }))} required placeholder="Date" />
           </div>
           <div className="flex gap-3 flex-wrap">
             <select className="border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500" value={expense.method} onChange={(e)=>setExpense(v=>({ ...v, method:e.target.value }))}>
@@ -344,7 +345,7 @@ const DELETE_TRANSACTION_LEGACY = async () => { /* replaced by modal-based delet
               <option value="">Category</option>
               {categories.filter(c=>c.type==='income').map(c=> <option key={c.id} value={c.id}>{c.name}</option>)}
             </select>
-            <input className="border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500" type="date" value={income.date} onChange={(e)=>setIncome(v=>({ ...v, date:e.target.value }))} required />
+            <DateInput className="border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500" value={income.date} onChange={(e)=>setIncome(v=>({ ...v, date:e.target.value }))} required placeholder="Date" />
             <input className="border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500" type="number" step="0.01" placeholder="Amount" value={income.amount} onChange={(e)=>setIncome(v=>({ ...v, amount:e.target.value }))} required />
           </div>
           <button className="px-3 py-2 rounded-md bg-indigo-600 text-white hover:bg-indigo-700" type="submit">Add Income</button>
@@ -360,19 +361,20 @@ const DELETE_TRANSACTION_LEGACY = async () => { /* replaced by modal-based delet
             <option value="income">Income</option>
           </select>
         </div>
-        <table className="min-w-full border border-gray-200 rounded-xl overflow-hidden">
-          <thead>
-            <tr className="bg-gray-50">
-              <th className="px-3 py-2 text-left text-sm font-semibold text-gray-700">Type</th>
-              <th className="px-3 py-2 text-left text-sm font-semibold text-gray-700">Description</th>
-              <th className="px-3 py-2 text-left text-sm font-semibold text-gray-700">Category</th>
-              <th className="px-3 py-2 text-left text-sm font-semibold text-gray-700">Amount</th>
-              <th className="px-3 py-2 text-left text-sm font-semibold text-gray-700">Date</th>
-              <th className="px-3 py-2 text-left text-sm font-semibold text-gray-700">Method</th>
-              <th className="px-3 py-2 text-left text-sm font-semibold text-gray-700 w-40">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
+        <div className="rounded-xl border border-gray-200 overflow-x-auto">
+          <table className="min-w-[760px] w-full table-auto">
+            <thead className="bg-gray-50 sticky top-0 z-10">
+              <tr>
+                <th className="px-3 py-2 text-left text-sm font-semibold text-gray-700 whitespace-nowrap">Type</th>
+                <th className="px-3 py-2 text-left text-sm font-semibold text-gray-700 whitespace-nowrap">Description</th>
+                <th className="px-3 py-2 text-left text-sm font-semibold text-gray-700 whitespace-nowrap">Category</th>
+                <th className="px-3 py-2 text-left text-sm font-semibold text-gray-700 whitespace-nowrap">Amount</th>
+                <th className="px-3 py-2 text-left text-sm font-semibold text-gray-700 whitespace-nowrap">Date</th>
+                <th className="px-3 py-2 text-left text-sm font-semibold text-gray-700 whitespace-nowrap">Method</th>
+                <th className="px-3 py-2 text-left text-sm font-semibold text-gray-700 w-40 whitespace-nowrap">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
             {filtered.map(t => (
               <tr key={t.id}>
                 {editingId === t.id ? (
@@ -445,11 +447,11 @@ const DELETE_TRANSACTION_LEGACY = async () => { /* replaced by modal-based delet
                 ) : (
                   <>
                     <td className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${t.type==='expense' ? 'bg-rose-100 text-rose-700' : 'bg-emerald-100 text-emerald-700'}`}>{t.type}</td>
-                    <td>{t.description}</td>
-                    <td>{t.Category?.name || ''}</td>
-                    <td className={`text-sm ${t.type==='expense' ? 'text-rose-600' : 'text-emerald-600'}`}>${parseFloat(t.amount ?? 0).toFixed(2)}</td>
-                    <td>{t.date}</td>
-                    <td>{t.paymentMethod==='card' ? (t.Card?.name || 'Card') : 'Cash'}</td>
+                    <td className="max-w-[180px] truncate" title={t.description}>{t.description}</td>
+                    <td className="whitespace-nowrap">{t.Category?.name || ''}</td>
+                    <td className={`text-sm ${t.type==='expense' ? 'text-rose-600' : 'text-emerald-600'} whitespace-nowrap`}>${parseFloat(t.amount ?? 0).toFixed(2)}</td>
+                    <td className="whitespace-nowrap">{t.date}</td>
+                    <td className="whitespace-nowrap">{t.paymentMethod==='card' ? (t.Card?.name || 'Card') : 'Cash'}</td>
                     <td className="w-40">
                        <div className="flex items-center gap-3">
                          <button
@@ -483,8 +485,9 @@ const DELETE_TRANSACTION_LEGACY = async () => { /* replaced by modal-based delet
                 )}
               </tr>
             ))}
-          </tbody>
-        </table>
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );

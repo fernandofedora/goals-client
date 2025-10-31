@@ -13,6 +13,16 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [cards, setCards] = useState([]);
+  const [initialBalance, setInitialBalance] = useState(null);
+  const [finalBalance, setFinalBalance] = useState(null);
+
+  const formatCurrency = (value) => {
+    try {
+      return new Intl.NumberFormat('es', { style: 'currency', currency: 'USD' }).format(Number(value || 0));
+    } catch {
+      return `$${Number(value || 0).toFixed(2)}`;
+    }
+  };
 
   const fetchSummary = async () => {
     setLoading(true); setError('');
@@ -21,6 +31,34 @@ export default function Dashboard() {
       const params = period === 'all' ? { period } : { period: `${year}-${period}` };
       const { data } = await api.get('/stats/summary', { params });
       setSummary(data);
+
+      // Calcular saldo inicial/final solo si es un mes específico
+      if (period !== 'all') {
+        const curIncome = Number(data?.totals?.income || 0);
+        const curExpense = Number(data?.totals?.expense || 0);
+        const monthNet = curIncome - curExpense; // variación del mes
+
+        // Mes previo y posible cambio de año
+        const curMonth = Number(period);
+        const prevMonth = String(curMonth === 1 ? 12 : curMonth - 1).padStart(2, '0');
+        const prevYear = curMonth === 1 ? year - 1 : year;
+        const prevParams = { period: `${prevYear}-${prevMonth}` };
+        try {
+          const prev = await api.get('/stats/summary', { params: prevParams });
+          const prevIncome = Number(prev?.data?.totals?.income || 0);
+          const prevExpense = Number(prev?.data?.totals?.expense || 0);
+          const prevBalance = prevIncome - prevExpense;
+          setInitialBalance(prevBalance);
+          setFinalBalance(prevBalance + monthNet);
+        } catch {
+          // Si falla el mes previo, asumimos saldo inicial 0 para no romper la vista
+          setInitialBalance(0);
+          setFinalBalance(monthNet);
+        }
+      } else {
+        setInitialBalance(null);
+        setFinalBalance(null);
+      }
     } catch (err) { setError(err.response?.data?.message || 'Failed to load summary'); }
     finally { setLoading(false); }
   };
@@ -148,6 +186,55 @@ export default function Dashboard() {
               <div className="text-sm text-gray-600">Transactions</div>
               <div className="text-2xl font-semibold">{summary.totals.transactions}</div>
             </div>
+          </div>
+        )}
+      </div>
+
+      {/* Saldo Inicial vs Saldo Final */}
+      <div className="bg-white rounded-xl shadow p-4">
+        <h3 className="text-lg font-semibold mb-3">Saldo inicial vs. saldo final</h3>
+        {period === 'all' ? (
+          <p className="text-gray-500">Selecciona un mes específico para ver el saldo inicial y final.</p>
+        ) : initialBalance == null || finalBalance == null ? (
+          <p className="text-gray-500">Cargando...</p>
+        ) : (
+          <div className="flex items-end justify-center gap-6" style={{ height: 220 }}>
+            {/* Barra saldo inicial */}
+            {(() => {
+              const maxVal = Math.max(Math.abs(initialBalance), Math.abs(finalBalance));
+              const base = 40; // altura mínima
+              const scale = maxVal > 0 ? Math.round((Math.abs(initialBalance) / maxVal) * 150) : 0;
+              const height = base + scale;
+              return (
+                <div className="flex flex-col items-center">
+                  <div className="w-16" style={{ height }}>
+                    <div className="h-full w-full rounded bg-slate-700" />
+                  </div>
+                  <div className="mt-2 text-sm font-semibold text-slate-700">SALDO INICIAL</div>
+                  <div className="text-sm text-gray-700">{formatCurrency(initialBalance)}</div>
+                </div>
+              );
+            })()}
+
+            {/* separador */}
+            <div className="h-full border-l border-dashed border-gray-300" />
+
+            {/* Barra saldo final */}
+            {(() => {
+              const maxVal = Math.max(Math.abs(initialBalance), Math.abs(finalBalance));
+              const base = 40;
+              const scale = maxVal > 0 ? Math.round((Math.abs(finalBalance) / maxVal) * 150) : 0;
+              const height = base + scale;
+              return (
+                <div className="flex flex-col items-center">
+                  <div className="w-16" style={{ height }}>
+                    <div className="h-full w-full rounded bg-orange-500" />
+                  </div>
+                  <div className="mt-2 text-sm font-semibold text-orange-600">SALDO FINAL</div>
+                  <div className="text-sm text-orange-600">{formatCurrency(finalBalance)}</div>
+                </div>
+              );
+            })()}
           </div>
         )}
       </div>
