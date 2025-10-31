@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import api from '../api';
-import DateInput from '../components/DateInput.jsx';
+import DateInput from '../components/DateInput';
 
 export default function Transactions() {
   const [categories, setCategories] = useState([]);
