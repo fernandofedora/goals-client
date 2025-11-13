@@ -7,6 +7,12 @@ export default function Transactions() {
   const [cards, setCards] = useState([]);
   const [transactions, setTransactions] = useState([]);
   const [typeFilter, setTypeFilter] = useState('all');
+  // Filtros de fecha (Mes/Año)
+  const now = new Date();
+  const [monthFilter, setMonthFilter] = useState(String(now.getMonth() + 1).padStart(2, '0'));
+  const [yearFilter, setYearFilter] = useState(String(now.getFullYear()));
+  const [showYearAll, setShowYearAll] = useState(false);
+  const monthNameEs = new Date(0, Number(monthFilter) - 1).toLocaleString('es', { month: 'long' });
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [deleteTargetId, setDeleteTargetId] = useState(null);
@@ -182,7 +188,29 @@ const DELETE_TRANSACTION_LEGACY = async () => { /* replaced by modal-based delet
       setError('Failed to delete transaction');
     }
   };
-  const filtered = transactions.filter(t => typeFilter==='all' || t.type===typeFilter);
+  // Utilidad robusta para extraer mes/año desde formatos tipo 'YYYY-MM-DD' o 'MM/DD/YYYY'
+  const extractMonthYear = (dateStr) => {
+    if (!dateStr) return { month: '', year: '' };
+    // ISO: 2025-11-09
+    const isoMatch = /^([0-9]{4})-([0-9]{2})-([0-9]{2})$/.exec(dateStr);
+    if (isoMatch) return { year: isoMatch[1], month: isoMatch[2] };
+    // US: 11/09/2025
+    const usMatch = /^([0-9]{1,2})\/([0-9]{1,2})\/([0-9]{4})$/.exec(dateStr);
+    if (usMatch) return { year: usMatch[3], month: String(usMatch[1]).padStart(2, '0') };
+    // Fallback a Date
+    const d = new Date(dateStr);
+    if (!isNaN(d.getTime())) return { year: String(d.getFullYear()), month: String(d.getMonth() + 1).padStart(2, '0') };
+    return { month: '', year: '' };
+  };
+
+  const filtered = transactions
+    .filter(t => typeFilter==='all' || t.type===typeFilter)
+    .filter(t => {
+      const { month, year } = extractMonthYear(t.date);
+      if (!year) return false;
+      if (showYearAll) return year === yearFilter;
+      return year === yearFilter && month === monthFilter;
+    });
 
   return (
     <div className="max-w-6xl mx-auto p-4 space-y-6">
@@ -353,30 +381,64 @@ const DELETE_TRANSACTION_LEGACY = async () => { /* replaced by modal-based delet
       </div>
 
       <div className="bg-white rounded-xl shadow p-4">
-        <div className="flex justify-between items-center mb-3">
-          <h3 className="text-lg font-semibold">Transactions</h3>
-          <select className="border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500" value={typeFilter} onChange={(e)=>setTypeFilter(e.target.value)}>
-            <option value="all">All</option>
-            <option value="expense">Expenses</option>
-            <option value="income">Income</option>
-          </select>
+        <div className="flex flex-col gap-3 mb-3">
+          <div className="flex items-center justify-between gap-3 flex-wrap">
+            <h3 className="text-lg font-semibold">Transaction History</h3>
+            <div className="flex items-center gap-2">
+              <label className="text-sm text-gray-600">Tipo:</label>
+              <select className="border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500" value={typeFilter} onChange={(e)=>setTypeFilter(e.target.value)}>
+                <option value="all">All</option>
+                <option value="expense">Expenses</option>
+                <option value="income">Income</option>
+              </select>
+            </div>
+          </div>
+          <div className="flex items-center gap-3 flex-wrap">
+            <div className="flex flex-col">
+              <span className="text-sm text-gray-600">Month</span>
+              <select className="border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                value={monthFilter}
+                onChange={(e)=>setMonthFilter(e.target.value)}
+                disabled={showYearAll}
+              >
+                {Array.from({length:12},(_,i)=> {
+                  const val = String(i+1).padStart(2,'0');
+                  const label = new Date(0,i).toLocaleString('es', { month: 'long' });
+                  return <option key={val} value={val}>{label}</option>;
+                })}
+              </select>
+            </div>
+            <div className="flex flex-col">
+              <span className="text-sm text-gray-600">Year</span>
+              <input className="border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 w-28" type="number" value={yearFilter} onChange={(e)=>setYearFilter(e.target.value)} />
+            </div>
+            <label className="inline-flex items-center gap-2 mt-5 sm:mt-0">
+              <input type="checkbox" className="rounded" checked={showYearAll} onChange={(e)=>setShowYearAll(e.target.checked)} />
+              <span className="text-sm text-gray-700">Mostrar todo el año</span>
+            </label>
+          </div>
         </div>
         <div className="rounded-xl border border-gray-200 overflow-x-auto">
-          <table className="min-w-[760px] w-full table-auto">
-            <thead className="bg-gray-50 sticky top-0 z-10">
-              <tr>
-                <th className="px-3 py-2 text-left text-sm font-semibold text-gray-700 whitespace-nowrap">Type</th>
-                <th className="px-3 py-2 text-left text-sm font-semibold text-gray-700 whitespace-nowrap">Description</th>
-                <th className="px-3 py-2 text-left text-sm font-semibold text-gray-700 whitespace-nowrap">Category</th>
-                <th className="px-3 py-2 text-left text-sm font-semibold text-gray-700 whitespace-nowrap">Amount</th>
-                <th className="px-3 py-2 text-left text-sm font-semibold text-gray-700 whitespace-nowrap">Date</th>
-                <th className="px-3 py-2 text-left text-sm font-semibold text-gray-700 whitespace-nowrap">Method</th>
-                <th className="px-3 py-2 text-left text-sm font-semibold text-gray-700 w-40 whitespace-nowrap">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-            {filtered.map(t => (
-              <tr key={t.id}>
+          {filtered.length === 0 ? (
+            <div className="p-6 text-center text-gray-600">
+              {`No transactions for ${showYearAll ? yearFilter : `${monthNameEs} ${yearFilter}`}. Add your first transaction above.`}
+            </div>
+          ) : (
+            <table className="min-w-[760px] w-full table-auto">
+              <thead className="bg-gray-50 sticky top-0 z-10">
+                <tr>
+                  <th className="px-3 py-2 text-left text-sm font-semibold text-gray-700 whitespace-nowrap">Type</th>
+                  <th className="px-3 py-2 text-left text-sm font-semibold text-gray-700 whitespace-nowrap">Description</th>
+                  <th className="px-3 py-2 text-left text-sm font-semibold text-gray-700 whitespace-nowrap">Category</th>
+                  <th className="px-3 py-2 text-left text-sm font-semibold text-gray-700 whitespace-nowrap">Amount</th>
+                  <th className="px-3 py-2 text-left text-sm font-semibold text-gray-700 whitespace-nowrap">Date</th>
+                  <th className="px-3 py-2 text-left text-sm font-semibold text-gray-700 whitespace-nowrap">Method</th>
+                  <th className="px-3 py-2 text-left text-sm font-semibold text-gray-700 w-40 whitespace-nowrap">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+              {filtered.map(t => (
+                <tr key={t.id}>
                 {editingId === t.id ? (
                   <>
                     <td>
@@ -483,10 +545,11 @@ const DELETE_TRANSACTION_LEGACY = async () => { /* replaced by modal-based delet
                      </td>
                   </>
                 )}
-              </tr>
-            ))}
-            </tbody>
-          </table>
+                </tr>
+              ))}
+              </tbody>
+            </table>
+          )}
         </div>
       </div>
     </div>
