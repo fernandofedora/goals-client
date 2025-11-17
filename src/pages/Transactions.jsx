@@ -12,6 +12,8 @@ export default function Transactions() {
   const [cards, setCards] = useState([]);
   const [transactions, setTransactions] = useState([]);
   const [typeFilter, setTypeFilter] = useState('all');
+  const [paymentFilter, setPaymentFilter] = useState('all');
+  const [categoryFilter, setCategoryFilter] = useState('');
   // Filtros de fecha (Mes/Año)
   const now = new Date();
   const [monthFilter, setMonthFilter] = useState(String(now.getMonth() + 1).padStart(2, '0'));
@@ -210,6 +212,8 @@ const DELETE_TRANSACTION_LEGACY = async () => { /* replaced by modal-based delet
 
   const filtered = transactions
     .filter(t => typeFilter==='all' || t.type===typeFilter)
+    .filter(t => paymentFilter==='all' || (t.paymentMethod || 'cash')===paymentFilter)
+    .filter(t => categoryFilter==='' || String(t.CategoryId || t.Category?.id || '')===String(categoryFilter))
     .filter(t => {
       const { month, year } = extractMonthYear(t.date);
       if (!year) return false;
@@ -379,13 +383,26 @@ const DELETE_TRANSACTION_LEGACY = async () => { /* replaced by modal-based delet
         <div className="flex flex-col gap-3 mb-3">
           <div className="flex items-center justify-between gap-3 flex-wrap">
             <h3 className="text-lg font-semibold">Transaction History</h3>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-4 flex-wrap">
               <label className="text-sm text-gray-600">Tipo:</label>
-              <select className="border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500" value={typeFilter} onChange={(e)=>setTypeFilter(e.target.value)}>
+              <Select value={typeFilter} onChange={(e)=>setTypeFilter(e.target.value)}>
                 <option value="all">All</option>
                 <option value="expense">Expenses</option>
                 <option value="income">Income</option>
-              </select>
+              </Select>
+              <label className="text-sm text-gray-600">Payment:</label>
+              <Select value={paymentFilter} onChange={(e)=>setPaymentFilter(e.target.value)}>
+                <option value="all">All</option>
+                <option value="cash">Cash</option>
+                <option value="card">Credit Card</option>
+              </Select>
+              <label className="text-sm text-gray-600">Category:</label>
+              <Select value={categoryFilter} onChange={(e)=>setCategoryFilter(e.target.value)}>
+                <option value="">All</option>
+                {categories.filter(c=> typeFilter==='all' || c.type===typeFilter).map(c=> (
+                  <option key={c.id} value={c.id}>{c.name}</option>
+                ))}
+              </Select>
             </div>
           </div>
           <div className="flex items-center gap-3 flex-wrap">

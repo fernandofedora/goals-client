@@ -23,6 +23,7 @@ const Select = React.forwardRef(({ className, children, value = '', onChange, pl
     ? (placeholder || placeholderText || 'Select')
     : (options.find(o => o.value === value)?.label || placeholder || 'Select'));
   const handleChange = (val) => {
+    if (val === '__empty__') val = '';
     if (typeof onChange === 'function') {
       onChange({ target: { value: val } });
     }
@@ -52,6 +53,15 @@ const Select = React.forwardRef(({ className, children, value = '', onChange, pl
               ▲
             </RadixSelect.ScrollUpButton>
             <RadixSelect.Viewport className="p-1">
+              {placeholderText && (
+                <RadixSelect.Item
+                  value="__empty__"
+                  className="relative flex w-full cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none hover:bg-[var(--muted)]"
+                >
+                  <RadixSelect.ItemText>{placeholderText}</RadixSelect.ItemText>
+                  <RadixSelect.ItemIndicator className="absolute right-2">✓</RadixSelect.ItemIndicator>
+                </RadixSelect.Item>
+              )}
               {options.filter(o => o.value !== '').map((o) => (
                 <RadixSelect.Item
                   key={o.value}
