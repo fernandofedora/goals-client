@@ -6,12 +6,14 @@ import Button from '../components/ui/button';
 import Select from '../components/ui/select';
 import Alert from '../components/ui/alert';
 import ConfirmDialog from '../components/ui/confirm-dialog';
+import { cn } from '../lib/utils';
 
 export default function Transactions() {
   const [categories, setCategories] = useState([]);
   const [cards, setCards] = useState([]);
   const [transactions, setTransactions] = useState([]);
   const [typeFilter, setTypeFilter] = useState('all');
+  const [txMode, setTxMode] = useState('expense');
   const [paymentFilter, setPaymentFilter] = useState('all');
   const [categoryFilter, setCategoryFilter] = useState('');
   // Filtros de fecha (Mes/Año)
@@ -336,46 +338,79 @@ const DELETE_TRANSACTION_LEGACY = async () => { /* replaced by modal-based delet
       </div>
 
       <div className="bg-white rounded-xl shadow p-4">
-        <h3 className="text-lg font-semibold mb-3">Add Expense</h3>
-        <form className="space-y-3" onSubmit={addExpense}>
-          <Input className="w-full" placeholder="Description" value={expense.description} onChange={(e)=>setExpense(v=>({ ...v, description:e.target.value }))} required />
-          <div className="flex gap-3 flex-wrap">
-            <Select value={expense.categoryId} onChange={(e)=>setExpense(v=>({ ...v, categoryId:e.target.value }))} required>
-              <option value="">Category</option>
-              {categories.filter(c=>c.type==='expense').map(c=> <option key={c.id} value={c.id}>{c.name}</option>)}
-            </Select>
-            <Input type="number" step="0.01" placeholder="Amount" value={expense.amount} onChange={(e)=>setExpense(v=>({ ...v, amount:e.target.value }))} required />
-            <DateInput className="rounded-md px-3 py-2" value={expense.date} onChange={(e)=>setExpense(v=>({ ...v, date:e.target.value }))} required placeholder="Date" />
-          </div>
-          <div className="flex gap-3 flex-wrap">
-            <Select value={expense.method} onChange={(e)=>setExpense(v=>({ ...v, method:e.target.value }))}>
-              <option value="cash">Cash</option>
-              <option value="card">Credit Card</option>
-            </Select>
-            {expense.method==='card' && (
-              <Select value={expense.cardId} onChange={(e)=>setExpense(v=>({ ...v, cardId:e.target.value }))} required>
-                <option value="">Select Card</option>
-                {cards.map(card => <option key={card.id} value={card.id}>{card.name}</option>)}
-              </Select>
+        <h3 className="text-lg font-semibold mb-1">Add Transaction</h3>
+        <p className="text-sm text-gray-500 mb-3">Record a new expense or income</p>
+        <div className="inline-flex w-full max-w-sm rounded-2xl border border-[var(--border)] bg-[var(--muted)] p-1">
+          <button
+            type="button"
+            onClick={()=>setTxMode('expense')}
+            className={cn(
+              'flex-1 rounded-xl px-4 py-2 text-sm transition-colors',
+              txMode==='expense'
+                ? 'bg-[var(--background)] text-[var(--foreground)] shadow-sm border border-[var(--border)]'
+                : 'bg-transparent text-[var(--foreground)] hover:bg-white/60'
             )}
+          >
+            Expense
+          </button>
+          <button
+            type="button"
+            onClick={()=>setTxMode('income')}
+            className={cn(
+              'flex-1 rounded-xl px-4 py-2 text-sm transition-colors',
+              txMode==='income'
+                ? 'bg-[var(--background)] text-[var(--foreground)] shadow-sm border border-[var(--border)]'
+                : 'bg-transparent text-[var(--foreground)] hover:bg-white/60'
+            )}
+          >
+            Income
+          </button>
+        </div>
+        <form className="space-y-3 mt-4" onSubmit={(e)=>{ if(txMode==='expense') { addExpense(e); } else { addIncome(e); } }}>
+          <div className="space-y-4">
+            <label className="text-sm font-medium text-gray-700 block mb-2">Description</label>
+            <Input className="w-full" placeholder="Enter description" value={txMode==='expense' ? expense.description : income.description} onChange={(e)=> txMode==='expense' ? setExpense(v=>({ ...v, description:e.target.value })) : setIncome(v=>({ ...v, description:e.target.value }))} required />
           </div>
-          <Button type="submit">Add Expense</Button>
-        </form>
-      </div>
-
-      <div className="bg-white rounded-xl shadow p-4">
-        <h3 className="text-lg font-semibold mb-3">Add Income</h3>
-        <form className="space-y-3" onSubmit={addIncome}>
-          <Input className="w-full" placeholder="Description" value={income.description} onChange={(e)=>setIncome(v=>({ ...v, description:e.target.value }))} required />
-          <div className="flex gap-3 flex-wrap">
-            <Select value={income.categoryId} onChange={(e)=>setIncome(v=>({ ...v, categoryId:e.target.value }))} required>
-              <option value="">Category</option>
-              {categories.filter(c=>c.type==='income').map(c=> <option key={c.id} value={c.id}>{c.name}</option>)}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="space-y-4">
+              <label className="text-sm font-medium text-gray-700 block mb-2">Amount</label>
+              <Input type="number" step="0.01" placeholder="0.00" value={txMode==='expense' ? expense.amount : income.amount} onChange={(e)=> txMode==='expense' ? setExpense(v=>({ ...v, amount:e.target.value })) : setIncome(v=>({ ...v, amount:e.target.value }))} required />
+            </div>
+            <div className="space-y-4">
+              <label className="text-sm font-medium text-gray-700 block mb-2">Date</label>
+              <DateInput value={txMode==='expense' ? expense.date : income.date} onChange={(e)=> txMode==='expense' ? setExpense(v=>({ ...v, date:e.target.value })) : setIncome(v=>({ ...v, date:e.target.value }))} required placeholder="Date" />
+            </div>
+          </div>
+          <div className="space-y-4">
+            <label className="text-sm font-medium text-gray-700 block mb-2">Category</label>
+            <Select value={txMode==='expense' ? expense.categoryId : income.categoryId} onChange={(e)=> txMode==='expense' ? setExpense(v=>({ ...v, categoryId:e.target.value })) : setIncome(v=>({ ...v, categoryId:e.target.value }))} required>
+              <option value="">Select category</option>
+              {(txMode==='expense' ? categories.filter(c=>c.type==='expense') : categories.filter(c=>c.type==='income')).map(c=> (
+                <option key={c.id} value={c.id}>{c.name}</option>
+              ))}
             </Select>
-            <DateInput className="rounded-md px-3 py-2" value={income.date} onChange={(e)=>setIncome(v=>({ ...v, date:e.target.value }))} required placeholder="Date" />
-            <Input type="number" step="0.01" placeholder="Amount" value={income.amount} onChange={(e)=>setIncome(v=>({ ...v, amount:e.target.value }))} required />
           </div>
-          <Button type="submit">Add Income</Button>
+          {txMode==='expense' && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="space-y-4">
+                <label className="text-sm font-medium text-gray-700 block mb-2">Payment</label>
+                <Select value={expense.method} onChange={(e)=>setExpense(v=>({ ...v, method:e.target.value }))}>
+                  <option value="cash">Cash</option>
+                  <option value="card">Credit Card</option>
+                </Select>
+              </div>
+              {expense.method==='card' && (
+                <div className="space-y-4">
+                  <label className="text-sm font-medium text-gray-700 block mb-2">Card</label>
+                  <Select value={expense.cardId} onChange={(e)=>setExpense(v=>({ ...v, cardId:e.target.value }))} required>
+                    <option value="">Select Card</option>
+                    {cards.map(card => <option key={card.id} value={card.id}>{card.name}</option>)}
+                  </Select>
+                </div>
+              )}
+            </div>
+          )}
+          <Button type="submit" variant="secondary" className="w-full">{txMode==='expense' ? 'Add Expense' : 'Add Income'}</Button>
         </form>
       </div>
 
