@@ -16,6 +16,7 @@ export default function Dashboard() {
   const [initialBalance, setInitialBalance] = useState(null);
   const [finalBalance, setFinalBalance] = useState(null);
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
+  const [yearLoadError, setYearLoadError] = useState('');
 
   const formatCurrency = (value) => {
     try {
@@ -95,6 +96,7 @@ export default function Dashboard() {
       const mm = String(i + 1).padStart(2, '0');
       return { key: `${selectedYear}-${mm}`, label: monthLabels[i] };
     });
+    setYearLoadError('');
 
     const buildFromSummaryAll = () => {
       const agg = (summary?.incomeVsExpense || []).reduce((acc, item) => {
@@ -107,6 +109,7 @@ export default function Dashboard() {
         return acc;
       }, {});
       setBarData(months.map(m => ({ month: m.label, income: agg[m.key]?.income || 0, expense: agg[m.key]?.expense || 0 })));
+      setYearLoadError('');
     };
 
     const buildByFetchingYear = async () => {
@@ -121,7 +124,10 @@ export default function Dashboard() {
           })
         );
         setBarData(results);
+        setYearLoadError('');
       } catch (e) {
+        console.error('Error al cargar resúmenes mensuales del año', { year: selectedYear, error: e });
+        setYearLoadError('No se pudo cargar los datos del año seleccionado.');
         // Si algo falla, dejamos datos vacíos para no romper la vista
         setBarData(months.map(m => ({ month: m.label, income: 0, expense: 0 })));
       }
@@ -281,6 +287,11 @@ export default function Dashboard() {
           <h3 className="text-lg font-semibold">Income vs Expenses</h3>
           <button className="px-3 py-2 rounded-md bg-gray-900 text-white hover:bg-gray-700" onClick={onExport}>Export XLSX</button>
         </div>
+        {yearLoadError && (
+          <div className="mb-2 px-3 py-2 rounded-md bg-amber-50 text-amber-700 text-sm">
+            {yearLoadError}
+          </div>
+        )}
         <div style={{ height: 280 }}>
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={barData}>
