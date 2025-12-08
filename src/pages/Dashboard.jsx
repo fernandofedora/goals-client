@@ -15,6 +15,8 @@ export default function Dashboard() {
   const [cards, setCards] = useState([]);
   const [initialBalance, setInitialBalance] = useState(null);
   const [finalBalance, setFinalBalance] = useState(null);
+  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
+  const [yearLoadError, setYearLoadError] = useState('');
 
   const formatCurrency = (value) => {
     try {
@@ -24,11 +26,20 @@ export default function Dashboard() {
     }
   };
 
+  // Build year options from available data when possible, else fallback to recent years
+  const yearOptions = useMemo(() => {
+    const currentYear = new Date().getFullYear();
+    if (period === 'all' && summary?.incomeVsExpense?.length) {
+      const years = Array.from(new Set(summary.incomeVsExpense.map(i => Number(String(i.date).slice(0, 4))))).filter(Boolean).sort((a, b) => b - a);
+      return years.length ? years : Array.from({ length: 7 }, (_, i) => currentYear - i);
+    }
+    return Array.from({ length: 7 }, (_, i) => currentYear - i);
+  }, [summary, period]);
+
   const fetchSummary = async () => {
     setLoading(true); setError('');
     try {
-      const year = new Date().getFullYear();
-      const params = period === 'all' ? { period } : { period: `${year}-${period}` };
+      const params = period === 'all' ? { period } : { period: `${selectedYear}-${period}` };
       const { data } = await api.get('/stats/summary', { params });
       setSummary(data);
 
@@ -41,7 +52,7 @@ export default function Dashboard() {
         // Mes previo y posible cambio de año
         const curMonth = Number(period);
         const prevMonth = String(curMonth === 1 ? 12 : curMonth - 1).padStart(2, '0');
-        const prevYear = curMonth === 1 ? year - 1 : year;
+        const prevYear = curMonth === 1 ? selectedYear - 1 : selectedYear;
         const prevParams = { period: `${prevYear}-${prevMonth}` };
         try {
           const prev = await api.get('/stats/summary', { params: prevParams });
@@ -63,7 +74,7 @@ export default function Dashboard() {
     finally { setLoading(false); }
   };
 
-  useEffect(() => { fetchSummary(); }, [period]);
+  useEffect(() => { fetchSummary(); }, [period, selectedYear]);
 
   // Cargar tarjetas para uso en Credit Card Usage
   useEffect(() => {
@@ -77,26 +88,54 @@ export default function Dashboard() {
     })();
   }, []);
 
-  // Datos mensuales para el gráfico de Ingresos vs Gastos (últimos 6 meses)
-  const barData = useMemo(() => {
-    if (!summary?.incomeVsExpense) return [];
+  // Datos mensuales para el gráfico de Ingresos vs Gastos (enero–diciembre del año seleccionado)
+  const [barData, setBarData] = useState([]);
+  useEffect(() => {
     const monthLabels = ['ene','feb','mar','abr','may','jun','jul','ago','sept','oct','nov','dic'];
-    const now = new Date();
-    const months = [];
-    for (let i = 5; i >= 0; i--) {
-      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-      const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
-      months.push({ key, label: monthLabels[d.getMonth()] });
-    }
-    const agg = summary.incomeVsExpense.reduce((acc, item) => {
-      const key = item.date.slice(0,7); // YYYY-MM
-      if (!acc[key]) acc[key] = { income: 0, expense: 0 };
-      acc[key].income += Number(item.income || 0);
-      acc[key].expense += Number(item.expense || 0);
-      return acc;
-    }, {});
-    return months.map(m => ({ month: m.label, income: agg[m.key]?.income || 0, expense: agg[m.key]?.expense || 0 }));
-  }, [summary]);
+    const months = Array.from({ length: 12 }, (_, i) => {
+      const mm = String(i + 1).padStart(2, '0');
+      return { key: `${selectedYear}-${mm}`, label: monthLabels[i] };
+    });
+    setYearLoadError('');
+
+    const buildFromSummaryAll = () => {
+      const agg = (summary?.incomeVsExpense || []).reduce((acc, item) => {
+        const key = String(item.date).slice(0, 7); // YYYY-MM
+        const yr = Number(String(item.date).slice(0, 4));
+        if (yr !== selectedYear) return acc; // filtrar al año seleccionado
+        if (!acc[key]) acc[key] = { income: 0, expense: 0 };
+        acc[key].income += Number(item.income || 0);
+        acc[key].expense += Number(item.expense || 0);
+        return acc;
+      }, {});
+      setBarData(months.map(m => ({ month: m.label, income: agg[m.key]?.income || 0, expense: agg[m.key]?.expense || 0 })));
+      setYearLoadError('');
+    };
+
+    const buildByFetchingYear = async () => {
+      try {
+        const results = await Promise.all(
+          months.map(async (m, i) => {
+            const mm = String(i + 1).padStart(2, '0');
+            const { data } = await api.get('/stats/summary', { params: { period: `${selectedYear}-${mm}` } });
+            const income = Number(data?.totals?.income || 0);
+            const expense = Number(data?.totals?.expense || 0);
+            return { month: monthLabels[i], income, expense };
+          })
+        );
+        setBarData(results);
+        setYearLoadError('');
+      } catch (e) {
+        console.error('Error al cargar resúmenes mensuales del año', { year: selectedYear, error: e });
+        setYearLoadError('No se pudo cargar los datos del año seleccionado.');
+        // Si algo falla, dejamos datos vacíos para no romper la vista
+        setBarData(months.map(m => ({ month: m.label, income: 0, expense: 0 })));
+      }
+    };
+
+    if (period === 'all') buildFromSummaryAll();
+    else buildByFetchingYear();
+  }, [selectedYear, period, summary]);
 
   // Totales y porcentajes de métodos de pago
   const paymentTotals = useMemo(() => {
@@ -145,8 +184,7 @@ export default function Dashboard() {
 
   const onExport = async () => {
     try {
-      const year = new Date().getFullYear();
-      const params = period === 'all' ? { period } : { period: `${year}-${period}` };
+      const params = period === 'all' ? { period } : { period: `${selectedYear}-${period}` };
       const res = await api.get('/stats/export', { params, responseType: 'blob' });
       const url = window.URL.createObjectURL(new Blob([res.data]));
       const a = document.createElement('a');
@@ -162,9 +200,14 @@ export default function Dashboard() {
       <div className="bg-white rounded-xl shadow p-4">
         <div className="flex justify-between items-center mb-3">
           <h3 className="text-lg font-semibold">Overview</h3>
-          <select className="border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500" value={period} onChange={(e)=>setPeriod(e.target.value)}>
-            {monthOptions.map(m=> <option key={m.value} value={m.value}>{m.label}</option>)}
-          </select>
+          <div className="flex items-center gap-2">
+            <select className="border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500" value={period} onChange={(e)=>setPeriod(e.target.value)}>
+              {monthOptions.map(m=> <option key={m.value} value={m.value}>{m.label}</option>)}
+            </select>
+            <select className="border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500" value={selectedYear} onChange={(e)=>setSelectedYear(Number(e.target.value))}>
+              {yearOptions.map(y => <option key={y} value={y}>{y}</option>)}
+            </select>
+          </div>
         </div>
         {loading && <p className="text-gray-500">Loading...</p>}
         {error && <div className="px-3 py-2 rounded-md bg-rose-100 text-rose-700">{error}</div>}
@@ -244,6 +287,11 @@ export default function Dashboard() {
           <h3 className="text-lg font-semibold">Income vs Expenses</h3>
           <button className="px-3 py-2 rounded-md bg-gray-900 text-white hover:bg-gray-700" onClick={onExport}>Export XLSX</button>
         </div>
+        {yearLoadError && (
+          <div className="mb-2 px-3 py-2 rounded-md bg-amber-50 text-amber-700 text-sm">
+            {yearLoadError}
+          </div>
+        )}
         <div style={{ height: 280 }}>
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={barData}>

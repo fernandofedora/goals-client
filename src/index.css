@@ -6,3 +6,36 @@ body {
   background-color: #f9fafb; /* gray-50 */
   color: #111827; /* gray-900 */
 }
+
+/* shadcn-like theme variables */
+:root {
+  --background: #ffffff;
+  --foreground: #111827;
+  --card: #ffffff;
+  --muted: #f3f4f6;
+  --muted-foreground: #6b7280;
+  --border: #e5e7eb;
+  --ring: #4f46e5;
+  --primary: #4f46e5;
+  --primary-foreground: #ffffff;
+  --secondary: #111827;
+  --secondary-foreground: #ffffff;
+  --destructive: #e11d48;
+  --destructive-foreground: #ffffff;
+}
+
+[data-theme="dark"] {
+  --background: #0b0f19;
+  --foreground: #e5e7eb;
+  --card: #111827;
+  --muted: #0f172a;
+  --muted-foreground: #94a3b8;
+  --border: #1f2937;
+  --ring: #6366f1;
+  --primary: #6366f1;
+  --primary-foreground: #0b0f19;
+  --secondary: #e5e7eb;
+  --secondary-foreground: #0b0f19;
+  --destructive: #ef4444;
+  --destructive-foreground: #0b0f19;
+}

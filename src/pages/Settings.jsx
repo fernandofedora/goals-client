@@ -1,5 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import api from '../api';
+import Input from '../components/ui/input';
+import Button from '../components/ui/button';
+import Select from '../components/ui/select';
 
 export default function Settings() {
   const [categories, setCategories] = useState([]);
@@ -94,19 +97,19 @@ export default function Settings() {
             <h3 className="text-lg font-semibold">Categories</h3>
             <p className="text-xs text-gray-500">Manage your expense and income categories</p>
           </div>
-          <button className="px-3 py-2 rounded-md bg-gray-900 text-white hover:bg-gray-700" onClick={()=>setShowCatForm(v=>!v)}>+ Add Category</button>
+          <Button variant="secondary" onClick={()=>setShowCatForm(v=>!v)}>+ Add Category</Button>
         </div>
 
         {showCatForm && (
           <form className="mt-4" onSubmit={addCategory}>
             <div className="flex gap-3 flex-wrap items-center">
-              <input className="border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Category Name" value={catForm.name} onChange={(e)=>setCatForm(v=>({ ...v, name:e.target.value }))} required />
-              <select className="border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500" value={catForm.type} onChange={(e)=>setCatForm(v=>({ ...v, type:e.target.value }))}>
+              <Input placeholder="Category Name" value={catForm.name} onChange={(e)=>setCatForm(v=>({ ...v, name:e.target.value }))} required />
+              <Select value={catForm.type} onChange={(e)=>setCatForm(v=>({ ...v, type:e.target.value }))}>
                 <option value="expense">Expense</option>
                 <option value="income">Income</option>
-              </select>
-              <input className="border border-gray-300 rounded-md w-16 h-10 p-0 cursor-pointer bg-transparent [appearance:auto]" type="color" value={catForm.color} onChange={(e)=>setCatForm(v=>({ ...v, color:e.target.value }))} />
-              <button className="px-3 py-2 rounded-md bg-indigo-600 text-white hover:bg-indigo-700" type="submit">Save</button>
+              </Select>
+              <Input className="w-8 h-8 p-0 cursor-pointer bg-transparent [appearance:auto]" type="color" value={catForm.color} onChange={(e)=>setCatForm(v=>({ ...v, color:e.target.value }))} />
+              <Button type="submit">Save</Button>
             </div>
           </form>
         )}
@@ -119,12 +122,12 @@ export default function Settings() {
               <li key={cat.id} className="flex items-center justify-between py-3">
                 {editingCatId === cat.id ? (
                   <div className="flex-1 flex items-center gap-2">
-                    <input className="border border-gray-300 rounded-md px-2 py-1 w-40" value={editCatForm.name} onChange={(e)=>setEditCatForm(v=>({ ...v, name:e.target.value }))} />
-                    <select className="border border-gray-300 rounded-md px-2 py-1" value={editCatForm.type} onChange={(e)=>setEditCatForm(v=>({ ...v, type:e.target.value }))}>
+                    <Input className="px-2 py-1 w-40" value={editCatForm.name} onChange={(e)=>setEditCatForm(v=>({ ...v, name:e.target.value }))} />
+                    <Select className="px-2 py-1" value={editCatForm.type} onChange={(e)=>setEditCatForm(v=>({ ...v, type:e.target.value }))}>
                       <option value="expense">Expense</option>
                       <option value="income">Income</option>
-                    </select>
-                    <input className="border border-gray-300 rounded-md w-14 h-8 p-0 cursor-pointer bg-transparent [appearance:auto]" type="color" value={editCatForm.color} onChange={(e)=>setEditCatForm(v=>({ ...v, color:e.target.value }))} />
+                    </Select>
+                    <Input className="w-8 h-8 p-0 cursor-pointer bg-transparent [appearance:auto]" type="color" value={editCatForm.color} onChange={(e)=>setEditCatForm(v=>({ ...v, color:e.target.value }))} />
                   </div>
                 ) : (
                   <div className="flex items-center gap-3">
@@ -135,8 +138,8 @@ export default function Settings() {
                 <div className="flex items-center gap-2">
                   {editingCatId === cat.id ? (
                     <>
-                      <button className="px-2 py-1 rounded-md bg-indigo-600 text-white" onClick={()=>saveEditCat(cat.id)}>Save</button>
-                      <button className="px-2 py-1 rounded-md border" onClick={cancelEditCat}>Cancel</button>
+                      <Button className="px-2 py-1" onClick={()=>saveEditCat(cat.id)}>Save</Button>
+                      <Button className="px-2 py-1" variant="outline" onClick={cancelEditCat}>Cancel</Button>
                     </>
                   ) : (
                     <>
@@ -167,7 +170,7 @@ export default function Settings() {
                       <option value="expense">Expense</option>
                       <option value="income">Income</option>
                     </select>
-                    <input className="border border-gray-300 rounded-md w-14 h-8 p-0 cursor-pointer bg-transparent [appearance:auto]" type="color" value={editCatForm.color} onChange={(e)=>setEditCatForm(v=>({ ...v, color:e.target.value }))} />
+                    <input className="border border-gray-300 rounded-md w-8 h-8 p-0 cursor-pointer bg-transparent [appearance:auto]" type="color" value={editCatForm.color} onChange={(e)=>setEditCatForm(v=>({ ...v, color:e.target.value }))} />
                   </div>
                 ) : (
                   <div className="flex items-center gap-3">
@@ -205,16 +208,16 @@ export default function Settings() {
             <h3 className="text-lg font-semibold">Credit Cards</h3>
             <p className="text-xs text-gray-500">Manage your credit cards for expense tracking</p>
           </div>
-          <button className="px-3 py-2 rounded-md bg-gray-900 text-white hover:bg-gray-700" onClick={()=>setShowCardForm(v=>!v)}>+ Add Card</button>
+          <Button variant="secondary" onClick={()=>setShowCardForm(v=>!v)}>+ Add Card</Button>
         </div>
 
         {showCardForm && (
           <form className="mt-4" onSubmit={addCard}>
             <div className="flex gap-3 flex-wrap items-center">
-              <input className="border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Card Name" value={cardForm.name} onChange={(e)=>setCardForm(v=>({ ...v, name:e.target.value }))} required />
-              <input className="border border-gray-300 rounded-md w-16 h-10 p-0 cursor-pointer bg-transparent [appearance:auto]" type="color" value={cardForm.color} onChange={(e)=>setCardForm(v=>({ ...v, color:e.target.value }))} />
-              <input className="border border-gray-300 rounded-md px-3 py-2 w-28" placeholder="Last 4" value={cardForm.last4} onChange={(e)=>setCardForm(v=>({ ...v, last4:e.target.value.replace(/[^0-9]/g,'').slice(0,4) }))} required />
-              <button className="px-3 py-2 rounded-md bg-indigo-600 text-white hover:bg-indigo-700" type="submit">Save</button>
+              <Input placeholder="Card Name" value={cardForm.name} onChange={(e)=>setCardForm(v=>({ ...v, name:e.target.value }))} required />
+              <Input className="w-8 h-8 p-0 cursor-pointer bg-transparent [appearance:auto]" type="color" value={cardForm.color} onChange={(e)=>setCardForm(v=>({ ...v, color:e.target.value }))} />
+              <Input className="w-28" placeholder="Last 4" value={cardForm.last4} onChange={(e)=>setCardForm(v=>({ ...v, last4:e.target.value.replace(/[^0-9]/g,'').slice(0,4) }))} required />
+              <Button type="submit">Save</Button>
             </div>
           </form>
         )}
@@ -228,9 +231,9 @@ export default function Settings() {
               <div className="relative flex items-center justify-between">
                 {editingCardId === card.id ? (
                   <div className="flex items-center gap-2">
-                    <input className="border border-white/50 bg-white/10 text-white rounded-md px-2 py-1" value={editCardForm.name} onChange={(e)=>setEditCardForm(v=>({ ...v, name:e.target.value }))} />
-                    <input className="border border-white/50 rounded-md w-14 h-8 p-0 cursor-pointer bg-transparent [appearance:auto]" type="color" value={editCardForm.color} onChange={(e)=>setEditCardForm(v=>({ ...v, color:e.target.value }))} />
-                    <input className="border border-white/50 bg-white/10 text-white rounded-md px-2 py-1 w-24" value={editCardForm.last4} onChange={(e)=>setEditCardForm(v=>({ ...v, last4:e.target.value.replace(/[^0-9]/g,'').slice(0,4) }))} />
+                    <Input className="border-white/50 bg-white/10 text-white px-2 py-1" value={editCardForm.name} onChange={(e)=>setEditCardForm(v=>({ ...v, name:e.target.value }))} />
+                    <Input className="border-white/50 w-8 h-8 p-0 cursor-pointer bg-transparent [appearance:auto]" type="color" value={editCardForm.color} onChange={(e)=>setEditCardForm(v=>({ ...v, color:e.target.value }))} />
+                    <Input className="border-white/50 bg-white/10 text-white px-2 py-1 w-24" value={editCardForm.last4} onChange={(e)=>setEditCardForm(v=>({ ...v, last4:e.target.value.replace(/[^0-9]/g,'').slice(0,4) }))} />
                   </div>
                 ) : (
                   <div className="flex items-center gap-3">
@@ -246,8 +249,8 @@ export default function Settings() {
                 <div className="flex items-center gap-2">
                   {editingCardId === card.id ? (
                     <>
-                      <button className="px-2 py-1 rounded-md bg-white/20 hover:bg-white/30" onClick={()=>saveEditCard(card.id)}>Save</button>
-                      <button className="px-2 py-1 rounded-md bg-white/10 hover:bg-white/20" onClick={cancelEditCard}>Cancel</button>
+                      <Button className="px-2 py-1 bg-white/20 hover:bg-white/30" onClick={()=>saveEditCard(card.id)}>Save</Button>
+                      <Button className="px-2 py-1 bg-white/10 hover:bg-white/20" onClick={cancelEditCard}>Cancel</Button>
                     </>
                   ) : (
                     <>
