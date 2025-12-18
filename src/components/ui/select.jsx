@@ -19,18 +19,19 @@ function extractOptions(children) {
 
 const Select = React.forwardRef(({ className, children, value = '', onChange, placeholder, required, name, disabled }, ref) => {
   const { options, placeholderText } = extractOptions(children);
-  const selectedLabel = (value === ''
+  const normalizedValue = value == null ? '' : String(value);
+  const selectedLabel = (normalizedValue === ''
     ? (placeholder || placeholderText || 'Select')
-    : (options.find(o => o.value === value)?.label || placeholder || 'Select'));
+    : (options.find(o => o.value === normalizedValue)?.label || placeholder || 'Select'));
   const handleChange = (val) => {
     if (val === '__empty__') val = '';
     if (typeof onChange === 'function') {
-      onChange({ target: { value: val } });
+      onChange({ target: { value: val, name } });
     }
   };
   return (
     <div className={cn('relative inline-block', className)}>
-      <RadixSelect.Root value={value} onValueChange={handleChange} disabled={disabled}>
+      <RadixSelect.Root value={normalizedValue} onValueChange={handleChange} disabled={disabled}>
         <RadixSelect.Trigger
           ref={ref}
           className={cn(
@@ -84,7 +85,7 @@ const Select = React.forwardRef(({ className, children, value = '', onChange, pl
       <select
         name={name}
         required={required}
-        value={value}
+        value={normalizedValue}
         onChange={() => {}}
         style={{ position: 'absolute', opacity: 0, pointerEvents: 'none', width: 0, height: 0 }}
       >
