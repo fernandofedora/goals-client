@@ -251,7 +251,7 @@ const DELETE_TRANSACTION_LEGACY = async () => { /* replaced by modal-based delet
         onConfirm={deleteBudget}
         onCancel={()=>setDeleteBudgetId(null)}
       />
-      <div className="bg-white rounded-xl shadow p-4">
+      <div className="bg-white dark:bg-slate-800 rounded-xl shadow p-4">
         <h3 className="text-lg font-semibold mb-3">Budget</h3>
         <form className="space-y-3" onSubmit={setMonthlyBudget}>
           <div className="flex gap-3 flex-wrap">
@@ -264,13 +264,13 @@ const DELETE_TRANSACTION_LEGACY = async () => { /* replaced by modal-based delet
             <Button type="submit">Set</Button>
           </div>
         </form>
-        <ul className="divide-y divide-gray-100 mt-3">
+        <ul className="divide-y divide-gray-100 dark:divide-slate-700 mt-3">
           {budgets.map(b => (
             <li key={b.id} className="flex items-center justify-between py-2">
               {editingBudgetId === b.id ? (
                 <div className="flex gap-2 flex-wrap items-center flex-1">
                   <select 
-                    className="border border-gray-300 rounded-md px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" 
+                    className="border border-gray-300 dark:border-slate-600 rounded-md px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:bg-slate-700 dark:text-white" 
                     value={editBudgetData.month} 
                     onChange={(e)=>setEditBudgetData(v=>({ ...v, month:e.target.value }))} 
                     required
@@ -279,7 +279,7 @@ const DELETE_TRANSACTION_LEGACY = async () => { /* replaced by modal-based delet
                     {Array.from({length:12},(_,i)=> <option key={i+1} value={String(i+1).padStart(2,'0')}>{new Date(0,i).toLocaleString('en',{ month:'long'})}</option>)}
                   </select>
                   <input 
-                    className="border border-gray-300 rounded-md px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 w-20" 
+                    className="border border-gray-300 dark:border-slate-600 rounded-md px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 w-20 dark:bg-slate-700 dark:text-white" 
                     type="number" 
                     placeholder="Year" 
                     value={editBudgetData.year} 
@@ -287,7 +287,7 @@ const DELETE_TRANSACTION_LEGACY = async () => { /* replaced by modal-based delet
                     required 
                   />
                   <input 
-                    className="border border-gray-300 rounded-md px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 w-24" 
+                    className="border border-gray-300 dark:border-slate-600 rounded-md px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 w-24 dark:bg-slate-700 dark:text-white" 
                     type="number" 
                     step="0.01" 
                     placeholder="Amount" 
@@ -337,9 +337,9 @@ const DELETE_TRANSACTION_LEGACY = async () => { /* replaced by modal-based delet
         </ul>
       </div>
 
-      <div className="bg-white rounded-xl shadow p-4">
+      <div className="bg-white dark:bg-slate-800 rounded-xl shadow p-4">
         <h3 className="text-lg font-semibold mb-1">Add Transaction</h3>
-        <p className="text-sm text-gray-500 mb-3">Record a new expense or income</p>
+        <p className="text-sm text-gray-500 dark:text-gray-400 mb-3">Record a new expense or income</p>
         <div className="inline-flex w-full max-w-sm rounded-2xl border border-[var(--border)] bg-[var(--muted)] p-1">
           <button
             type="button"
@@ -348,7 +348,7 @@ const DELETE_TRANSACTION_LEGACY = async () => { /* replaced by modal-based delet
               'flex-1 rounded-xl px-4 py-2 text-sm transition-colors',
               txMode==='expense'
                 ? 'bg-[var(--background)] text-[var(--foreground)] shadow-sm border border-[var(--border)]'
-                : 'bg-transparent text-[var(--foreground)] hover:bg-white/60'
+                : 'bg-transparent text-[var(--foreground)] hover:bg-white dark:bg-slate-800/60'
             )}
           >
             Expense
@@ -360,7 +360,7 @@ const DELETE_TRANSACTION_LEGACY = async () => { /* replaced by modal-based delet
               'flex-1 rounded-xl px-4 py-2 text-sm transition-colors',
               txMode==='income'
                 ? 'bg-[var(--background)] text-[var(--foreground)] shadow-sm border border-[var(--border)]'
-                : 'bg-transparent text-[var(--foreground)] hover:bg-white/60'
+                : 'bg-transparent text-[var(--foreground)] hover:bg-white dark:bg-slate-800/60'
             )}
           >
             Income
@@ -368,21 +368,21 @@ const DELETE_TRANSACTION_LEGACY = async () => { /* replaced by modal-based delet
         </div>
         <form className="space-y-3 mt-4" onSubmit={(e)=>{ if(txMode==='expense') { addExpense(e); } else { addIncome(e); } }}>
           <div className="space-y-4">
-            <label className="text-sm font-medium text-gray-700 block mb-2">Description</label>
+            <label className="text-sm font-medium text-gray-700 dark:text-gray-200 block mb-2">Description</label>
             <Input className="w-full" placeholder="Enter description" value={txMode==='expense' ? expense.description : income.description} onChange={(e)=> txMode==='expense' ? setExpense(v=>({ ...v, description:e.target.value })) : setIncome(v=>({ ...v, description:e.target.value }))} required />
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="space-y-4">
-              <label className="text-sm font-medium text-gray-700 block mb-2">Amount</label>
+              <label className="text-sm font-medium text-gray-700 dark:text-gray-200 block mb-2">Amount</label>
               <Input type="number" step="0.01" placeholder="0.00" value={txMode==='expense' ? expense.amount : income.amount} onChange={(e)=> txMode==='expense' ? setExpense(v=>({ ...v, amount:e.target.value })) : setIncome(v=>({ ...v, amount:e.target.value }))} required />
             </div>
             <div className="space-y-4">
-              <label className="text-sm font-medium text-gray-700 block mb-2">Date</label>
+              <label className="text-sm font-medium text-gray-700 dark:text-gray-200 block mb-2">Date</label>
               <DateInput value={txMode==='expense' ? expense.date : income.date} onChange={(e)=> txMode==='expense' ? setExpense(v=>({ ...v, date:e.target.value })) : setIncome(v=>({ ...v, date:e.target.value }))} required placeholder="Date" />
             </div>
           </div>
           <div className="space-y-4">
-            <label className="text-sm font-medium text-gray-700 block mb-2">Category</label>
+            <label className="text-sm font-medium text-gray-700 dark:text-gray-200 block mb-2">Category</label>
             <Select value={txMode==='expense' ? expense.categoryId : income.categoryId} onChange={(e)=> txMode==='expense' ? setExpense(v=>({ ...v, categoryId:e.target.value })) : setIncome(v=>({ ...v, categoryId:e.target.value }))} required>
               <option value="">Select category</option>
               {(txMode==='expense' ? categories.filter(c=>c.type==='expense') : categories.filter(c=>c.type==='income')).map(c=> (
@@ -393,7 +393,7 @@ const DELETE_TRANSACTION_LEGACY = async () => { /* replaced by modal-based delet
           {txMode==='expense' && (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="space-y-4">
-                <label className="text-sm font-medium text-gray-700 block mb-2">Payment</label>
+                <label className="text-sm font-medium text-gray-700 dark:text-gray-200 block mb-2">Payment</label>
                 <Select value={expense.method} onChange={(e)=>setExpense(v=>({ ...v, method:e.target.value }))}>
                   <option value="cash">Cash</option>
                   <option value="card">Credit Card</option>
@@ -401,7 +401,7 @@ const DELETE_TRANSACTION_LEGACY = async () => { /* replaced by modal-based delet
               </div>
               {expense.method==='card' && (
                 <div className="space-y-4">
-                  <label className="text-sm font-medium text-gray-700 block mb-2">Card</label>
+                  <label className="text-sm font-medium text-gray-700 dark:text-gray-200 block mb-2">Card</label>
                   <Select value={expense.cardId} onChange={(e)=>setExpense(v=>({ ...v, cardId:e.target.value }))} required>
                     <option value="">Select Card</option>
                     {cards.map(card => <option key={card.id} value={card.id}>{card.name}</option>)}
@@ -414,24 +414,24 @@ const DELETE_TRANSACTION_LEGACY = async () => { /* replaced by modal-based delet
         </form>
       </div>
 
-      <div className="bg-white rounded-xl shadow p-4">
+      <div className="bg-white dark:bg-slate-800 rounded-xl shadow p-4">
         <div className="flex flex-col gap-3 mb-3">
           <div className="flex items-center justify-between gap-3 flex-wrap">
             <h3 className="text-lg font-semibold">Transaction History</h3>
             <div className="flex items-center gap-4 flex-wrap">
-              <label className="text-sm text-gray-600">Tipo:</label>
+              <label className="text-sm text-gray-600 dark:text-gray-300">Tipo:</label>
               <Select value={typeFilter} onChange={(e)=>setTypeFilter(e.target.value)}>
                 <option value="all">All</option>
                 <option value="expense">Expenses</option>
                 <option value="income">Income</option>
               </Select>
-              <label className="text-sm text-gray-600">Payment:</label>
+              <label className="text-sm text-gray-600 dark:text-gray-300">Payment:</label>
               <Select value={paymentFilter} onChange={(e)=>setPaymentFilter(e.target.value)}>
                 <option value="all">All</option>
                 <option value="cash">Cash</option>
                 <option value="card">Credit Card</option>
               </Select>
-              <label className="text-sm text-gray-600">Category:</label>
+              <label className="text-sm text-gray-600 dark:text-gray-300">Category:</label>
               <Select value={categoryFilter} onChange={(e)=>setCategoryFilter(e.target.value)}>
                 <option value="">All</option>
                 {categories.filter(c=> typeFilter==='all' || c.type===typeFilter).map(c=> (
@@ -442,8 +442,8 @@ const DELETE_TRANSACTION_LEGACY = async () => { /* replaced by modal-based delet
           </div>
           <div className="flex items-center gap-3 flex-wrap">
             <div className="flex flex-col">
-              <span className="text-sm text-gray-600">Month</span>
-              <select className="border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              <span className="text-sm text-gray-600 dark:text-gray-300">Month</span>
+              <select className="border border-gray-300 dark:border-slate-600 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:bg-slate-700 dark:text-white"
                 value={monthFilter}
                 onChange={(e)=>setMonthFilter(e.target.value)}
                 disabled={showYearAll}
@@ -456,31 +456,31 @@ const DELETE_TRANSACTION_LEGACY = async () => { /* replaced by modal-based delet
               </select>
             </div>
             <div className="flex flex-col">
-              <span className="text-sm text-gray-600">Year</span>
-              <input className="border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 w-28" type="number" value={yearFilter} onChange={(e)=>setYearFilter(e.target.value)} />
+              <span className="text-sm text-gray-600 dark:text-gray-300">Year</span>
+              <input className="border border-gray-300 dark:border-slate-600 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 w-28 dark:bg-slate-700 dark:text-white" type="number" value={yearFilter} onChange={(e)=>setYearFilter(e.target.value)} />
             </div>
             <label className="inline-flex items-center gap-2 mt-5 sm:mt-0">
-              <input type="checkbox" className="rounded" checked={showYearAll} onChange={(e)=>setShowYearAll(e.target.checked)} />
-              <span className="text-sm text-gray-700">Mostrar todo el año</span>
+              <input type="checkbox" className="rounded dark:bg-slate-700 dark:text-white" checked={showYearAll} onChange={(e)=>setShowYearAll(e.target.checked)} />
+              <span className="text-sm text-gray-700 dark:text-gray-200">Mostrar todo el año</span>
             </label>
           </div>
         </div>
-        <div className="rounded-xl border border-gray-200 overflow-x-auto">
+        <div className="rounded-xl border border-gray-200 dark:border-slate-700 overflow-x-auto">
           {filtered.length === 0 ? (
-            <div className="p-6 text-center text-gray-600">
+            <div className="p-6 text-center text-gray-600 dark:text-gray-300">
               {`No transactions for ${showYearAll ? yearFilter : `${monthNameEs} ${yearFilter}`}. Add your first transaction above.`}
             </div>
           ) : (
             <table className="min-w-[760px] w-full table-auto">
-              <thead className="bg-gray-50 sticky top-0 z-10">
+              <thead className="bg-gray-50 dark:bg-slate-700 sticky top-0 z-10">
                 <tr>
-                  <th className="px-3 py-2 text-left text-sm font-semibold text-gray-700 whitespace-nowrap">Type</th>
-                  <th className="px-3 py-2 text-left text-sm font-semibold text-gray-700 whitespace-nowrap">Description</th>
-                  <th className="px-3 py-2 text-left text-sm font-semibold text-gray-700 whitespace-nowrap">Category</th>
-                  <th className="px-3 py-2 text-left text-sm font-semibold text-gray-700 whitespace-nowrap">Amount</th>
-                  <th className="px-3 py-2 text-left text-sm font-semibold text-gray-700 whitespace-nowrap">Date</th>
-                  <th className="px-3 py-2 text-left text-sm font-semibold text-gray-700 whitespace-nowrap">Method</th>
-                  <th className="px-3 py-2 text-left text-sm font-semibold text-gray-700 w-40 whitespace-nowrap">Actions</th>
+                  <th className="px-3 py-2 text-left text-sm font-semibold text-gray-700 dark:text-gray-200 whitespace-nowrap">Type</th>
+                  <th className="px-3 py-2 text-left text-sm font-semibold text-gray-700 dark:text-gray-200 whitespace-nowrap">Description</th>
+                  <th className="px-3 py-2 text-left text-sm font-semibold text-gray-700 dark:text-gray-200 whitespace-nowrap">Category</th>
+                  <th className="px-3 py-2 text-left text-sm font-semibold text-gray-700 dark:text-gray-200 whitespace-nowrap">Amount</th>
+                  <th className="px-3 py-2 text-left text-sm font-semibold text-gray-700 dark:text-gray-200 whitespace-nowrap">Date</th>
+                  <th className="px-3 py-2 text-left text-sm font-semibold text-gray-700 dark:text-gray-200 whitespace-nowrap">Method</th>
+                  <th className="px-3 py-2 text-left text-sm font-semibold text-gray-700 dark:text-gray-200 w-40 whitespace-nowrap">Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -489,16 +489,16 @@ const DELETE_TRANSACTION_LEGACY = async () => { /* replaced by modal-based delet
                 {editingId === t.id ? (
                   <>
                     <td>
-                      <select className="border border-gray-300 rounded-md px-2 py-1 focus:outline-none focus:ring-2 focus:ring-indigo-500" value={editData.type} onChange={(e)=>setEditData(v=>({ ...v, type:e.target.value, paymentMethod: e.target.value==='income' ? 'cash' : v.paymentMethod }))}>
+                      <select className="border border-gray-300 dark:border-slate-600 rounded-md px-2 py-1 focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:bg-slate-700 dark:text-white" value={editData.type} onChange={(e)=>setEditData(v=>({ ...v, type:e.target.value, paymentMethod: e.target.value==='income' ? 'cash' : v.paymentMethod }))}>
                         <option value="expense">expense</option>
                         <option value="income">income</option>
                       </select>
                     </td>
                     <td>
-                      <input className="border border-gray-300 rounded-md px-2 py-1 focus:outline-none focus:ring-2 focus:ring-indigo-500" value={editData.description} onChange={(e)=>setEditData(v=>({ ...v, description:e.target.value }))} />
+                      <input className="border border-gray-300 dark:border-slate-600 rounded-md px-2 py-1 focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:bg-slate-700 dark:text-white" value={editData.description} onChange={(e)=>setEditData(v=>({ ...v, description:e.target.value }))} />
                     </td>
                     <td>
-                      <select className="border border-gray-300 rounded-md px-2 py-1 focus:outline-none focus:ring-2 focus:ring-indigo-500" value={editData.categoryId} onChange={(e)=>setEditData(v=>({ ...v, categoryId:e.target.value }))}>
+                      <select className="border border-gray-300 dark:border-slate-600 rounded-md px-2 py-1 focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:bg-slate-700 dark:text-white" value={editData.categoryId} onChange={(e)=>setEditData(v=>({ ...v, categoryId:e.target.value }))}>
                         <option value="">Category</option>
                         {categories.filter(c=>c.type===editData.type).map(c=> <option key={c.id} value={c.id}>{c.name}</option>)}
                       </select>
@@ -511,26 +511,26 @@ const DELETE_TRANSACTION_LEGACY = async () => { /* replaced by modal-based delet
                     </td>
                     <td>
                       {editData.type==='expense' ? (
-                        <div className="flex gap-2">
-                          <select className="border border-gray-300 rounded-md px-2 py-1 focus:outline-none focus:ring-2 focus:ring-indigo-500" value={editData.paymentMethod} onChange={(e)=>setEditData(v=>({ ...v, paymentMethod:e.target.value }))}>
+                        <div className="flex gap-2 dark:bg-slate-700 dark:text-white">
+                          <select className="border border-gray-300 dark:border-slate-600 rounded-md px-2 py-1 focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:bg-slate-700 dark:text-white" value={editData.paymentMethod} onChange={(e)=>setEditData(v=>({ ...v, paymentMethod:e.target.value }))}>
                             <option value="cash">Cash</option>
                             <option value="card">Credit Card</option>
                           </select>
                           {editData.paymentMethod==='card' && (
-                            <select className="border border-gray-300 rounded-md px-2 py-1 focus:outline-none focus:ring-2 focus:ring-indigo-500" value={editData.cardId || ''} onChange={(e)=>setEditData(v=>({ ...v, cardId:e.target.value }))}>
+                            <select className="border border-gray-300 dark:border-slate-600 rounded-md px-2 py-1 focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:bg-slate-700 dark:text-white" value={editData.cardId || ''} onChange={(e)=>setEditData(v=>({ ...v, cardId:e.target.value }))}>
                               <option value="">Select Card</option>
                               {cards.map(card => <option key={card.id} value={card.id}>{card.name}</option>)}
                             </select>
                           )}
                         </div>
                       ) : (
-                        <span className="text-gray-500">Cash</span>
+                        <span className="text-gray-500 dark:text-gray-400">Cash</span>
                       )}
                     </td>
                     <td className="w-40">
                        <div className="flex items-center gap-3">
                          <button
-                           className="p-2 rounded-md hover:bg-emerald-100 text-emerald-600"
+                           className="p-2 rounded-md hover:bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600"
                            aria-label="Save"
                            title="Save"
                            onClick={saveEdit}
@@ -540,7 +540,7 @@ const DELETE_TRANSACTION_LEGACY = async () => { /* replaced by modal-based delet
                            </svg>
                          </button>
                          <button
-                           className="p-2 rounded-md hover:bg-gray-100 text-gray-700"
+                           className="p-2 rounded-md hover:bg-gray-100 dark:hover:bg-slate-700 dark:bg-slate-700 text-gray-700 dark:text-gray-200"
                            aria-label="Cancel"
                            title="Cancel"
                            onClick={cancelEdit}
@@ -555,7 +555,7 @@ const DELETE_TRANSACTION_LEGACY = async () => { /* replaced by modal-based delet
                   </>
                 ) : (
                   <>
-                    <td className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${t.type==='expense' ? 'bg-rose-100 text-rose-700' : 'bg-emerald-100 text-emerald-700'}`}>{t.type}</td>
+                    <td className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${t.type==='expense' ? 'bg-rose-100 dark:bg-rose-900/30 text-rose-700 dark:text-rose-300' : 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300'}`}>{t.type}</td>
                     <td className="max-w-[180px] truncate" title={t.description}>{t.description}</td>
                     <td className="whitespace-nowrap">{t.Category?.name || ''}</td>
                     <td className={`text-sm ${t.type==='expense' ? 'text-rose-600' : 'text-emerald-600'} whitespace-nowrap`}>${parseFloat(t.amount ?? 0).toFixed(2)}</td>
@@ -564,7 +564,7 @@ const DELETE_TRANSACTION_LEGACY = async () => { /* replaced by modal-based delet
                     <td className="w-40">
                        <div className="flex items-center gap-3">
                          <button
-                            className="p-2 rounded-md hover:bg-gray-100 text-gray-800"
+                            className="p-2 rounded-md hover:bg-gray-100 dark:hover:bg-slate-700 dark:bg-slate-700 text-gray-800 dark:text-gray-100"
                             aria-label="Edit"
                             title="Edit"
                             onClick={()=>startEdit(t)}
