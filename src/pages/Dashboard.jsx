@@ -8,15 +8,27 @@ const monthOptions = [
 ];
 
 export default function Dashboard() {
-  const [period, setPeriod] = useState('all');
+  const [period, setPeriod] = useState(() => localStorage.getItem('dashboard_period') || 'all');
   const [summary, setSummary] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [cards, setCards] = useState([]);
   const [initialBalance, setInitialBalance] = useState(null);
   const [finalBalance, setFinalBalance] = useState(null);
-  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
+  const [selectedYear, setSelectedYear] = useState(() => {
+    const saved = localStorage.getItem('dashboard_year');
+    return saved ? Number(saved) : new Date().getFullYear();
+  });
   const [yearLoadError, setYearLoadError] = useState('');
+
+  // Persist state changes
+  useEffect(() => {
+    localStorage.setItem('dashboard_period', period);
+  }, [period]);
+
+  useEffect(() => {
+    localStorage.setItem('dashboard_year', String(selectedYear));
+  }, [selectedYear]);
 
   const formatCurrency = (value) => {
     try {
