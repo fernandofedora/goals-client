@@ -6,8 +6,8 @@ function ConfirmDialog({ open, onOpenChange, title, description, confirmText = '
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
       <Dialog.Portal>
-        <Dialog.Overlay className="fixed inset-0 bg-black/40" />
-        <Dialog.Content className={cn('fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2', 'w-[90vw] max-w-sm rounded-xl border border-[var(--border)] bg-[var(--card)] p-6 shadow-lg')}> 
+        <Dialog.Overlay className="fixed inset-0 bg-black/40 z-50" />
+        <Dialog.Content className={cn('fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-50', 'w-[90vw] max-w-sm rounded-xl border border-[var(--border)] bg-[var(--card)] p-6 shadow-lg')}> 
           {title && <Dialog.Title className="text-lg font-semibold mb-2">{title}</Dialog.Title>}
           {description && <Dialog.Description className="text-sm text-[var(--muted-foreground)] mb-4">{description}</Dialog.Description>}
           <div className="flex justify-end gap-2">

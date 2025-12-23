@@ -4,6 +4,8 @@ export default function Navbar() {
   const navigate = useNavigate();
   const onLogout = () => {
     localStorage.removeItem('token');
+    localStorage.removeItem('dashboard_period');
+    localStorage.removeItem('dashboard_year');
     navigate('/login');
   };
   return (
@@ -35,6 +37,18 @@ export default function Navbar() {
             }
           >
             Transactions
+          </NavLink>
+          <NavLink
+            to="/saving-plan"
+            className={({ isActive }) =>
+              `inline-flex items-center gap-2 px-3 py-1 rounded-lg transition-colors ${
+                isActive
+                  ? 'bg-gray-100 text-gray-900 font-semibold shadow-sm'
+                  : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+              }`
+            }
+          >
+            Saving Plan
           </NavLink>
           <NavLink
             to="/settings"

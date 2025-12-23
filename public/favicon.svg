@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" fill="none" stroke="url(#gradient)" stroke-width="6" stroke-linecap="round" stroke-linejoin="round">
+  <defs>
+    <linearGradient id="gradient" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#06b6d4" /> <!-- Cyan/Blue -->
+      <stop offset="50%" stop-color="#d946ef" /> <!-- Fuchsia/Purple -->
+      <stop offset="100%" stop-color="#f43f5e" /> <!-- Rose/Red -->
+    </linearGradient>
+  </defs>
+  
+  <!-- Gears -->
+  <g transform="translate(20, 35)">
+     <!-- Gear 1 (Left) -->
+    <path d="M15 0 L18 6 A 15 15 0 0 1 24 8 L 30 6 L 33 11 L 28 15 A 15 15 0 0 1 29 21 L 35 23 L 33 29 L 27 29 A 15 15 0 0 1 23 34 L 25 40 L 19 42 L 16 36 A 15 15 0 0 1 10 35 L 6 39 L 1 35 L 5 30 A 15 15 0 0 1 5 22 L 0 20 L 2 14 L 8 15 A 15 15 0 0 1 12 10 L 10 4 Z" transform="translate(-10, -25) scale(0.9)"/>
+    <circle cx="5" cy="5" r="5" transform="translate(-10, -25) scale(0.9)"/>
+    
+    <!-- Gear 2 (Right) -->
+     <path d="M15 0 L18 6 A 15 15 0 0 1 24 8 L 30 6 L 33 11 L 28 15 A 15 15 0 0 1 29 21 L 35 23 L 33 29 L 27 29 A 15 15 0 0 1 23 34 L 25 40 L 19 42 L 16 36 A 15 15 0 0 1 10 35 L 6 39 L 1 35 L 5 30 A 15 15 0 0 1 5 22 L 0 20 L 2 14 L 8 15 A 15 15 0 0 1 12 10 L 10 4 Z" transform="translate(25, -35) scale(0.8) rotate(25)"/>
+     <circle cx="5" cy="5" r="5" transform="translate(25, -35) scale(0.8) rotate(25)"/>
+  </g>
+
+  <!-- Money Bill -->
+  <rect x="10" y="50" width="80" height="40" rx="4" />
+  <circle cx="50" cy="70" r="12" />
+  <path d="M50 64 V 76 M 48 66 H 50 A 2 2 0 0 1 52 68 A 2 2 0 0 1 50 70 H 50 A 2 2 0 0 0 48 72 A 2 2 0 0 0 50 74 H 52" stroke-width="4" />
+</svg>
