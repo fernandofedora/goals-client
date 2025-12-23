@@ -9,6 +9,7 @@ import Dashboard from './pages/Dashboard';
 import Transactions from './pages/Transactions';
 import Settings from './pages/Settings';
 import SavingPlan from './pages/SavingPlan';
+import useTheme from './hooks/useTheme';
 
 function ProtectedRoute({ children }) {
   const token = localStorage.getItem('token');
@@ -19,14 +20,15 @@ function ProtectedRoute({ children }) {
 export default function App() {
   const location = useLocation();
   const hideNavbar = ['/login','/register','/reset-password'].includes(location.pathname);
+  const { theme, toggleTheme } = useTheme();
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, [location.pathname]);
 
   return (
-    <div>
-      {!hideNavbar && <Navbar />}
+    <div className="min-h-screen bg-[var(--background)] text-[var(--foreground)]">
+      {!hideNavbar && <Navbar theme={theme} onToggleTheme={toggleTheme} />}
       <div className="max-w-6xl mx-auto px-4 py-6">
         <ErrorBoundary key={location.pathname}>
         <Routes>
