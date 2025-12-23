@@ -4,6 +4,8 @@ export default function Navbar() {
   const navigate = useNavigate();
   const onLogout = () => {
     localStorage.removeItem('token');
+    localStorage.removeItem('dashboard_period');
+    localStorage.removeItem('dashboard_year');
     navigate('/login');
   };
   return (
