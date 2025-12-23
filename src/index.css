@@ -1,10 +1,10 @@
 @import "tailwindcss";
 
-/* Minimal baseline only; rely on Tailwind utilities for component styling */
+/* Baseline usando variables de tema para buen contraste */
 body {
   min-height: 100vh;
-  background-color: #f9fafb; /* gray-50 */
-  color: #111827; /* gray-900 */
+  background-color: var(--background);
+  color: var(--foreground);
 }
 
 /* shadcn-like theme variables */
