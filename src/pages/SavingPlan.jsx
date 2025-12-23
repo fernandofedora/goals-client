@@ -211,7 +211,7 @@ export default function SavingPlan() {
       )}
 
       <section className="space-y-4">
-        <div className="bg-white rounded-xl shadow p-4 border border-gray-200">
+        <div className="bg-white dark:bg-slate-800 rounded-xl shadow p-4 border border-gray-200 dark:border-slate-700">
         <h2 className="text-lg font-medium text-[var(--foreground)] mb-3">Gestión de Planes</h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
@@ -257,7 +257,7 @@ export default function SavingPlan() {
 
       {selectedPlanId && (
         <section className="space-y-4">
-          <div className="bg-white rounded-xl shadow p-4 border border-gray-200">
+          <div className="bg-white dark:bg-slate-800 rounded-xl shadow p-4 border border-gray-200 dark:border-slate-700">
           <h2 className="text-lg font-medium text-[var(--foreground)] mb-3">Contribuir al ahorro</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
@@ -286,7 +286,7 @@ export default function SavingPlan() {
 
       {currentPlan && summary && (
         <section className="space-y-4">
-          <div className="rounded-xl border border-gray-200 p-4 bg-white shadow">
+          <div className="rounded-xl border border-gray-200 dark:border-slate-700 p-4 bg-white dark:bg-slate-800 shadow">
           <h2 className="text-lg font-medium text-[var(--foreground)] mb-2">Progreso</h2>
             <div className="flex justify-between text-sm mb-2 text-[var(--muted-foreground)]">
               <span>Ahorrado: {formatAmount(summary.totalManual + summary.totalAuto)}</span>
@@ -309,7 +309,7 @@ export default function SavingPlan() {
 
       {summary && (
         <section className="space-y-4">
-          <div className="rounded-xl border border-gray-200 bg-white shadow">
+          <div className="rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow">
           <div className="flex items-center justify-between p-4">
             <h2 className="text-lg font-medium text-[var(--foreground)]">Histórico de contribuciones</h2>
           </div>
@@ -326,7 +326,7 @@ export default function SavingPlan() {
               <tbody>
                 {rows.length === 0 ? (
                   <tr>
-                    <td colSpan="4" className="p-6 text-center text-gray-600">No hay contribuciones aún. ¡Empieza agregando una!</td>
+                    <td colSpan="4" className="p-6 text-center text-gray-600 dark:text-gray-300">No hay contribuciones aún. ¡Empieza agregando una!</td>
                   </tr>
                 ) : paginated.map(r => (
                   <tr key={r.key} className="border-t border-[var(--border)]">
@@ -348,19 +348,19 @@ export default function SavingPlan() {
               </tbody>
             </table>
           </div>
-          <div className="flex items-center justify-between p-4 border-t border-gray-200">
+          <div className="flex items-center justify-between p-4 border-t border-gray-200 dark:border-slate-700">
             <div className="flex items-center gap-2">
-              <span className="text-sm text-gray-600">Mostrar</span>
-              <select className="border border-gray-300 rounded-md px-2 py-1 text-sm" value={pageSize} onChange={(e)=>{ setPageSize(Number(e.target.value)); setPage(1); }}>
+              <span className="text-sm text-gray-600 dark:text-gray-300">Mostrar</span>
+              <select className="border border-gray-300 dark:border-slate-600 rounded-md px-2 py-1 text-sm dark:bg-slate-700 dark:text-white" value={pageSize} onChange={(e)=>{ setPageSize(Number(e.target.value)); setPage(1); }}>
                 <option value="5">5</option>
                 <option value="10">10</option>
                 <option value="20">20</option>
               </select>
-              <span className="text-sm text-gray-600">por página</span>
+              <span className="text-sm text-gray-600 dark:text-gray-300">por página</span>
             </div>
             <div className="flex items-center gap-2">
               <button className="px-3 py-1 rounded-md border" disabled={page<=1} onClick={()=>setPage(p=>Math.max(1,p-1))}>Anterior</button>
-              <span className="text-sm text-gray-700">Página {page} de {totalPages}</span>
+              <span className="text-sm text-gray-700 dark:text-gray-200">Página {page} de {totalPages}</span>
               <button className="px-3 py-1 rounded-md border" disabled={page>=totalPages} onClick={()=>setPage(p=>Math.min(totalPages,p+1))}>Siguiente</button>
             </div>
           </div>
