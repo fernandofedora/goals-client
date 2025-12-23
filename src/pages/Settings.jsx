@@ -85,17 +85,17 @@ export default function Settings() {
       {/* Page header */}
       <div className="flex items-start justify-between">
         <div>
-          <h2 className="text-2xl font-semibold text-gray-900">Settings</h2>
-          <p className="text-sm text-gray-500">Manage your categories and credit cards</p>
+          <h2 className="text-2xl font-semibold text-gray-900 dark:text-white">Settings</h2>
+          <p className="text-sm text-gray-500 dark:text-gray-400">Manage your categories and credit cards</p>
         </div>
       </div>
 
       {/* Categories card */}
-      <div className="bg-white rounded-xl shadow p-6">
+      <div className="bg-white dark:bg-slate-800 rounded-xl shadow p-6">
         <div className="flex items-center justify-between">
           <div>
             <h3 className="text-lg font-semibold">Categories</h3>
-            <p className="text-xs text-gray-500">Manage your expense and income categories</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400">Manage your expense and income categories</p>
           </div>
           <Button variant="secondary" onClick={()=>setShowCatForm(v=>!v)}>+ Add Category</Button>
         </div>
@@ -116,8 +116,8 @@ export default function Settings() {
 
         {/* Expense categories */}
         <div className="mt-6">
-          <h4 className="text-sm font-medium text-gray-700">Expense Categories</h4>
-          <ul className="divide-y divide-gray-100 mt-2">
+          <h4 className="text-sm font-medium text-gray-700 dark:text-gray-200">Expense Categories</h4>
+          <ul className="divide-y divide-gray-100 dark:divide-slate-700 mt-2">
             {expenseCats.map(cat => (
               <li key={cat.id} className="flex items-center justify-between py-3">
                 {editingCatId === cat.id ? (
@@ -132,7 +132,7 @@ export default function Settings() {
                 ) : (
                   <div className="flex items-center gap-3">
                     <span className="inline-block w-2.5 h-2.5 rounded-full" style={{ background:cat.color }}></span>
-                    <span className="font-medium text-gray-800">{cat.name}</span>
+                    <span className="font-medium text-gray-800 dark:text-gray-100">{cat.name}</span>
                   </div>
                 )}
                 <div className="flex items-center gap-2">
@@ -143,10 +143,10 @@ export default function Settings() {
                     </>
                   ) : (
                     <>
-                      <button className="p-2 rounded-md hover:bg-gray-100" aria-label="Edit" onClick={()=>startEditCat(cat)}>
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" className="w-5 h-5 text-gray-600"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M16.862 3.487a2.25 2.25 0 013.182 3.182l-10.5 10.5a2.25 2.25 0 01-.845.53l-3.682 1.228a.75.75 0 01-.948-.948l1.228-3.682a2.25 2.25 0 01.53-.845l10.5-10.5z"/></svg>
+                      <button className="p-2 rounded-md hover:bg-gray-100 dark:hover:bg-slate-700 dark:bg-slate-700" aria-label="Edit" onClick={()=>startEditCat(cat)}>
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" className="w-5 h-5 text-gray-600 dark:text-gray-300"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M16.862 3.487a2.25 2.25 0 013.182 3.182l-10.5 10.5a2.25 2.25 0 01-.845.53l-3.682 1.228a.75.75 0 01-.948-.948l1.228-3.682a2.25 2.25 0 01.53-.845l10.5-10.5z"/></svg>
                       </button>
-                      <button className="p-2 rounded-md hover:bg-gray-100" aria-label="Delete" onClick={()=>deleteCategory(cat.id)}>
+                      <button className="p-2 rounded-md hover:bg-gray-100 dark:hover:bg-slate-700 dark:bg-slate-700" aria-label="Delete" onClick={()=>deleteCategory(cat.id)}>
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" className="w-5 h-5 text-rose-600"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M6 7.5h12M9.75 7.5v-1.5A1.5 1.5 0 0111.25 4.5h1.5A1.5 1.5 0 0114.25 6v1.5M8.25 9.75v7.5m7.5-7.5v7.5M5.25 7.5l.75 12a1.5 1.5 0 001.5 1.5h8.5a1.5 1.5 0 001.5-1.5l.75-12"/></svg>
                       </button>
                     </>
@@ -159,23 +159,23 @@ export default function Settings() {
 
         {/* Income categories */}
         <div className="mt-6">
-          <h4 className="text-sm font-medium text-gray-700">Income Categories</h4>
-          <ul className="divide-y divide-gray-100 mt-2">
+          <h4 className="text-sm font-medium text-gray-700 dark:text-gray-200">Income Categories</h4>
+          <ul className="divide-y divide-gray-100 dark:divide-slate-700 mt-2">
             {incomeCats.map(cat => (
               <li key={cat.id} className="flex items-center justify-between py-3">
                 {editingCatId === cat.id ? (
                   <div className="flex-1 flex items-center gap-2">
-                    <input className="border border-gray-300 rounded-md px-2 py-1 w-40" value={editCatForm.name} onChange={(e)=>setEditCatForm(v=>({ ...v, name:e.target.value }))} />
-                    <select className="border border-gray-300 rounded-md px-2 py-1" value={editCatForm.type} onChange={(e)=>setEditCatForm(v=>({ ...v, type:e.target.value }))}>
+                    <input className="border border-gray-300 dark:border-slate-600 rounded-md px-2 py-1 w-40 dark:bg-slate-700 dark:text-white" value={editCatForm.name} onChange={(e)=>setEditCatForm(v=>({ ...v, name:e.target.value }))} />
+                    <select className="border border-gray-300 dark:border-slate-600 rounded-md px-2 py-1 dark:bg-slate-700 dark:text-white" value={editCatForm.type} onChange={(e)=>setEditCatForm(v=>({ ...v, type:e.target.value }))}>
                       <option value="expense">Expense</option>
                       <option value="income">Income</option>
                     </select>
-                    <input className="border border-gray-300 rounded-md w-8 h-8 p-0 cursor-pointer bg-transparent [appearance:auto]" type="color" value={editCatForm.color} onChange={(e)=>setEditCatForm(v=>({ ...v, color:e.target.value }))} />
+                    <input className="border border-gray-300 dark:border-slate-600 rounded-md w-8 h-8 p-0 cursor-pointer bg-transparent [appearance:auto] dark:bg-slate-700 dark:text-white" type="color" value={editCatForm.color} onChange={(e)=>setEditCatForm(v=>({ ...v, color:e.target.value }))} />
                   </div>
                 ) : (
                   <div className="flex items-center gap-3">
                     <span className="inline-block w-2.5 h-2.5 rounded-full" style={{ background:cat.color }}></span>
-                    <span className="font-medium text-gray-800">{cat.name}</span>
+                    <span className="font-medium text-gray-800 dark:text-gray-100">{cat.name}</span>
                   </div>
                 )}
                 <div className="flex items-center gap-2">
@@ -186,10 +186,10 @@ export default function Settings() {
                     </>
                   ) : (
                     <>
-                      <button className="p-2 rounded-md hover:bg-gray-100" aria-label="Edit" onClick={()=>startEditCat(cat)}>
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" className="w-5 h-5 text-gray-600"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M16.862 3.487a2.25 2.25 0 013.182 3.182l-10.5 10.5a2.25 2.25 0 01-.845.53l-3.682 1.228a.75.75 0 01-.948-.948l1.228-3.682a2.25 2.25 0 01.53-.845l10.5-10.5z"/></svg>
+                      <button className="p-2 rounded-md hover:bg-gray-100 dark:hover:bg-slate-700 dark:bg-slate-700" aria-label="Edit" onClick={()=>startEditCat(cat)}>
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" className="w-5 h-5 text-gray-600 dark:text-gray-300"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M16.862 3.487a2.25 2.25 0 013.182 3.182l-10.5 10.5a2.25 2.25 0 01-.845.53l-3.682 1.228a.75.75 0 01-.948-.948l1.228-3.682a2.25 2.25 0 01.53-.845l10.5-10.5z"/></svg>
                       </button>
-                      <button className="p-2 rounded-md hover:bg-gray-100" aria-label="Delete" onClick={()=>deleteCategory(cat.id)}>
+                      <button className="p-2 rounded-md hover:bg-gray-100 dark:hover:bg-slate-700 dark:bg-slate-700" aria-label="Delete" onClick={()=>deleteCategory(cat.id)}>
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" className="w-5 h-5 text-rose-600"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M6 7.5h12M9.75 7.5v-1.5A1.5 1.5 0 0111.25 4.5h1.5A1.5 1.5 0 0114.25 6v1.5M8.25 9.75v7.5m7.5-7.5v7.5M5.25 7.5l.75 12a1.5 1.5 0 001.5 1.5h8.5a1.5 1.5 0 001.5-1.5l.75-12"/></svg>
                       </button>
                     </>
@@ -202,11 +202,11 @@ export default function Settings() {
       </div>
 
       {/* Credit cards */}
-      <div className="bg-white rounded-xl shadow p-6">
+      <div className="bg-white dark:bg-slate-800 rounded-xl shadow p-6">
         <div className="flex items-center justify-between">
           <div>
             <h3 className="text-lg font-semibold">Credit Cards</h3>
-            <p className="text-xs text-gray-500">Manage your credit cards for expense tracking</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400">Manage your credit cards for expense tracking</p>
           </div>
           <Button variant="secondary" onClick={()=>setShowCardForm(v=>!v)}>+ Add Card</Button>
         </div>
@@ -231,13 +231,13 @@ export default function Settings() {
               <div className="relative flex items-center justify-between">
                 {editingCardId === card.id ? (
                   <div className="flex items-center gap-2">
-                    <Input className="border-white/50 bg-white/10 text-white px-2 py-1" value={editCardForm.name} onChange={(e)=>setEditCardForm(v=>({ ...v, name:e.target.value }))} />
+                    <Input className="border-white/50 bg-white dark:bg-slate-800/10 text-white px-2 py-1" value={editCardForm.name} onChange={(e)=>setEditCardForm(v=>({ ...v, name:e.target.value }))} />
                     <Input className="border-white/50 w-8 h-8 p-0 cursor-pointer bg-transparent [appearance:auto]" type="color" value={editCardForm.color} onChange={(e)=>setEditCardForm(v=>({ ...v, color:e.target.value }))} />
-                    <Input className="border-white/50 bg-white/10 text-white px-2 py-1 w-24" value={editCardForm.last4} onChange={(e)=>setEditCardForm(v=>({ ...v, last4:e.target.value.replace(/[^0-9]/g,'').slice(0,4) }))} />
+                    <Input className="border-white/50 bg-white dark:bg-slate-800/10 text-white px-2 py-1 w-24" value={editCardForm.last4} onChange={(e)=>setEditCardForm(v=>({ ...v, last4:e.target.value.replace(/[^0-9]/g,'').slice(0,4) }))} />
                   </div>
                 ) : (
                   <div className="flex items-center gap-3">
-                    <div className="w-9 h-6 rounded bg-white/20 flex items-center justify-center">
+                    <div className="w-9 h-6 rounded bg-white dark:bg-slate-800/20 flex items-center justify-center">
                       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" className="w-5 h-5"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M2.25 7.5h19.5m-16.5 9h13.5A2.25 2.25 0 0021 14.25v-6A2.25 2.25 0 0018.75 6H5.25A2.25 2.25 0 003 8.25v6A2.25 2.25 0 005.25 16.5z"/></svg>
                     </div>
                     <div>
@@ -249,15 +249,15 @@ export default function Settings() {
                 <div className="flex items-center gap-2">
                   {editingCardId === card.id ? (
                     <>
-                      <Button className="px-2 py-1 bg-white/20 hover:bg-white/30" onClick={()=>saveEditCard(card.id)}>Save</Button>
-                      <Button className="px-2 py-1 bg-white/10 hover:bg-white/20" onClick={cancelEditCard}>Cancel</Button>
+                      <Button className="px-2 py-1 bg-white dark:bg-slate-800/20 hover:bg-white dark:bg-slate-800/30" onClick={()=>saveEditCard(card.id)}>Save</Button>
+                      <Button className="px-2 py-1 bg-white dark:bg-slate-800/10 hover:bg-white dark:bg-slate-800/20" onClick={cancelEditCard}>Cancel</Button>
                     </>
                   ) : (
                     <>
-                      <button className="p-2 rounded-md bg-white/10 hover:bg-white/20" aria-label="Edit" onClick={()=>startEditCard(card)}>
+                      <button className="p-2 rounded-md bg-white dark:bg-slate-800/10 hover:bg-white dark:bg-slate-800/20" aria-label="Edit" onClick={()=>startEditCard(card)}>
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" className="w-5 h-5"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M16.862 3.487a2.25 2.25 0 013.182 3.182l-10.5 10.5a2.25 2.25 0 01-.845.53l-3.682 1.228a.75.75 0 01-.948-.948l1.228-3.682a2.25 2.25 0 01.53-.845l10.5-10.5z"/></svg>
                       </button>
-                      <button className="p-2 rounded-md bg-white/10 hover:bg-white/20" aria-label="Delete" onClick={()=>deleteCard(card.id)}>
+                      <button className="p-2 rounded-md bg-white dark:bg-slate-800/10 hover:bg-white dark:bg-slate-800/20" aria-label="Delete" onClick={()=>deleteCard(card.id)}>
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" className="w-5 h-5"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M6 7.5h12M9.75 7.5v-1.5A1.5 1.5 0 0111.25 4.5h1.5A1.5 1.5 0 0114.25 6v1.5M8.25 9.75v7.5m7.5-7.5v7.5M5.25 7.5l.75 12a1.5 1.5 0 001.5 1.5h8.5a1.5 1.5 0 001.5-1.5l.75-12"/></svg>
                       </button>
                     </>

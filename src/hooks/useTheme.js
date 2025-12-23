@@ -18,11 +18,7 @@ export default function useTheme() {
     const saved = localStorage.getItem(STORAGE_KEY);
     let initial = saved;
     if (!initial) {
-      initial =
-        window.matchMedia &&
-        window.matchMedia('(prefers-color-scheme: dark)').matches
-          ? 'dark'
-          : 'light';
+      initial = 'light';
     }
     setTheme(initial);
     applyTheme(initial);
