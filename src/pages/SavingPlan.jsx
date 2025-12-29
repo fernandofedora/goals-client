@@ -21,7 +21,8 @@ export default function SavingPlan() {
   const [message, setMessage] = useState(null);
   const [confirm, setConfirm] = useState({ open: false, id: null });
   const [confirmPlan, setConfirmPlan] = useState({ open: false });
-  const [autoSaving, setAutoSaving] = useState(false);
+const [AUTO_SAVING, setAutoSaving] = useState(false);
+
   const [prevLinkedId, setPrevLinkedId] = useState('');
   const currentPlan = useMemo(() => plans.find(p => String(p.id) === String(selectedPlanId)), [plans, selectedPlanId]);
 
@@ -148,7 +149,9 @@ export default function SavingPlan() {
         const upd = res.data;
         setPlans(plans.map(p => String(p.id) === String(selectedPlanId) ? upd : p));
         setPrevLinkedId(cur);
-      } catch {}
+      } catch (err) {
+        console.error('Auto-save plan failed:', err);
+      }
       finally { setAutoSaving(false); }
     };
     run();
@@ -204,7 +207,7 @@ export default function SavingPlan() {
 
   return (
     <div className="space-y-8">
-      <h1 className="text-2xl font-semibold text-[var(--foreground)]">Saving Plan</h1>
+      <h1 className="text-2xl font-semibold text-[var(--foreground)]">Savings Plans</h1>
 
       {message && (
         <Alert variant={message.type === 'error' ? 'destructive' : 'default'} title={message.type === 'error' ? 'Error' : 'Éxito'} description={message.text} />
@@ -297,7 +300,12 @@ export default function SavingPlan() {
               <div className="absolute inset-0 flex items-center justify-center text-xs font-medium text-[var(--foreground)]">{progressPct}%</div>
             </div>
             <div className="text-sm mt-2 text-[var(--muted-foreground)]">Restante: {formatAmount(summary.remaining)} • {progressPct}% completado</div>
-            {progressPct >= 90 && (
+            {progressPct >= 100 ? (
+              <div className="mt-2 inline-flex items-center gap-2 rounded-md bg-green-50 text-green-700 px-3 py-1 text-sm">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+                ¡Felicidades! Has completado tu meta.
+              </div>
+            ) : progressPct >= 90 && (
               <div className="mt-2 inline-flex items-center gap-2 rounded-md bg-amber-50 text-amber-700 px-3 py-1 text-sm">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M8 21h8l2-7-6-6-6 6 2 7z"/></svg>
                 ¡Casi llegas a tu meta!
