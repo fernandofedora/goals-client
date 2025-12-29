@@ -53,7 +53,7 @@ export default function Navbar({ theme, onToggleTheme }) {
               )
             }
           >
-            Saving Plan
+            Savings Plans
           </NavLink>
           <NavLink
             to="/settings"
