@@ -362,15 +362,24 @@ export default function Dashboard() {
             </ResponsiveContainer>
           </div>
           <ul className="divide-y divide-gray-100 dark:divide-slate-700 flex-1">
-            {(summary?.categories || []).map(c => (
-              <li key={c.name} className="flex items-center justify-between py-2">
-                <div className="flex items-center gap-2">
-                  <span className="inline-block w-3 h-3 rounded-full" style={{ background:c.color || '#3b82f6' }}></span>
-                  <span>{c.name}</span>
-                </div>
-                <span className="font-medium">${c.amount.toFixed(2)}</span>
-              </li>
-            ))}
+            {(summary?.categories || []).map(c => {
+              const totalExp = summary?.totals?.expense || 0;
+              const pct = totalExp > 0 ? Math.round((c.amount / totalExp) * 100) : 0;
+              return (
+                <li key={c.name} className="grid grid-cols-12 items-center py-2 gap-2">
+                  <div className="col-span-5 flex items-center gap-2 overflow-hidden">
+                    <span className="inline-block w-3 h-3 rounded-full flex-shrink-0" style={{ background:c.color || '#3b82f6' }}></span>
+                    <span className="truncate" title={c.name}>{c.name}</span>
+                  </div>
+                  <div className="col-span-3 text-center">
+                    <span className="text-sm text-gray-500 dark:text-gray-400">{pct} %</span>
+                  </div>
+                  <div className="col-span-4 text-right">
+                    <span className="font-medium">${c.amount.toFixed(2)}</span>
+                  </div>
+                </li>
+              );
+            })}
           </ul>
         </div>
       </div>
