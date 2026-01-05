@@ -231,13 +231,13 @@ export default function Settings() {
               <div className="relative flex items-center justify-between">
                 {editingCardId === card.id ? (
                   <div className="flex items-center gap-2">
-                    <Input className="border-white/50 bg-white dark:bg-slate-800/10 text-white px-2 py-1" value={editCardForm.name} onChange={(e)=>setEditCardForm(v=>({ ...v, name:e.target.value }))} />
+                    <Input className="border-white/50 bg-white text-gray-900 dark:bg-slate-800/10 dark:text-white px-2 py-1" value={editCardForm.name} onChange={(e)=>setEditCardForm(v=>({ ...v, name:e.target.value }))} />
                     <Input className="border-white/50 w-8 h-8 p-0 cursor-pointer bg-transparent [appearance:auto]" type="color" value={editCardForm.color} onChange={(e)=>setEditCardForm(v=>({ ...v, color:e.target.value }))} />
-                    <Input className="border-white/50 bg-white dark:bg-slate-800/10 text-white px-2 py-1 w-24" value={editCardForm.last4} onChange={(e)=>setEditCardForm(v=>({ ...v, last4:e.target.value.replace(/[^0-9]/g,'').slice(0,4) }))} />
+                    <Input className="border-white/50 bg-white text-gray-900 dark:bg-slate-800/10 dark:text-white px-2 py-1 w-24" value={editCardForm.last4} onChange={(e)=>setEditCardForm(v=>({ ...v, last4:e.target.value.replace(/[^0-9]/g,'').slice(0,4) }))} />
                   </div>
                 ) : (
                   <div className="flex items-center gap-3">
-                    <div className="w-9 h-6 rounded bg-white dark:bg-slate-800/20 flex items-center justify-center">
+                    <div className="w-9 h-6 rounded bg-white text-gray-900 dark:bg-slate-800/20 dark:text-white flex items-center justify-center">
                       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" className="w-5 h-5"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M2.25 7.5h19.5m-16.5 9h13.5A2.25 2.25 0 0021 14.25v-6A2.25 2.25 0 0018.75 6H5.25A2.25 2.25 0 003 8.25v6A2.25 2.25 0 005.25 16.5z"/></svg>
                     </div>
                     <div>
@@ -249,15 +249,15 @@ export default function Settings() {
                 <div className="flex items-center gap-2">
                   {editingCardId === card.id ? (
                     <>
-                      <Button className="px-2 py-1 bg-white dark:bg-slate-800/20 hover:bg-white dark:bg-slate-800/30" onClick={()=>saveEditCard(card.id)}>Save</Button>
-                      <Button className="px-2 py-1 bg-white dark:bg-slate-800/10 hover:bg-white dark:bg-slate-800/20" onClick={cancelEditCard}>Cancel</Button>
+                      <Button className="px-2 py-1 bg-white text-gray-900 dark:bg-slate-800/20 dark:text-white hover:bg-gray-50 dark:hover:bg-slate-800/30" onClick={()=>saveEditCard(card.id)}>Save</Button>
+                      <Button className="px-2 py-1 bg-white text-gray-900 dark:bg-slate-800/10 dark:text-white hover:bg-gray-50 dark:hover:bg-slate-800/20" onClick={cancelEditCard}>Cancel</Button>
                     </>
                   ) : (
                     <>
-                      <button className="p-2 rounded-md bg-white dark:bg-slate-800/10 hover:bg-white dark:bg-slate-800/20" aria-label="Edit" onClick={()=>startEditCard(card)}>
+                      <button className="p-2 rounded-md bg-white text-gray-900 dark:bg-slate-800/10 dark:text-white hover:bg-gray-50 dark:hover:bg-slate-800/20" aria-label="Edit" onClick={()=>startEditCard(card)}>
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" className="w-5 h-5"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M16.862 3.487a2.25 2.25 0 013.182 3.182l-10.5 10.5a2.25 2.25 0 01-.845.53l-3.682 1.228a.75.75 0 01-.948-.948l1.228-3.682a2.25 2.25 0 01.53-.845l10.5-10.5z"/></svg>
                       </button>
-                      <button className="p-2 rounded-md bg-white dark:bg-slate-800/10 hover:bg-white dark:bg-slate-800/20" aria-label="Delete" onClick={()=>deleteCard(card.id)}>
+                      <button className="p-2 rounded-md bg-white text-gray-900 dark:bg-slate-800/10 dark:text-white hover:bg-gray-50 dark:hover:bg-slate-800/20" aria-label="Delete" onClick={()=>deleteCard(card.id)}>
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" className="w-5 h-5"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M6 7.5h12M9.75 7.5v-1.5A1.5 1.5 0 0111.25 4.5h1.5A1.5 1.5 0 0114.25 6v1.5M8.25 9.75v7.5m7.5-7.5v7.5M5.25 7.5l.75 12a1.5 1.5 0 001.5 1.5h8.5a1.5 1.5 0 001.5-1.5l.75-12"/></svg>
                       </button>
                     </>
