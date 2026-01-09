@@ -4,8 +4,10 @@ import { cn } from '../lib/utils';
 
 export default function Navbar({ theme, onToggleTheme }) {
   const navigate = useNavigate();
+  const user = JSON.parse(localStorage.getItem('user') || 'null');
   const onLogout = () => {
     localStorage.removeItem('token');
+    localStorage.removeItem('user');
     localStorage.removeItem('dashboard_period');
     localStorage.removeItem('dashboard_year');
     navigate('/login');
@@ -56,6 +58,19 @@ export default function Navbar({ theme, onToggleTheme }) {
             Savings Plans
           </NavLink>
           <NavLink
+            to="/profile"
+            className={({ isActive }) =>
+              cn(
+                'inline-flex items-center gap-2 px-3 py-1 rounded-lg transition-colors',
+                isActive
+                  ? 'bg-[var(--muted)] text-[var(--foreground)] font-semibold shadow-sm'
+                  : 'text-[var(--muted-foreground)] hover:bg-[var(--muted)] hover:text-[var(--foreground)]'
+              )
+            }
+          >
+            Profile
+          </NavLink>
+          <NavLink
             to="/settings"
             className={({ isActive }) =>
               cn(
@@ -70,6 +85,11 @@ export default function Navbar({ theme, onToggleTheme }) {
           </NavLink>
         </div>
         <div className="flex items-center gap-3">
+          {user?.name && (
+            <span className="text-sm text-[var(--muted-foreground)]">
+              Welcome, {user.name}
+            </span>
+          )}
           <Button variant="outline" onClick={onToggleTheme} aria-label="Toggle theme">
             {theme === 'dark' ? '🌙 Modo oscuro' : '☀️ Modo claro'}
           </Button>
