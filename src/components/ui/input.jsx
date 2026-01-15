@@ -9,7 +9,7 @@ const Input = React.forwardRef(({ className, type = 'text', ...props }, ref) => 
         type === 'color'
           ? 'inline-block align-middle w-8 h-8 rounded-md border p-0 cursor-pointer bg-transparent [appearance:auto]'
           : 'flex h-10 w-full rounded-md border px-3 py-2 text-sm',
-        'border-[var(--border)] bg-[var(--background)] text-[var(--foreground)]',
+        'border-[var(--border)] bg-[var(--background)] text-[var(--foreground)] placeholder:text-[var(--muted-foreground)]',
         'focus:outline-none focus:ring-2 focus:ring-[var(--ring)]',
         'disabled:cursor-not-allowed disabled:opacity-50',
         className
