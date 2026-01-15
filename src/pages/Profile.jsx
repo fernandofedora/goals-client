@@ -13,7 +13,8 @@ export default function Profile() {
   const [lastLoginAt, setLastLoginAt] = useState('');
   const [statusMsg, setStatusMsg] = useState(null);
   const [statusType, setStatusType] = useState('success');
-  const [currentPassword, setCurrentPassword] = useState('');
+  const [profilePassword, setProfilePassword] = useState('');
+  const [passwordCurrent, setPasswordCurrent] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [submittingProfile, setSubmittingProfile] = useState(false);
@@ -42,7 +43,7 @@ const EMAIL_CHANGED = email !== initialEmail;
     if (!name.trim()) nextErrors.name = 'El nombre es requerido';
     if (!email.trim()) nextErrors.email = 'El correo es requerido';
     else if (!emailValid) nextErrors.email = 'Formato de correo inválido';
-    if (!currentPassword.trim()) nextErrors.currentPassword = 'Contraseña actual requerida para actualizar perfil';
+    if (!profilePassword.trim()) nextErrors.currentPassword = 'Contraseña actual requerida para actualizar perfil';
     if (Object.keys(nextErrors).length) {
       setPErrors(nextErrors);
       setStatusType('error');
@@ -52,7 +53,7 @@ const EMAIL_CHANGED = email !== initialEmail;
     setPErrors({});
     setSubmittingProfile(true);
     try {
-      const payload = { name, email, currentPassword };
+      const payload = { name, email, currentPassword: profilePassword };
       const { data } = await api.put('/user/profile', payload);
       setName(data.name);
       setEmail(data.email);
@@ -69,7 +70,7 @@ const EMAIL_CHANGED = email !== initialEmail;
     e.preventDefault();
     const nextErrors = {};
     const strong = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/.test(newPassword);
-    if (!currentPassword.trim()) nextErrors.currentPassword = 'La contraseña actual es requerida';
+    if (!passwordCurrent.trim()) nextErrors.currentPassword = 'La contraseña actual es requerida';
     if (!newPassword.trim()) nextErrors.newPassword = 'La nueva contraseña es requerida';
     else if (!strong) nextErrors.newPassword = 'Debe tener 8+ caracteres, mayúscula, minúscula y número';
     if (!confirmPassword.trim()) nextErrors.confirmPassword = 'Confirma la nueva contraseña';
@@ -83,8 +84,8 @@ const EMAIL_CHANGED = email !== initialEmail;
     setPwErrors({});
     setSubmittingPassword(true);
     try {
-      await api.post('/user/change-password', { currentPassword, newPassword });
-      setCurrentPassword('');
+      await api.post('/user/change-password', { currentPassword: passwordCurrent, newPassword });
+      setPasswordCurrent('');
       setNewPassword('');
       setConfirmPassword('');
       setStatusType('success');
@@ -100,11 +101,8 @@ const EMAIL_CHANGED = email !== initialEmail;
     try { return new Date(v).toLocaleString(); } catch { return v; }
   };
 
-  const emailChanged = email !== initialEmail;
-  const emailValid = /^\S+@\S+\.\S+$/.test(email);
-  const PROFILE_VALID = name.trim() && emailValid && (!emailChanged || currentPassword.trim());
-  const passwordStrong = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/.test(newPassword);
-  const PASSWORD_VALID = currentPassword.trim() && passwordStrong && newPassword === confirmPassword;
+  const EMAIL_CHANGED = email !== initialEmail;
+  const EMAIL_VALID = /^\S+@\S+\.\S+$/.test(email);
 
   return (
     <div className="space-y-8">
@@ -155,8 +153,8 @@ const EMAIL_CHANGED = email !== initialEmail;
             <Input
               id="currentPassword"
               type="password"
-              value={currentPassword}
-              onChange={(e) => { setCurrentPassword(e.target.value); if (pErrors.currentPassword) setPErrors((x)=>({ ...x, currentPassword: undefined })); }}
+              value={profilePassword}
+              onChange={(e) => { setProfilePassword(e.target.value); if (pErrors.currentPassword) setPErrors((x)=>({ ...x, currentPassword: undefined })); }}
               required
               aria-invalid={!!pErrors.currentPassword}
               aria-describedby="currentPassword-error"
@@ -179,8 +177,8 @@ const EMAIL_CHANGED = email !== initialEmail;
             <Input
               id="current"
               type="password"
-              value={currentPassword}
-              onChange={(e) => { setCurrentPassword(e.target.value); if (pwErrors.currentPassword) setPwErrors((x)=>({ ...x, currentPassword: undefined })); }}
+              value={passwordCurrent}
+              onChange={(e) => { setPasswordCurrent(e.target.value); if (pwErrors.currentPassword) setPwErrors((x)=>({ ...x, currentPassword: undefined })); }}
               required
               aria-invalid={!!pwErrors.currentPassword}
               aria-describedby="pwd-current-error"
