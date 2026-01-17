@@ -1,17 +1,20 @@
 import { useState } from 'react';
-import { NavLink, useNavigate } from 'react-router-dom';
+import { NavLink, useNavigate, useLocation } from 'react-router-dom';
 import Button from './ui/button';
 import { cn } from '../lib/utils';
 
 export default function Navbar({ theme, onToggleTheme }) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isPlansOpen, setIsPlansOpen] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
   const user = JSON.parse(localStorage.getItem('user') || 'null');
   const onLogout = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
     localStorage.removeItem('dashboard_period');
     localStorage.removeItem('dashboard_year');
+    localStorage.removeItem('accounts.selectedAccountId');
     navigate('/login');
   };
 
@@ -48,21 +51,93 @@ export default function Navbar({ theme, onToggleTheme }) {
       >
         Transactions
       </NavLink>
-      <NavLink
-        to="/saving-plan"
-        onClick={onItemClick}
-        className={({ isActive }) =>
-          cn(
+      {/* Plans submenu */}
+      <div className={cn('relative', mobile ? 'w-full' : '')}>
+        <button
+          type="button"
+          onClick={() => setIsPlansOpen(v => !v)}
+          className={cn(
             'inline-flex items-center gap-2 px-3 py-1 rounded-lg transition-colors',
             mobile ? 'w-full justify-start' : '',
-            isActive
+            location.pathname.startsWith('/plans') || location.pathname === '/saving-plan'
               ? 'bg-[var(--muted)] text-[var(--foreground)] font-semibold shadow-sm'
               : 'text-[var(--muted-foreground)] hover:bg-[var(--muted)] hover:text-[var(--foreground)]'
-          )
-        }
-      >
-        Savings Plans
-      </NavLink>
+          )}
+          aria-haspopup="menu"
+          aria-expanded={isPlansOpen}
+        >
+          Plans
+          <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M6 9l6 6 6-6"/></svg>
+        </button>
+        {/* Desktop dropdown */}
+        {!mobile && isPlansOpen && (
+          <div className="absolute mt-2 w-48 rounded-lg border border-[var(--border)] bg-[var(--card)] shadow-lg z-50">
+            <nav className="py-2">
+              <NavLink
+                to="/plans/savings"
+                onClick={() => { onItemClick?.(); setIsPlansOpen(false); }}
+                className={({ isActive }) =>
+                  cn(
+                    'block px-3 py-1.5 rounded-md transition-colors',
+                    isActive
+                      ? 'bg-[var(--muted)] text-[var(--foreground)] font-semibold'
+                      : 'text-[var(--muted-foreground)] hover:bg-[var(--muted)] hover:text-[var(--foreground)]'
+                  )
+                }
+              >
+                Savings Plans
+              </NavLink>
+              <NavLink
+                to="/plans/accounts"
+                onClick={() => { onItemClick?.(); setIsPlansOpen(false); }}
+                className={({ isActive }) =>
+                  cn(
+                    'block px-3 py-1.5 rounded-md transition-colors',
+                    isActive
+                      ? 'bg-[var(--muted)] text-[var(--foreground)] font-semibold'
+                      : 'text-[var(--muted-foreground)] hover:bg-[var(--muted)] hover:text-[var(--foreground)]'
+                  )
+                }
+              >
+                Accounts
+              </NavLink>
+            </nav>
+          </div>
+        )}
+        {/* Mobile submenu inline */}
+        {mobile && (
+          <div className="mt-2 space-y-1">
+            <NavLink
+              to="/plans/savings"
+              onClick={onItemClick}
+              className={({ isActive }) =>
+                cn(
+                  'inline-flex items-center gap-2 px-3 py-1 rounded-lg transition-colors w-full justify-start',
+                  isActive
+                    ? 'bg-[var(--muted)] text-[var(--foreground)] font-semibold shadow-sm'
+                    : 'text-[var(--muted-foreground)] hover:bg-[var(--muted)] hover:text-[var(--foreground)]'
+                )
+              }
+            >
+              Savings Plans
+            </NavLink>
+            <NavLink
+              to="/plans/accounts"
+              onClick={onItemClick}
+              className={({ isActive }) =>
+                cn(
+                  'inline-flex items-center gap-2 px-3 py-1 rounded-lg transition-colors w-full justify-start',
+                  isActive
+                    ? 'bg-[var(--muted)] text-[var(--foreground)] font-semibold shadow-sm'
+                    : 'text-[var(--muted-foreground)] hover:bg-[var(--muted)] hover:text-[var(--foreground)]'
+                )
+              }
+            >
+              Accounts
+            </NavLink>
+          </div>
+        )}
+      </div>
       <NavLink
         to="/profile"
         onClick={onItemClick}
