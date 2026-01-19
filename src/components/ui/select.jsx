@@ -89,6 +89,10 @@ const Select = React.forwardRef(({ className, children, value = '', onChange, pl
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
                   placeholder={searchPlaceholder}
+                  onMouseDown={(e)=>{ e.stopPropagation(); }}
+                  onClick={(e)=>{ e.stopPropagation(); }}
+                  onKeyDown={(e)=>{ e.stopPropagation(); }}
+                  onTouchStart={(e)=>{ e.stopPropagation(); }}
                   className={cn(
                     'w-full rounded-md border px-2 py-1 text-sm',
                     'border-[var(--border)] bg-[var(--background)] text-[var(--foreground)]',
