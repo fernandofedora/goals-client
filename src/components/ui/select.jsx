@@ -42,6 +42,7 @@ const Select = React.forwardRef(({ className, children, value = '', onChange, pl
   const viewportStyle = enableSearch
     ? { maxHeight: `calc(${menuMaxH} - 2.5rem)` }
     : { maxHeight: menuMaxH };
+  const contentStyle = { maxHeight: menuMaxH };
   return (
     <div className={cn('relative inline-block', className)}>
       <RadixSelect.Root value={normalizedValue} onValueChange={handleChange} disabled={disabled}>
@@ -62,12 +63,27 @@ const Select = React.forwardRef(({ className, children, value = '', onChange, pl
           </RadixSelect.Icon>
         </RadixSelect.Trigger>
         <RadixSelect.Portal>
-          <RadixSelect.Content position="popper" sideOffset={6} collisionPadding={8} className="z-50 min-w-[var(--radix-select-trigger-width)] rounded-md border border-[var(--border)] bg-[var(--card)] text-[var(--foreground)] shadow-md overflow-hidden">
+          <RadixSelect.Content
+            position="popper"
+            sideOffset={6}
+            collisionPadding={8}
+            onCloseAutoFocus={(e)=> e.preventDefault()}
+            onPointerDownOutside={(e)=> {
+              const target = e.target;
+              if (target && typeof target.closest === 'function' && target.closest('.select-search')) e.preventDefault();
+            }}
+            onFocusOutside={(e)=> {
+              const target = e.target;
+              if (target && typeof target.closest === 'function' && target.closest('.select-search')) e.preventDefault();
+            }}
+            className="z-50 min-w-[var(--radix-select-trigger-width)] rounded-md border border-[var(--border)] bg-[var(--card)] text-[var(--foreground)] shadow-md overflow-hidden"
+            style={contentStyle}
+          >
             <RadixSelect.ScrollUpButton className="flex items-center justify-center py-1 text-[var(--muted-foreground)]">
               ▲
             </RadixSelect.ScrollUpButton>
             {enableSearch && (
-              <div className="px-2 pt-2 sticky top-0 bg-[var(--card)] z-10">
+              <div className="px-2 pt-2 sticky top-0 bg-[var(--card)] z-10 select-search">
                 <input
                   type="text"
                   value={query}
@@ -81,7 +97,10 @@ const Select = React.forwardRef(({ className, children, value = '', onChange, pl
                 />
               </div>
             )}
-            <RadixSelect.Viewport className="p-1 overflow-y-auto overscroll-contain" style={viewportStyle}>
+            <RadixSelect.Viewport
+              className="p-1 overflow-y-auto overscroll-contain"
+              style={{ ...viewportStyle, WebkitOverflowScrolling: 'touch', touchAction: 'pan-y' }}
+            >
               {placeholderText && (
                 <RadixSelect.Item
                   value="__empty__"
