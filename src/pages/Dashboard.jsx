@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import api from '../api';
+import Select from '../components/ui/select';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, BarChart, Bar, Legend, CartesianGrid } from 'recharts';
 
 const monthOptions = [
@@ -213,12 +214,12 @@ export default function Dashboard() {
         <div className="flex justify-between items-center mb-3">
           <h3 className="text-lg font-semibold">Overview</h3>
           <div className="flex items-center gap-2">
-            <select className="border border-gray-300 dark:border-slate-600 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:bg-slate-700 dark:text-white" value={period} onChange={(e)=>setPeriod(e.target.value)}>
+            <Select value={period} onChange={(e)=>setPeriod(e.target.value)}>
               {monthOptions.map(m=> <option key={m.value} value={m.value}>{m.label}</option>)}
-            </select>
-            <select className="border border-gray-300 dark:border-slate-600 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:bg-slate-700 dark:text-white" value={selectedYear} onChange={(e)=>setSelectedYear(Number(e.target.value))}>
+            </Select>
+            <Select value={String(selectedYear)} onChange={(e)=>setSelectedYear(Number(e.target.value))}>
               {yearOptions.map(y => <option key={y} value={y}>{y}</option>)}
-            </select>
+            </Select>
           </div>
         </div>
         {loading && <p className="text-gray-500 dark:text-gray-400">Loading...</p>}

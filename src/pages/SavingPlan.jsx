@@ -359,11 +359,11 @@ const [AUTO_SAVING, setAutoSaving] = useState(false);
           <div className="flex items-center justify-between p-4 border-t border-gray-200 dark:border-slate-700">
             <div className="flex items-center gap-2">
               <span className="text-sm text-gray-600 dark:text-gray-300">Mostrar</span>
-              <select className="border border-gray-300 dark:border-slate-600 rounded-md px-2 py-1 text-sm dark:bg-slate-700 dark:text-white" value={pageSize} onChange={(e)=>{ setPageSize(Number(e.target.value)); setPage(1); }}>
+              <Select value={String(pageSize)} onChange={(e)=>{ setPageSize(Number(e.target.value)); setPage(1); }}>
                 <option value="5">5</option>
                 <option value="10">10</option>
                 <option value="20">20</option>
-              </select>
+              </Select>
               <span className="text-sm text-gray-600 dark:text-gray-300">por página</span>
             </div>
             <div className="flex items-center gap-2">

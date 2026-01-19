@@ -443,17 +443,13 @@ const DELETE_TRANSACTION_LEGACY = async () => { /* replaced by modal-based delet
           <div className="flex items-center gap-3 flex-wrap">
             <div className="flex flex-col">
               <span className="text-sm text-gray-600 dark:text-gray-300">Month</span>
-              <select className="border border-gray-300 dark:border-slate-600 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:bg-slate-700 dark:text-white"
-                value={monthFilter}
-                onChange={(e)=>setMonthFilter(e.target.value)}
-                disabled={showYearAll}
-              >
+              <Select value={monthFilter} onChange={(e)=>setMonthFilter(e.target.value)} disabled={showYearAll}>
                 {Array.from({length:12},(_,i)=> {
                   const val = String(i+1).padStart(2,'0');
                   const label = new Date(0,i).toLocaleString('es', { month: 'long' });
                   return <option key={val} value={val}>{label}</option>;
                 })}
-              </select>
+              </Select>
             </div>
             <div className="flex flex-col">
               <span className="text-sm text-gray-600 dark:text-gray-300">Year</span>
@@ -489,19 +485,19 @@ const DELETE_TRANSACTION_LEGACY = async () => { /* replaced by modal-based delet
                 {editingId === t.id ? (
                   <>
                     <td>
-                      <select className="border border-gray-300 dark:border-slate-600 rounded-md px-2 py-1 focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:bg-slate-700 dark:text-white" value={editData.type} onChange={(e)=>setEditData(v=>({ ...v, type:e.target.value, paymentMethod: e.target.value==='income' ? 'cash' : v.paymentMethod }))}>
+                      <Select value={editData.type} onChange={(e)=>setEditData(v=>({ ...v, type:e.target.value, paymentMethod: e.target.value==='income' ? 'cash' : v.paymentMethod }))}>
                         <option value="expense">expense</option>
                         <option value="income">income</option>
-                      </select>
+                      </Select>
                     </td>
                     <td>
                       <input className="border border-gray-300 dark:border-slate-600 rounded-md px-2 py-1 focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:bg-slate-700 dark:text-white" value={editData.description} onChange={(e)=>setEditData(v=>({ ...v, description:e.target.value }))} />
                     </td>
                     <td>
-                      <select className="border border-gray-300 dark:border-slate-600 rounded-md px-2 py-1 focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:bg-slate-700 dark:text-white" value={editData.categoryId} onChange={(e)=>setEditData(v=>({ ...v, categoryId:e.target.value }))}>
+                      <Select value={editData.categoryId} onChange={(e)=>setEditData(v=>({ ...v, categoryId:e.target.value }))}>
                         <option value="">Category</option>
                         {categories.filter(c=>c.type===editData.type).map(c=> <option key={c.id} value={c.id}>{c.name}</option>)}
-                      </select>
+                      </Select>
                     </td>
                     <td>
                       <input type="number" step="0.01" value={editData.amount} onChange={(e)=>setEditData(v=>({ ...v, amount:e.target.value }))} />
@@ -512,15 +508,15 @@ const DELETE_TRANSACTION_LEGACY = async () => { /* replaced by modal-based delet
                     <td>
                       {editData.type==='expense' ? (
                         <div className="flex gap-2 dark:bg-slate-700 dark:text-white">
-                          <select className="border border-gray-300 dark:border-slate-600 rounded-md px-2 py-1 focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:bg-slate-700 dark:text-white" value={editData.paymentMethod} onChange={(e)=>setEditData(v=>({ ...v, paymentMethod:e.target.value }))}>
+                          <Select value={editData.paymentMethod} onChange={(e)=>setEditData(v=>({ ...v, paymentMethod:e.target.value }))}>
                             <option value="cash">Cash</option>
                             <option value="card">Credit Card</option>
-                          </select>
+                          </Select>
                           {editData.paymentMethod==='card' && (
-                            <select className="border border-gray-300 dark:border-slate-600 rounded-md px-2 py-1 focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:bg-slate-700 dark:text-white" value={editData.cardId || ''} onChange={(e)=>setEditData(v=>({ ...v, cardId:e.target.value }))}>
+                            <Select value={editData.cardId || ''} onChange={(e)=>setEditData(v=>({ ...v, cardId:e.target.value }))}>
                               <option value="">Select Card</option>
                               {cards.map(card => <option key={card.id} value={card.id}>{card.name}</option>)}
-                            </select>
+                            </Select>
                           )}
                         </div>
                       ) : (

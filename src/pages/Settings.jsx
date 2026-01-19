@@ -166,10 +166,10 @@ export default function Settings() {
                 {editingCatId === cat.id ? (
                   <div className="flex-1 flex items-center gap-2">
                     <input className="border border-gray-300 dark:border-slate-600 rounded-md px-2 py-1 w-40 dark:bg-slate-700 dark:text-white" value={editCatForm.name} onChange={(e)=>setEditCatForm(v=>({ ...v, name:e.target.value }))} />
-                    <select className="border border-gray-300 dark:border-slate-600 rounded-md px-2 py-1 dark:bg-slate-700 dark:text-white" value={editCatForm.type} onChange={(e)=>setEditCatForm(v=>({ ...v, type:e.target.value }))}>
+                    <Select value={editCatForm.type} onChange={(e)=>setEditCatForm(v=>({ ...v, type:e.target.value }))}>
                       <option value="expense">Expense</option>
                       <option value="income">Income</option>
-                    </select>
+                    </Select>
                     <input className="border border-gray-300 dark:border-slate-600 rounded-md w-8 h-8 p-0 cursor-pointer bg-transparent [appearance:auto] dark:bg-slate-700 dark:text-white" type="color" value={editCatForm.color} onChange={(e)=>setEditCatForm(v=>({ ...v, color:e.target.value }))} />
                   </div>
                 ) : (

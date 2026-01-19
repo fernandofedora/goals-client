@@ -17,7 +17,7 @@ function extractOptions(children) {
   return { options: opts, placeholderText };
 }
 
-const Select = React.forwardRef(({ className, children, value = '', onChange, placeholder, required, name, disabled }, ref) => {
+const Select = React.forwardRef(({ className, children, value = '', onChange, placeholder, required, name, disabled, searchable, searchPlaceholder = 'Buscar...', noResultsText = 'Sin resultados', maxHeight, searchThreshold = 8, filterFn }, ref) => {
   const { options, placeholderText } = extractOptions(children);
   const normalizedValue = value == null ? '' : String(value);
   const selectedLabel = (normalizedValue === ''
@@ -29,9 +29,33 @@ const Select = React.forwardRef(({ className, children, value = '', onChange, pl
       onChange({ target: { value: val, name } });
     }
   };
+  const [query, setQuery] = React.useState('');
+  const enableSearch = searchable || options.length > searchThreshold;
+  const normalize = (s) => String(s ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+  const filtered = React.useMemo(() => {
+    if (!enableSearch || !query) return options;
+    const q = normalize(query);
+    if (typeof filterFn === 'function') return options.filter(o => filterFn(q, o));
+    return options.filter(o => normalize(o.label).includes(q) || normalize(o.value).includes(q));
+  }, [options, enableSearch, query, filterFn]);
+  const menuMaxH = maxHeight ? String(maxHeight) : '70vh';
+  const viewportStyle = enableSearch
+    ? { maxHeight: `calc(${menuMaxH} - 2.5rem)` }
+    : { maxHeight: menuMaxH };
+  const contentStyle = { maxHeight: menuMaxH };
+  const [open, setOpen] = React.useState(false);
+  const preventCloseRef = React.useRef(false);
+  const searchRef = React.useRef(null);
+  const armPreventClose = () => { preventCloseRef.current = true; setTimeout(() => { preventCloseRef.current = false; }, 300); };
   return (
     <div className={cn('relative inline-block', className)}>
-      <RadixSelect.Root value={normalizedValue} onValueChange={handleChange} disabled={disabled}>
+      <RadixSelect.Root
+        value={normalizedValue}
+        onValueChange={(v)=>{ handleChange(v); setOpen(false); }}
+        disabled={disabled}
+        open={open}
+        onOpenChange={(next)=>{ if (!next && preventCloseRef.current) return; setOpen(next); }}
+      >
         <RadixSelect.Trigger
           ref={ref}
           className={cn(
@@ -49,11 +73,55 @@ const Select = React.forwardRef(({ className, children, value = '', onChange, pl
           </RadixSelect.Icon>
         </RadixSelect.Trigger>
         <RadixSelect.Portal>
-          <RadixSelect.Content position="popper" className="z-50 min-w-[var(--radix-select-trigger-width)] overflow-hidden rounded-md border border-[var(--border)] bg-[var(--card)] text-[var(--foreground)] shadow-md">
+          <RadixSelect.Content
+            position="popper"
+            sideOffset={6}
+            collisionPadding={8}
+            onCloseAutoFocus={(e)=> e.preventDefault()}
+            onOpenAutoFocus={(e)=> { e.preventDefault(); searchRef.current?.focus(); }}
+            onInteractOutside={(e)=> {
+              const target = e.target;
+              if (target && typeof target.closest === 'function' && target.closest('.select-search')) e.preventDefault();
+            }}
+            onPointerDownOutside={(e)=> {
+              const target = e.target;
+              if (target && typeof target.closest === 'function' && target.closest('.select-search')) e.preventDefault();
+            }}
+            onFocusOutside={(e)=> {
+              const target = e.target;
+              if (target && typeof target.closest === 'function' && target.closest('.select-search')) e.preventDefault();
+            }}
+            className="z-50 min-w-[var(--radix-select-trigger-width)] rounded-md border border-[var(--border)] bg-[var(--card)] text-[var(--foreground)] shadow-md overflow-hidden"
+            style={contentStyle}
+          >
             <RadixSelect.ScrollUpButton className="flex items-center justify-center py-1 text-[var(--muted-foreground)]">
               ▲
             </RadixSelect.ScrollUpButton>
-            <RadixSelect.Viewport className="p-1">
+            {enableSearch && (
+              <div className="px-2 pt-2 sticky top-0 bg-[var(--card)] z-10 select-search">
+                <input
+                  ref={searchRef}
+                  type="text"
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  placeholder={searchPlaceholder}
+                  onFocus={()=> { setOpen(true); armPreventClose(); }}
+                  onMouseDown={(e)=>{ armPreventClose(); e.stopPropagation(); }}
+                  onClick={(e)=>{ armPreventClose(); e.stopPropagation(); }}
+                  onKeyDown={(e)=>{ armPreventClose(); e.stopPropagation(); }}
+                  onTouchStart={(e)=>{ armPreventClose(); e.stopPropagation(); }}
+                  className={cn(
+                    'w-full rounded-md border px-2 py-1 text-sm',
+                    'border-[var(--border)] bg-[var(--background)] text-[var(--foreground)]',
+                    'focus:outline-none focus:ring-2 focus:ring-[var(--ring)]'
+                  )}
+                />
+              </div>
+            )}
+            <RadixSelect.Viewport
+              className="p-1 overflow-y-auto overscroll-contain"
+              style={{ ...viewportStyle, WebkitOverflowScrolling: 'touch', touchAction: 'pan-y' }}
+            >
               {placeholderText && (
                 <RadixSelect.Item
                   value="__empty__"
@@ -63,7 +131,7 @@ const Select = React.forwardRef(({ className, children, value = '', onChange, pl
                   <RadixSelect.ItemIndicator className="absolute right-2">✓</RadixSelect.ItemIndicator>
                 </RadixSelect.Item>
               )}
-              {options.filter(o => o.value !== '').map((o) => (
+              {(filtered.filter(o => o.value !== '')).map((o) => (
                 <RadixSelect.Item
                   key={o.value}
                   value={o.value}
@@ -75,6 +143,11 @@ const Select = React.forwardRef(({ className, children, value = '', onChange, pl
                   </RadixSelect.ItemIndicator>
                 </RadixSelect.Item>
               ))}
+              {enableSearch && filtered.filter(o => o.value !== '').length === 0 && (
+                <div className="px-2 py-2 text-sm text-[var(--muted-foreground)]">
+                  {noResultsText}
+                </div>
+              )}
             </RadixSelect.Viewport>
             <RadixSelect.ScrollDownButton className="flex items-center justify-center py-1 text-[var(--muted-foreground)]">
               ▼
