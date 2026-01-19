@@ -43,9 +43,19 @@ const Select = React.forwardRef(({ className, children, value = '', onChange, pl
     ? { maxHeight: `calc(${menuMaxH} - 2.5rem)` }
     : { maxHeight: menuMaxH };
   const contentStyle = { maxHeight: menuMaxH };
+  const [open, setOpen] = React.useState(false);
+  const preventCloseRef = React.useRef(false);
+  const searchRef = React.useRef(null);
+  const armPreventClose = () => { preventCloseRef.current = true; setTimeout(() => { preventCloseRef.current = false; }, 300); };
   return (
     <div className={cn('relative inline-block', className)}>
-      <RadixSelect.Root value={normalizedValue} onValueChange={handleChange} disabled={disabled}>
+      <RadixSelect.Root
+        value={normalizedValue}
+        onValueChange={(v)=>{ handleChange(v); setOpen(false); }}
+        disabled={disabled}
+        open={open}
+        onOpenChange={(next)=>{ if (!next && preventCloseRef.current) return; setOpen(next); }}
+      >
         <RadixSelect.Trigger
           ref={ref}
           className={cn(
@@ -68,6 +78,11 @@ const Select = React.forwardRef(({ className, children, value = '', onChange, pl
             sideOffset={6}
             collisionPadding={8}
             onCloseAutoFocus={(e)=> e.preventDefault()}
+            onOpenAutoFocus={(e)=> { e.preventDefault(); searchRef.current?.focus(); }}
+            onInteractOutside={(e)=> {
+              const target = e.target;
+              if (target && typeof target.closest === 'function' && target.closest('.select-search')) e.preventDefault();
+            }}
             onPointerDownOutside={(e)=> {
               const target = e.target;
               if (target && typeof target.closest === 'function' && target.closest('.select-search')) e.preventDefault();
@@ -85,14 +100,16 @@ const Select = React.forwardRef(({ className, children, value = '', onChange, pl
             {enableSearch && (
               <div className="px-2 pt-2 sticky top-0 bg-[var(--card)] z-10 select-search">
                 <input
+                  ref={searchRef}
                   type="text"
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
                   placeholder={searchPlaceholder}
-                  onMouseDown={(e)=>{ e.stopPropagation(); }}
-                  onClick={(e)=>{ e.stopPropagation(); }}
-                  onKeyDown={(e)=>{ e.stopPropagation(); }}
-                  onTouchStart={(e)=>{ e.stopPropagation(); }}
+                  onFocus={()=> { setOpen(true); armPreventClose(); }}
+                  onMouseDown={(e)=>{ armPreventClose(); e.stopPropagation(); }}
+                  onClick={(e)=>{ armPreventClose(); e.stopPropagation(); }}
+                  onKeyDown={(e)=>{ armPreventClose(); e.stopPropagation(); }}
+                  onTouchStart={(e)=>{ armPreventClose(); e.stopPropagation(); }}
                   className={cn(
                     'w-full rounded-md border px-2 py-1 text-sm',
                     'border-[var(--border)] bg-[var(--background)] text-[var(--foreground)]',
