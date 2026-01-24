@@ -39,10 +39,11 @@ const Select = React.forwardRef(({ className, children, value = '', onChange, pl
     return options.filter(o => normalize(o.label).includes(q) || normalize(o.value).includes(q));
   }, [options, enableSearch, query, filterFn]);
   const menuMaxH = maxHeight ? String(maxHeight) : '70vh';
-  const viewportStyle = enableSearch
-    ? { maxHeight: `calc(${menuMaxH} - 2.5rem)` }
-    : { maxHeight: menuMaxH };
-  const contentStyle = { maxHeight: menuMaxH };
+  const exceedsThreshold = options.length > searchThreshold;
+  const viewportStyle = exceedsThreshold
+    ? (enableSearch ? { maxHeight: `calc(${menuMaxH} - 2.5rem)` } : { maxHeight: menuMaxH })
+    : {};
+  const contentStyle = exceedsThreshold ? { maxHeight: menuMaxH } : undefined;
   const [open, setOpen] = React.useState(false);
   const preventCloseRef = React.useRef(false);
   const searchRef = React.useRef(null);
@@ -119,8 +120,8 @@ const Select = React.forwardRef(({ className, children, value = '', onChange, pl
               </div>
             )}
             <RadixSelect.Viewport
-              className="p-1 overflow-y-auto overscroll-contain"
-              style={{ ...viewportStyle, WebkitOverflowScrolling: 'touch', touchAction: 'pan-y' }}
+              className={cn('p-1', exceedsThreshold ? 'overflow-y-auto overscroll-contain' : '')}
+              style={exceedsThreshold ? { ...viewportStyle, WebkitOverflowScrolling: 'touch', touchAction: 'pan-y' } : viewportStyle}
             >
               {placeholderText && (
                 <RadixSelect.Item
