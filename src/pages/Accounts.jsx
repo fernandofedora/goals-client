@@ -11,10 +11,23 @@ import { cn } from '../lib/utils';
 export default function Accounts() {
   const [cards, setCards] = useState([]);
   const [categories, setCategories] = useState([]);
+  const [hiddenCardIds, setHiddenCardIds] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem('accounts.hiddenCardIds') || '[]');
+    } catch { return []; }
+  });
+
   const [selectedId, setSelectedId] = useState(() => {
     const v = localStorage.getItem('accounts.selectedAccountId');
     return v ? parseInt(v, 10) : null;
   });
+
+  const visibleCards = useMemo(() => cards.filter(c => !hiddenCardIds.includes(c.id)), [cards, hiddenCardIds]);
+  const hiddenCards = useMemo(() => cards.filter(c => hiddenCardIds.includes(c.id)), [cards, hiddenCardIds]);
+
+  useEffect(() => {
+    localStorage.setItem('accounts.hiddenCardIds', JSON.stringify(hiddenCardIds));
+  }, [hiddenCardIds]);
 
   const [txItems, setTxItems] = useState([]);
   const [txPage, setTxPage] = useState(1);
@@ -37,18 +50,25 @@ export default function Accounts() {
   const [editingCardId, setEditingCardId] = useState(null);
   const [editCardForm, setEditCardForm] = useState({ name:'', color:'#0ea5e9', last4:'' });
 
+  const [showLinkMode, setShowLinkMode] = useState(false);
+  const [cardToLink, setCardToLink] = useState('');
+
   const loadBase = async () => {
     const [cardsRes, catsRes] = await Promise.all([api.get('/cards'), api.get('/categories')]);
     setCards(cardsRes.data);
     setCategories(catsRes.data);
+
+    const currentHidden = JSON.parse(localStorage.getItem('accounts.hiddenCardIds') || '[]');
+    const visible = cardsRes.data.filter(c => !currentHidden.includes(c.id));
+
     if (!selectedId) {
-      const first = cardsRes.data[0]?.id || null;
+      const first = visible[0]?.id || null;
       setSelectedId(first);
       if (first) localStorage.setItem('accounts.selectedAccountId', String(first));
     } else {
-      const exists = cardsRes.data.some(c => c.id === selectedId);
+      const exists = visible.some(c => c.id === selectedId);
       if (!exists) {
-        const first = cardsRes.data[0]?.id || null;
+        const first = visible[0]?.id || null;
         setSelectedId(first);
         if (first) localStorage.setItem('accounts.selectedAccountId', String(first));
       }
@@ -143,16 +163,25 @@ export default function Accounts() {
     await loadBase();
   };
   const deleteCard = async (id) => {
-    if (!confirm('¿Eliminar la cuenta? Esto eliminará sus transacciones asociadas.')) return;
-    await api.delete(`/cards/${id}`);
-    await loadBase();
-    // si borramos la seleccionada, selectedId se ajustará en loadBase
+    if (!confirm('Remove account from this list? (Data will be preserved in Settings/Dashboard)')) return;
+    setHiddenCardIds(prev => [...prev, id]);
+    // Adjust selection if we hid the current one
     if (selectedId === id) {
-      setTxItems([]); setTxTotal(0); setSummary({ income:0, expense:0 });
-    } else {
-      loadTransactionsPage(selectedId, txPage, txLimit);
-      loadSummary(selectedId);
+       const remaining = visibleCards.filter(c => c.id !== id);
+       const nextId = remaining[0]?.id || null;
+       setSelectedId(nextId);
+       if (!nextId) {
+         setTxItems([]); setTxTotal(0); setSummary({ income:0, expense:0 });
+       }
     }
+  };
+
+  const linkCard = () => {
+    if (!cardToLink) return;
+    setHiddenCardIds(prev => prev.filter(hid => hid !== parseInt(cardToLink, 10)));
+    setCardToLink('');
+    setShowCardForm(false);
+    setShowLinkMode(false);
   };
 
   const totalPages = Math.max(1, Math.ceil(txTotal / txLimit));
@@ -213,14 +242,33 @@ export default function Accounts() {
       </div>
 
       {showCardForm && (
-        <form className="bg-[var(--card)] rounded-xl border border-[var(--border)] p-4" onSubmit={addCard}>
-          <div className="flex gap-3 flex-wrap items-center">
-            <Input placeholder="Account Name" value={cardForm.name} onChange={(e)=>setCardForm(v=>({ ...v, name:e.target.value }))} required />
-            <Input className="w-8 h-8 p-0 cursor-pointer bg-transparent [appearance:auto]" type="color" value={cardForm.color} onChange={(e)=>setCardForm(v=>({ ...v, color:e.target.value }))} />
-            <Input className="w-28" placeholder="Last 4" value={cardForm.last4} onChange={(e)=>setCardForm(v=>({ ...v, last4:e.target.value.replace(/[^0-9]/g,'').slice(0,4) }))} required />
-            <Button type="submit">Save</Button>
-          </div>
-        </form>
+        <div className="bg-[var(--card)] rounded-xl border border-[var(--border)] p-4 space-y-4">
+           {hiddenCards.length > 0 && (
+             <div className="flex gap-4 border-b border-[var(--border)] pb-2 mb-2">
+                <button type="button" onClick={()=>setShowLinkMode(false)} className={cn("text-sm font-medium", !showLinkMode && "text-[var(--foreground)]", showLinkMode && "text-[var(--muted-foreground)]")}>New Account</button>
+                <button type="button" onClick={()=>setShowLinkMode(true)} className={cn("text-sm font-medium", showLinkMode && "text-[var(--foreground)]", !showLinkMode && "text-[var(--muted-foreground)]")}>Link Existing</button>
+             </div>
+           )}
+
+           {!showLinkMode ? (
+              <form onSubmit={addCard}>
+                <div className="flex gap-3 flex-wrap items-center">
+                  <Input placeholder="Account Name" value={cardForm.name} onChange={(e)=>setCardForm(v=>({ ...v, name:e.target.value }))} required />
+                  <Input className="w-8 h-8 p-0 cursor-pointer bg-transparent [appearance:auto]" type="color" value={cardForm.color} onChange={(e)=>setCardForm(v=>({ ...v, color:e.target.value }))} />
+                  <Input className="w-28" placeholder="Last 4" value={cardForm.last4} onChange={(e)=>setCardForm(v=>({ ...v, last4:e.target.value.replace(/[^0-9]/g,'').slice(0,4) }))} required />
+                  <Button type="submit">Save</Button>
+                </div>
+              </form>
+           ) : (
+              <div className="flex gap-3 items-center">
+                <Select value={cardToLink} onChange={(e) => setCardToLink(e.target.value)}>
+                   <option value="">Select account...</option>
+                   {hiddenCards.map(c => <option key={c.id} value={c.id}>{c.name} (**** {c.last4})</option>)}
+                </Select>
+                <Button onClick={linkCard} disabled={!cardToLink}>Link</Button>
+              </div>
+           )}
+        </div>
       )}
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -228,7 +276,7 @@ export default function Accounts() {
           <div className="bg-[var(--card)] rounded-xl border border-[var(--border)] p-4">
             <h3 className="text-lg font-semibold mb-2">Accounts</h3>
             <ul className="space-y-2">
-              {cards.map(card => (
+              {visibleCards.map(card => (
                 <li
                   key={card.id}
                   className={cn(
@@ -299,7 +347,7 @@ export default function Accounts() {
             <form onSubmit={addTransaction} className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <Input placeholder="Description" value={txForm.description} onChange={(e)=>setTxForm(v=>({ ...v, description:e.target.value }))} required />
               <Input type="number" placeholder="Amount" value={txForm.amount} onChange={(e)=>setTxForm(v=>({ ...v, amount:e.target.value }))} required />
-              <DateInput value={txForm.date} onChange={(v)=>setTxForm(s=>({ ...s, date:v }))} />
+              <DateInput value={txForm.date} onChange={(e)=>setTxForm(s=>({ ...s, date: e.target.value }))} />
               <Select value={txForm.categoryId} onChange={(e)=>setTxForm(v=>({ ...v, categoryId:e.target.value }))}>
                 <option value="">No Category</option>
                 {(mode==='expense' ? expenseCats : incomeCats).map(c => (
