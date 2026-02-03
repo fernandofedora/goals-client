@@ -38,12 +38,11 @@ const Select = React.forwardRef(({ className, children, value = '', onChange, pl
     if (typeof filterFn === 'function') return options.filter(o => filterFn(q, o));
     return options.filter(o => normalize(o.label).includes(q) || normalize(o.value).includes(q));
   }, [options, enableSearch, query, filterFn]);
-  const menuMaxH = maxHeight ? String(maxHeight) : '70vh';
-  const exceedsThreshold = options.length > searchThreshold;
-  const viewportStyle = exceedsThreshold
-    ? (enableSearch ? { maxHeight: `calc(${menuMaxH} - 2.5rem)` } : { maxHeight: menuMaxH })
-    : {};
-  const contentStyle = exceedsThreshold ? { maxHeight: menuMaxH } : undefined;
+  const menuMaxH = maxHeight ? String(maxHeight) : '300px';
+  const viewportStyle = enableSearch
+    ? { maxHeight: `calc(${menuMaxH} - 2.5rem)` }
+    : { maxHeight: menuMaxH };
+  const contentStyle = { maxHeight: menuMaxH };
   const [open, setOpen] = React.useState(false);
   const preventCloseRef = React.useRef(false);
   const searchRef = React.useRef(null);
@@ -77,7 +76,7 @@ const Select = React.forwardRef(({ className, children, value = '', onChange, pl
           <RadixSelect.Content
             position="popper"
             sideOffset={6}
-            collisionPadding={8}
+            collisionPadding={10}
             onCloseAutoFocus={(e)=> e.preventDefault()}
             onOpenAutoFocus={(e)=> { e.preventDefault(); searchRef.current?.focus(); }}
             onInteractOutside={(e)=> {
@@ -120,8 +119,8 @@ const Select = React.forwardRef(({ className, children, value = '', onChange, pl
               </div>
             )}
             <RadixSelect.Viewport
-              className={cn('p-1', exceedsThreshold ? 'overflow-y-auto overscroll-contain' : '')}
-              style={exceedsThreshold ? { ...viewportStyle, WebkitOverflowScrolling: 'touch', touchAction: 'pan-y' } : viewportStyle}
+              className={cn('p-1', 'overflow-y-auto overscroll-contain')}
+              style={{ ...viewportStyle, WebkitOverflowScrolling: 'touch', touchAction: 'pan-y' }}
             >
               {placeholderText && (
                 <RadixSelect.Item
