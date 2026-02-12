@@ -1,9 +1,10 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import api from '../api';
 import DateInput from '../components/DateInput';
 import Input from '../components/ui/input';
 import Button from '../components/ui/button';
 import Select from '../components/ui/select';
+import EditTransactionDialog from '../components/ui/edit-transaction-dialog';
 import Alert from '../components/ui/alert';
 import ConfirmDialog from '../components/ui/confirm-dialog';
 import { cn } from '../lib/utils';
@@ -37,9 +38,21 @@ export default function Transactions() {
   const [editBudgetData, setEditBudgetData] = useState({ month:'', year:'', amount:'' });
   const [deleteBudgetId, setDeleteBudgetId] = useState(null);
 
-  // Inline editing state
-  const [editingId, setEditingId] = useState(null);
-  const [editData, setEditData] = useState({ type:'expense', description:'', categoryId:'', amount:'', date:'', paymentMethod:'cash', cardId:'' });
+  // Modal editing state
+  const [editingTxId, setEditingTxId] = useState(null);
+  const [editTxData, setEditTxData] = useState({
+    type: 'expense',
+    description: '',
+    categoryId: '',
+    amount: '',
+    date: '',
+    paymentMethod: 'cash'
+  });
+  const [editOpen, setEditOpen] = useState(false);
+  const [editError, setEditError] = useState('');
+
+  const expenseCats = useMemo(() => categories.filter(c => c.type === 'expense'), [categories]);
+  const incomeCats = useMemo(() => categories.filter(c => c.type === 'income'), [categories]);
 
   const load = async () => {
     try {
@@ -146,40 +159,50 @@ const DELETE_TRANSACTION_LEGACY = async () => { /* replaced by modal-based delet
   //   load();
   // } catch { setError('Failed to delete transaction'); }
 
-  // Inline edit handlers
-  const startEdit = (t) => {
-    setEditingId(t.id);
-    setEditData({
+  // Modal edit handlers
+  const startEditTx = (t) => {
+    setEditingTxId(t.id);
+    setEditTxData({
       type: t.type,
       description: t.description || '',
       categoryId: t.CategoryId || t.Category?.id || '',
       amount: (t.amount ?? '').toString(),
-      date: t.date || '',
+      date: t.date || new Date().toISOString().slice(0,10),
       paymentMethod: t.paymentMethod || (t.type==='income' ? 'cash' : 'cash'),
       cardId: t.CardId || t.Card?.id || ''
     });
+    setEditOpen(true);
+    setEditError('');
   };
 
-  const cancelEdit = () => {
-    setEditingId(null);
+  const cancelEditTx = () => {
+    setEditOpen(false);
+    setEditingTxId(null);
   };
 
-  const saveEdit = async () => {
+  const saveEditTx = async (data, patchOnly) => {
+    if (patchOnly) { setEditTxData(data); return; }
+    
     try {
-      const payload = { ...editData, amount: parseFloat(editData.amount || 0) };
+      const amt = parseFloat(data.amount || 0);
+      if (!data.description.trim()) { setEditError('Description is required'); return; }
+      if (!(amt > 0)) { setEditError('Amount must be greater than 0'); return; }
+      
+      const payload = { ...data, amount: amt };
       if (payload.type === 'income') { payload.paymentMethod = 'cash'; payload.cardId = null; }
       if (payload.type === 'expense' && payload.paymentMethod === 'card' && !payload.cardId) {
-        setError('Please select a card for card payments');
+        setEditError('Please select a card for card payments');
         return;
       }
-      await api.put(`/transactions/${editingId}`, payload);
-      setEditingId(null);
-      setError('');
+      
+      await api.put(`/transactions/${editingTxId}`, payload);
+      setEditOpen(false);
+      setEditingTxId(null);
+      setEditError('');
       setSuccess('Changes saved');
       load();
     } catch {
-      setSuccess('');
-      setError('Failed to save changes');
+      setEditError('Failed to save changes');
     }
   };
 
@@ -482,112 +505,41 @@ const DELETE_TRANSACTION_LEGACY = async () => { /* replaced by modal-based delet
               <tbody>
               {filtered.map(t => (
                 <tr key={t.id}>
-                {editingId === t.id ? (
-                  <>
-                    <td>
-                      <Select value={editData.type} onChange={(e)=>setEditData(v=>({ ...v, type:e.target.value, paymentMethod: e.target.value==='income' ? 'cash' : v.paymentMethod }))}>
-                        <option value="expense">expense</option>
-                        <option value="income">income</option>
-                      </Select>
-                    </td>
-                    <td>
-                      <input className="border border-gray-300 dark:border-slate-600 rounded-md px-2 py-1 focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:bg-slate-700 dark:text-white" value={editData.description} onChange={(e)=>setEditData(v=>({ ...v, description:e.target.value }))} />
-                    </td>
-                    <td>
-                      <Select value={editData.categoryId} onChange={(e)=>setEditData(v=>({ ...v, categoryId:e.target.value }))}>
-                        <option value="">Category</option>
-                        {categories.filter(c=>c.type===editData.type).map(c=> <option key={c.id} value={c.id}>{c.name}</option>)}
-                      </Select>
-                    </td>
-                    <td>
-                      <input type="number" step="0.01" value={editData.amount} onChange={(e)=>setEditData(v=>({ ...v, amount:e.target.value }))} />
-                    </td>
-                    <td>
-                      <input type="date" value={editData.date} onChange={(e)=>setEditData(v=>({ ...v, date:e.target.value }))} />
-                    </td>
-                    <td>
-                      {editData.type==='expense' ? (
-                        <div className="flex gap-2 dark:bg-slate-700 dark:text-white">
-                          <Select value={editData.paymentMethod} onChange={(e)=>setEditData(v=>({ ...v, paymentMethod:e.target.value }))}>
-                            <option value="cash">Cash</option>
-                            <option value="card">Credit Card</option>
-                          </Select>
-                          {editData.paymentMethod==='card' && (
-                            <Select value={editData.cardId || ''} onChange={(e)=>setEditData(v=>({ ...v, cardId:e.target.value }))}>
-                              <option value="">Select Card</option>
-                              {cards.map(card => <option key={card.id} value={card.id}>{card.name}</option>)}
-                            </Select>
-                          )}
-                        </div>
-                      ) : (
-                        <span className="text-gray-500 dark:text-gray-400">Cash</span>
-                      )}
-                    </td>
-                    <td className="w-40">
-                       <div className="flex items-center gap-3">
-                         <button
-                           className="p-2 rounded-md hover:bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600"
-                           aria-label="Save"
-                           title="Save"
-                           onClick={saveEdit}
-                         >
-                           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                             <path d="M20 6L9 17l-5-5" />
-                           </svg>
-                         </button>
-                         <button
-                           className="p-2 rounded-md hover:bg-gray-100 dark:hover:bg-slate-700 dark:bg-slate-700 text-gray-700 dark:text-gray-200"
-                           aria-label="Cancel"
-                           title="Cancel"
-                           onClick={cancelEdit}
-                         >
-                           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                             <path d="M18 6L6 18" />
-                             <path d="M6 6l12 12" />
-                           </svg>
-                         </button>
-                       </div>
-                     </td>
-                  </>
-                ) : (
-                  <>
-                    <td className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${t.type==='expense' ? 'bg-rose-100 dark:bg-rose-900/30 text-rose-700 dark:text-rose-300' : 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300'}`}>{t.type}</td>
-                    <td className="max-w-[180px] truncate" title={t.description}>{t.description}</td>
-                    <td className="whitespace-nowrap">{t.Category?.name || ''}</td>
-                    <td className={`text-sm ${t.type==='expense' ? 'text-rose-600' : 'text-emerald-600'} whitespace-nowrap`}>${parseFloat(t.amount ?? 0).toFixed(2)}</td>
-                    <td className="whitespace-nowrap">{t.date}</td>
-                    <td className="whitespace-nowrap">{t.paymentMethod==='card' ? (t.Card?.name || 'Card') : 'Cash'}</td>
-                    <td className="w-40">
-                       <div className="flex items-center gap-3">
-                         <button
-                            className="p-2 rounded-md hover:bg-gray-100 dark:hover:bg-slate-700 dark:bg-slate-700 text-gray-800 dark:text-gray-100"
-                            aria-label="Edit"
-                            title="Edit"
-                            onClick={()=>startEdit(t)}
-                          >
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                              <path d="M12 20h9" />
-                              <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L8 18l-4 1 1-4 11.5-11.5z" />
-                            </svg>
-                          </button>
-                          <button
-                            className="p-2 rounded-md hover:bg-rose-50 text-rose-600"
-                            aria-label="Delete"
-                            title="Delete"
-                            onClick={()=>setDeleteTargetId(t.id)}
-                          >
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                              <path d="M3 6h18" />
-                              <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
-                              <path d="M10 11v6" />
-                              <path d="M14 11v6" />
-                              <path d="M15 6V4a2 2 0 0 0-2-2h-2a2 2 0 0 0-2 2v2" />
-                            </svg>
-                          </button>
-                       </div>
-                     </td>
-                  </>
-                )}
+                  <td className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${t.type==='expense' ? 'bg-rose-100 dark:bg-rose-900/30 text-rose-700 dark:text-rose-300' : 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300'}`}>{t.type}</td>
+                  <td className="max-w-[180px] truncate" title={t.description}>{t.description}</td>
+                  <td className="whitespace-nowrap">{t.Category?.name || ''}</td>
+                  <td className={`text-sm ${t.type==='expense' ? 'text-rose-600' : 'text-emerald-600'} whitespace-nowrap`}>${parseFloat(t.amount ?? 0).toFixed(2)}</td>
+                  <td className="whitespace-nowrap">{t.date}</td>
+                  <td className="whitespace-nowrap">{t.paymentMethod==='card' ? (t.Card?.name || 'Card') : 'Cash'}</td>
+                  <td className="w-40">
+                     <div className="flex items-center gap-3">
+                       <button
+                          className="p-2 rounded-md hover:bg-gray-100 dark:hover:bg-slate-700 dark:bg-slate-700 text-gray-800 dark:text-gray-100"
+                          aria-label="Edit"
+                          title="Edit"
+                          onClick={()=>startEditTx(t)}
+                        >
+                          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M12 20h9" />
+                            <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L8 18l-4 1 1-4 11.5-11.5z" />
+                          </svg>
+                        </button>
+                        <button
+                          className="p-2 rounded-md hover:bg-rose-50 text-rose-600"
+                          aria-label="Delete"
+                          title="Delete"
+                          onClick={()=>setDeleteTargetId(t.id)}
+                        >
+                          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M3 6h18" />
+                            <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+                            <path d="M10 11v6" />
+                            <path d="M14 11v6" />
+                            <path d="M15 6V4a2 2 0 0 0-2-2h-2a2 2 0 0 0-2 2v2" />
+                          </svg>
+                        </button>
+                     </div>
+                   </td>
                 </tr>
               ))}
               </tbody>
@@ -595,6 +547,16 @@ const DELETE_TRANSACTION_LEGACY = async () => { /* replaced by modal-based delet
           )}
         </div>
       </div>
+      <EditTransactionDialog
+        open={editOpen}
+        onOpenChange={(o)=>{ if(!o) cancelEditTx(); }}
+        initial={editTxData}
+        expenseCats={expenseCats}
+        incomeCats={incomeCats}
+        onSave={saveEditTx}
+        onCancel={cancelEditTx}
+        error={editError}
+      />
     </div>
   );
 }
