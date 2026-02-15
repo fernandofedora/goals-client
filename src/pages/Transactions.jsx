@@ -553,6 +553,7 @@ const DELETE_TRANSACTION_LEGACY = async () => { /* replaced by modal-based delet
         initial={editTxData}
         expenseCats={expenseCats}
         incomeCats={incomeCats}
+        cards={cards}
         onSave={saveEditTx}
         onCancel={cancelEditTx}
         error={editError}
