@@ -221,7 +221,7 @@ export default function Dashboard() {
         <div className="flex justify-between items-center mb-3">
           <h3 className="text-lg font-semibold">Overview</h3>
           <div className="flex items-center gap-2">
-            <Button onClick={() => navigate('/transactions')}>New Transaction</Button>
+            <Button onClick={() => navigate('/transactions')} variant="primary">New Transaction</Button>
             <Select value={period} onChange={(e)=>setPeriod(e.target.value)}>
               {monthOptions.map(m=> <option key={m.value} value={m.value}>{m.label}</option>)}
             </Select>

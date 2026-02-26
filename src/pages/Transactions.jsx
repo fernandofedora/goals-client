@@ -369,9 +369,9 @@ const DELETE_TRANSACTION_LEGACY = async () => { /* replaced by modal-based delet
             onClick={()=>setTxMode('expense')}
             className={cn(
               'flex-1 rounded-xl px-4 py-2 text-sm transition-colors',
-              txMode==='expense'
-                ? 'bg-[var(--background)] text-[var(--foreground)] shadow-sm border border-[var(--border)]'
-                : 'bg-transparent text-[var(--foreground)] hover:bg-white dark:bg-slate-800/60'
+              txMode === 'expense'
+                ? 'bg-slate-900 text-slate-50 dark:bg-slate-50 dark:text-slate-900 shadow-sm'
+                : 'text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
             )}
           >
             Expense
@@ -381,9 +381,9 @@ const DELETE_TRANSACTION_LEGACY = async () => { /* replaced by modal-based delet
             onClick={()=>setTxMode('income')}
             className={cn(
               'flex-1 rounded-xl px-4 py-2 text-sm transition-colors',
-              txMode==='income'
-                ? 'bg-[var(--background)] text-[var(--foreground)] shadow-sm border border-[var(--border)]'
-                : 'bg-transparent text-[var(--foreground)] hover:bg-white dark:bg-slate-800/60'
+              txMode === 'income'
+                ? 'bg-slate-900 text-slate-50 dark:bg-slate-50 dark:text-slate-900 shadow-sm'
+                : 'text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
             )}
           >
             Income
@@ -433,7 +433,7 @@ const DELETE_TRANSACTION_LEGACY = async () => { /* replaced by modal-based delet
               )}
             </div>
           )}
-          <Button type="submit" variant="secondary" className="w-full">{txMode==='expense' ? 'Add Expense' : 'Add Income'}</Button>
+          <Button type="submit" variant="primary" className="w-full">{txMode==='expense' ? 'Add Expense' : 'Add Income'}</Button>
         </form>
       </div>
 
