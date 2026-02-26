@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import Button from '../components/ui/button';
 import api from '../api';
 import Select from '../components/ui/select';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, BarChart, Bar, Legend, CartesianGrid } from 'recharts';
@@ -9,6 +11,7 @@ const monthOptions = [
 ];
 
 export default function Dashboard() {
+  const navigate = useNavigate();
   const [period, setPeriod] = useState(() => localStorage.getItem('dashboard_period') || 'all');
   const [summary, setSummary] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -16,6 +19,7 @@ export default function Dashboard() {
   const [cards, setCards] = useState([]);
   const [initialBalance, setInitialBalance] = useState(null);
   const [finalBalance, setFinalBalance] = useState(null);
+  const [allTimeSummary, setAllTimeSummary] = useState(null);
   const [selectedYear, setSelectedYear] = useState(() => {
     const saved = localStorage.getItem('dashboard_year');
     return saved ? Number(saved) : new Date().getFullYear();
@@ -58,6 +62,8 @@ export default function Dashboard() {
 
       // Calcular saldo inicial/final solo si es un mes específico
       if (period !== 'all') {
+        const allTime = await api.get('/stats/summary', { params: { period: 'all' } });
+        setAllTimeSummary(allTime.data);
         const curIncome = Number(data?.totals?.income || 0);
         const curExpense = Number(data?.totals?.expense || 0);
         const monthNet = curIncome - curExpense; // variación del mes
@@ -82,6 +88,7 @@ export default function Dashboard() {
       } else {
         setInitialBalance(null);
         setFinalBalance(null);
+        setAllTimeSummary(null);
       }
     } catch (err) { setError(err.response?.data?.message || 'Failed to load summary'); }
     finally { setLoading(false); }
@@ -214,6 +221,7 @@ export default function Dashboard() {
         <div className="flex justify-between items-center mb-3">
           <h3 className="text-lg font-semibold">Overview</h3>
           <div className="flex items-center gap-2">
+            <Button onClick={() => navigate('/transactions')} variant="primary">New Transaction</Button>
             <Select value={period} onChange={(e)=>setPeriod(e.target.value)}>
               {monthOptions.map(m=> <option key={m.value} value={m.value}>{m.label}</option>)}
             </Select>
@@ -242,6 +250,12 @@ export default function Dashboard() {
               <div className="text-sm text-gray-600 dark:text-gray-300">Transactions</div>
               <div className="text-2xl font-semibold">{summary.totals.transactions}</div>
             </div>
+            {period !== 'all' && allTimeSummary && (
+              <div className="bg-gray-50 dark:bg-slate-700 rounded-lg p-4">
+                <div className="text-sm text-gray-600 dark:text-gray-300">All Time Balance</div>
+                <div className="text-2xl font-semibold">${(allTimeSummary.totals.income - allTimeSummary.totals.expense).toFixed(2)}</div>
+              </div>
+            )}
           </div>
         )}
       </div>
