@@ -73,7 +73,7 @@ export default function Transactions() {
   const [success, setSuccess] = useState('');
   const [deleteTargetId, setDeleteTargetId] = useState(null);
 
-  const [expense, setExpense] = useState({ description: '', categoryId: '', amount: '', date: '', method: 'cash', cardId: '' });
+  const [expense, setExpense] = useState({ description: '', categoryId: '', amount: '', date: '', method: 'cash', cardId: '', accountId: '' });
   const [income, setIncome] = useState({ description: '', categoryId: '', amount: '', date: '', incomeMethod: 'cash', accountId: '' });
 
   const [budget, setBudget] = useState({ month: '', year: '', amount: '' });
@@ -83,7 +83,7 @@ export default function Transactions() {
   const [deleteBudgetId, setDeleteBudgetId] = useState(null);
 
   const [editingTxId, setEditingTxId] = useState(null);
-  const [editTxData, setEditTxData] = useState({ type: 'expense', description: '', categoryId: '', amount: '', date: '', paymentMethod: 'cash' });
+  const [editTxData, setEditTxData] = useState({ type: 'expense', description: '', categoryId: '', amount: '', date: '', paymentMethod: 'cash', cardId: '', accountId: '' });
   const [editOpen, setEditOpen] = useState(false);
   const [editError, setEditError] = useState('');
 
@@ -113,8 +113,16 @@ export default function Transactions() {
   const addExpense = async (e) => {
     e.preventDefault();
     try {
-      await api.post('/transactions', { ...expense, type: 'expense', paymentMethod: expense.method, amount: parseFloat(expense.amount || 0) });
-      setExpense({ description: '', categoryId: '', amount: '', date: '', method: 'cash', cardId: '' });
+      const expPayload = {
+        ...expense,
+        type: 'expense',
+        paymentMethod: expense.method === 'account' ? 'cash' : expense.method,
+        amount: parseFloat(expense.amount || 0),
+        accountId: expense.method === 'account' ? expense.accountId || null : null,
+        cardId: expense.method === 'card' ? expense.cardId || null : null,
+      };
+      await api.post('/transactions', expPayload);
+      setExpense({ description: '', categoryId: '', amount: '', date: '', method: 'cash', cardId: '', accountId: '' });
       setSuccess('Expense added'); setError(''); load();
     } catch { setError('Failed to add expense'); setSuccess(''); }
   };
@@ -158,13 +166,16 @@ export default function Transactions() {
 
   const startEditTx = (t) => {
     setEditingTxId(t.id);
+    // For expenses paid from an account (AccountId set, paymentMethod='cash'), show 'account' method in the edit dialog
+    const resolvedMethod = (t.type === 'expense' && t.AccountId) ? 'account' : (t.paymentMethod || 'cash');
     setEditTxData({
       type: t.type, description: t.description || '',
       categoryId: t.CategoryId || t.Category?.id || '',
       amount: (t.amount ?? '').toString(),
       date: t.date || new Date().toISOString().slice(0, 10),
-      paymentMethod: t.paymentMethod || 'cash',
-      cardId: t.CardId || t.Card?.id || ''
+      paymentMethod: resolvedMethod,
+      cardId: t.CardId || t.Card?.id || '',
+      accountId: t.AccountId || ''
     });
     setEditOpen(true); setEditError('');
   };
@@ -179,8 +190,18 @@ export default function Transactions() {
       if (!(amt > 0)) { setEditError('Amount must be greater than 0'); return; }
       const payload = { ...data, amount: amt };
       if (payload.type === 'income') { payload.paymentMethod = 'cash'; payload.cardId = null; }
-      if (payload.type === 'expense' && payload.paymentMethod === 'card' && !payload.cardId) {
-        setEditError('Please select a card for card payments'); return;
+      // Resolve expense payment method: 'account' → paymentMethod='cash' + accountId
+      if (payload.type === 'expense') {
+        if (payload.paymentMethod === 'account') {
+          if (!payload.accountId) { setEditError('Please select an account'); return; }
+          payload.paymentMethod = 'cash';
+          payload.cardId = null;
+        } else if (payload.paymentMethod === 'card') {
+          if (!payload.cardId) { setEditError('Please select a card for card payments'); return; }
+          payload.accountId = null;
+        } else {
+          payload.cardId = null; payload.accountId = null;
+        }
       }
       await api.put(`/transactions/${editingTxId}`, payload);
       cancelEditTx(); setSuccess('Changes saved'); setError(''); load();
@@ -333,20 +354,43 @@ export default function Transactions() {
             </Select>
           </Field>
 
-          {/* Expense-only: payment method + card */}
+          {/* Expense-only: 3-way payment picker + conditional card or account picker */}
           {txMode === 'expense' && (
             <>
               <Field label="Payment method">
-                <Select value={expense.method} onChange={(e) => setExpense(v => ({ ...v, method: e.target.value }))}>
-                  <option value="cash">💵 Cash</option>
-                  <option value="card">💳 Credit Card</option>
-                </Select>
+                {/* 3-way segmented control: Cash / Card / Account */}
+                <div className="inline-flex rounded-lg border border-[var(--border)] bg-[var(--muted)] p-0.5 gap-0.5">
+                  {[{ val: 'cash', icon: '💵', label: 'Cash' }, { val: 'card', icon: '💳', label: 'Card' }, { val: 'account', icon: '🏦', label: 'Account' }].map(opt => (
+                    <button
+                      key={opt.val}
+                      type="button"
+                      onClick={() => setExpense(v => ({ ...v, method: opt.val, cardId: '', accountId: '' }))}
+                      className={cn(
+                        'flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-all duration-150 whitespace-nowrap',
+                        expense.method === opt.val
+                          ? 'bg-white dark:bg-slate-700 text-gray-900 dark:text-white shadow-sm'
+                          : 'text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200'
+                      )}
+                    >
+                      <span>{opt.icon}</span>
+                      <span>{opt.label}</span>
+                    </button>
+                  ))}
+                </div>
               </Field>
               {expense.method === 'card' && (
-                <Field label="Card">
+                <Field label="Credit card">
                   <Select value={expense.cardId} onChange={(e) => setExpense(v => ({ ...v, cardId: e.target.value }))} required>
                     <option value="">Select card</option>
                     {cards.map(card => <option key={card.id} value={card.id}>{card.name}</option>)}
+                  </Select>
+                </Field>
+              )}
+              {expense.method === 'account' && (
+                <Field label="Bank account">
+                  <Select value={expense.accountId} onChange={(e) => setExpense(v => ({ ...v, accountId: e.target.value }))} required>
+                    <option value="">Select account</option>
+                    {accounts.map(acc => <option key={acc.id} value={acc.id}>{acc.name}</option>)}
                   </Select>
                 </Field>
               )}
@@ -614,12 +658,25 @@ export default function Transactions() {
                       {t.type === 'expense' ? '−' : '+'}${parseFloat(t.amount ?? 0).toFixed(2)}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-gray-500 dark:text-gray-400 text-xs">{t.date}</td>
-                    <td className="px-4 py-3 whitespace-nowrap text-gray-500 dark:text-gray-400 text-xs">
-                      {t.type === 'income'
-                        ? (t.Account ? `🏦 ${t.Account.name}` : '💵 Cash')
-                        : t.paymentMethod === 'card'
-                          ? `💳 ${t.Card?.name || 'Card'}`
-                          : '💵 Cash'}
+                    <td className="px-4 py-3 whitespace-nowrap">
+                      {/* Resolve method display for both income and expense */}
+                      {(() => {
+                        if (t.Account) return (
+                          <span className="inline-flex items-center gap-1.5 text-[11px] font-medium px-2 py-0.5 rounded-full bg-sky-50 dark:bg-sky-950/40 text-sky-700 dark:text-sky-400">
+                            🏦 {t.Account.name}
+                          </span>
+                        );
+                        if (t.paymentMethod === 'card') return (
+                          <span className="inline-flex items-center gap-1.5 text-[11px] font-medium px-2 py-0.5 rounded-full bg-violet-50 dark:bg-violet-950/40 text-violet-700 dark:text-violet-400">
+                            💳 {t.Card?.name || 'Card'}
+                          </span>
+                        );
+                        return (
+                          <span className="inline-flex items-center gap-1.5 text-[11px] font-medium px-2 py-0.5 rounded-full bg-gray-100 dark:bg-slate-800 text-gray-500 dark:text-gray-400">
+                            💵 Cash
+                          </span>
+                        );
+                      })()}
                     </td>
                     <td className="px-4 py-3 text-right">
                       <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
