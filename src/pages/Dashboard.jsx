@@ -403,6 +403,30 @@ export default function Dashboard() {
       <div className="grid md:grid-cols-2 gap-4">
         {/* Payment Methods */}
         <div className="bg-white dark:bg-slate-800 rounded-xl shadow p-4">
+          <h3 className="text-lg font-semibold mb-3">Income Methods</h3>
+          <div style={{ width: '100%', height: 200 }}>
+            <ResponsiveContainer>
+              <PieChart>
+                <Pie
+                  data={Object.entries(summary?.incomeMethods || {}).map(([name, amount]) => ({ name, amount }))}
+                  dataKey="amount"
+                  nameKey="name"
+                  cx="50%"
+                  cy="50%"
+                  outerRadius={80}
+                  label
+                >
+                  <Cell key="cash" fill="#10b981" />
+                  <Cell key="account" fill="#38bdf8" />
+                </Pie>
+                <Tooltip formatter={(value) => `$${Number(value).toFixed(2)}`} />
+                <Legend />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        <div className="bg-white dark:bg-slate-800 rounded-xl shadow p-4">
           <h3 className="text-lg font-semibold mb-3">Payment Methods</h3>
           <div className="space-y-3">
             {/* Cash card */}

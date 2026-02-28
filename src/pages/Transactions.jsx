@@ -12,6 +12,7 @@ import { cn } from '../lib/utils';
 export default function Transactions() {
   const [categories, setCategories] = useState([]);
   const [cards, setCards] = useState([]);
+  const [accounts, setAccounts] = useState([]);
   const [transactions, setTransactions] = useState([]);
   const [typeFilter, setTypeFilter] = useState('all');
   const [txMode, setTxMode] = useState('expense');
@@ -27,15 +28,15 @@ export default function Transactions() {
   const [success, setSuccess] = useState('');
   const [deleteTargetId, setDeleteTargetId] = useState(null);
 
-  const [expense, setExpense] = useState({ description:'', categoryId:'', amount:'', date:'', method:'cash', cardId:'' });
-  const [income, setIncome] = useState({ description:'', categoryId:'', amount:'', date:'' });
+  const [expense, setExpense] = useState({ description: '', categoryId: '', amount: '', date: '', method: 'cash', cardId: '' });
+  const [income, setIncome] = useState({ description: '', categoryId: '', amount: '', date: '', incomeMethod: 'cash', accountId: '' });
 
-  const [budget, setBudget] = useState({ month:'', year:'', amount:'' });
+  const [budget, setBudget] = useState({ month: '', year: '', amount: '' });
   const [budgets, setBudgets] = useState([]);
 
   // Budget editing state
   const [editingBudgetId, setEditingBudgetId] = useState(null);
-  const [editBudgetData, setEditBudgetData] = useState({ month:'', year:'', amount:'' });
+  const [editBudgetData, setEditBudgetData] = useState({ month: '', year: '', amount: '' });
   const [deleteBudgetId, setDeleteBudgetId] = useState(null);
 
   // Modal editing state
@@ -56,18 +57,21 @@ export default function Transactions() {
 
   const load = async () => {
     try {
-      const [catRes, cardRes, trxRes, budRes] = await Promise.all([
-        api.get('/categories'), api.get('/cards'), api.get('/transactions'), api.get('/budgets')
+      const [catRes, cardRes, trxRes, budRes, accRes] = await Promise.all([
+        api.get('/categories'), api.get('/cards'), api.get('/transactions'), api.get('/budgets'), api.get('/accounts')
       ]);
+      console.log('Loaded categories:', catRes.data);
       setCategories(catRes.data);
       setCards(cardRes.data);
       setTransactions(trxRes.data);
       setBudgets(budRes.data);
+      console.log('Loaded accounts:', accRes.data);
+      setAccounts(accRes.data);
       setError(''); // clear previous error on success
     } catch { setError('Failed to load data'); }
   };
 
-  useEffect(()=>{ load(); },[]);
+  useEffect(() => { load(); }, []);
   // auto-dismiss banners
   useEffect(() => { if (!success) return; const t = setTimeout(() => setSuccess(''), 4000); return () => clearTimeout(t); }, [success]);
   useEffect(() => { if (!error) return; const t = setTimeout(() => setError(''), 6000); return () => clearTimeout(t); }, [error]);
@@ -75,34 +79,41 @@ export default function Transactions() {
   const addExpense = async (e) => {
     e.preventDefault();
     try {
-      await api.post('/transactions', { ...expense, type:'expense', paymentMethod: expense.method, amount: parseFloat(expense.amount || 0) });
-      setExpense({ description:'', categoryId:'', amount:'', date:'', method:'cash', cardId:'' });
+      await api.post('/transactions', { ...expense, type: 'expense', paymentMethod: expense.method, amount: parseFloat(expense.amount || 0) });
+      setExpense({ description: '', categoryId: '', amount: '', date: '', method: 'cash', cardId: '' });
       setError('');
       setSuccess('Expense added');
       load();
-    } catch{ setSuccess(''); setError('Failed to add expense'); }
+    } catch { setSuccess(''); setError('Failed to add expense'); }
   };
 
   const addIncome = async (e) => {
     e.preventDefault();
     try {
-      await api.post('/transactions', { ...income, type:'income', amount: parseFloat(income.amount || 0), paymentMethod:'cash' });
-      setIncome({ description:'', categoryId:'', amount:'', date:'' });
+      const payload = { ...income, type: 'income', amount: parseFloat(income.amount || 0), paymentMethod: 'cash' };
+      if (income.incomeMethod === 'cash') {
+        payload.accountId = null;
+      }
+      await api.post('/transactions', payload);
+      setIncome({ description: '', categoryId: '', amount: '', date: '', incomeMethod: 'cash', accountId: '' });
       setError('');
       setSuccess('Income added');
       load();
-    } catch{ setSuccess(''); setError('Failed to add income'); }
+    } catch {
+      setSuccess('');
+      setError('Failed to add income');
+    }
   };
 
   const setMonthlyBudget = async (e) => {
     e.preventDefault();
     try {
       await api.post('/budgets', { month: budget.month, year: budget.year, amount: parseFloat(budget.amount || 0) });
-      setBudget({ month:'', year:'', amount:'' });
+      setBudget({ month: '', year: '', amount: '' });
       setError('');
       setSuccess('Budget set');
       load();
-    } catch{ setSuccess(''); setError('Failed to set budget'); }
+    } catch { setSuccess(''); setError('Failed to set budget'); }
   };
 
   // Budget editing functions
@@ -117,7 +128,7 @@ export default function Transactions() {
 
   const cancelEditBudget = () => {
     setEditingBudgetId(null);
-    setEditBudgetData({ month:'', year:'', amount:'' });
+    setEditBudgetData({ month: '', year: '', amount: '' });
   };
 
   const saveEditBudget = async () => {
@@ -128,7 +139,7 @@ export default function Transactions() {
         amount: parseFloat(editBudgetData.amount || 0)
       });
       setEditingBudgetId(null);
-      setEditBudgetData({ month:'', year:'', amount:'' });
+      setEditBudgetData({ month: '', year: '', amount: '' });
       setError('');
       setSuccess('Budget updated');
       load();
@@ -151,7 +162,7 @@ export default function Transactions() {
     }
   };
 
-const DELETE_TRANSACTION_LEGACY = async () => { /* replaced by modal-based delete flow */ };
+  const DELETE_TRANSACTION_LEGACY = async () => { /* replaced by modal-based delete flow */ };
   // if(!confirm('Delete transaction?')) return;
   // try {
   //   await api.delete(`/transactions/${id}`);
@@ -167,8 +178,8 @@ const DELETE_TRANSACTION_LEGACY = async () => { /* replaced by modal-based delet
       description: t.description || '',
       categoryId: t.CategoryId || t.Category?.id || '',
       amount: (t.amount ?? '').toString(),
-      date: t.date || new Date().toISOString().slice(0,10),
-      paymentMethod: t.paymentMethod || (t.type==='income' ? 'cash' : 'cash'),
+      date: t.date || new Date().toISOString().slice(0, 10),
+      paymentMethod: t.paymentMethod || (t.type === 'income' ? 'cash' : 'cash'),
       cardId: t.CardId || t.Card?.id || ''
     });
     setEditOpen(true);
@@ -182,19 +193,19 @@ const DELETE_TRANSACTION_LEGACY = async () => { /* replaced by modal-based delet
 
   const saveEditTx = async (data, patchOnly) => {
     if (patchOnly) { setEditTxData(data); return; }
-    
+
     try {
       const amt = parseFloat(data.amount || 0);
       if (!data.description.trim()) { setEditError('Description is required'); return; }
       if (!(amt > 0)) { setEditError('Amount must be greater than 0'); return; }
-      
+
       const payload = { ...data, amount: amt };
       if (payload.type === 'income') { payload.paymentMethod = 'cash'; payload.cardId = null; }
       if (payload.type === 'expense' && payload.paymentMethod === 'card' && !payload.cardId) {
         setEditError('Please select a card for card payments');
         return;
       }
-      
+
       await api.put(`/transactions/${editingTxId}`, payload);
       setEditOpen(false);
       setEditingTxId(null);
@@ -236,9 +247,9 @@ const DELETE_TRANSACTION_LEGACY = async () => { /* replaced by modal-based delet
   };
 
   const filtered = transactions
-    .filter(t => typeFilter==='all' || t.type===typeFilter)
-    .filter(t => paymentFilter==='all' || (t.paymentMethod || 'cash')===paymentFilter)
-    .filter(t => categoryFilter==='' || String(t.CategoryId || t.Category?.id || '')===String(categoryFilter))
+    .filter(t => typeFilter === 'all' || t.type === typeFilter)
+    .filter(t => paymentFilter === 'all' || (t.paymentMethod || 'cash') === paymentFilter)
+    .filter(t => categoryFilter === '' || String(t.CategoryId || t.Category?.id || '') === String(categoryFilter))
     .filter(t => {
       const { month, year } = extractMonthYear(t.date);
       if (!year) return false;
@@ -246,44 +257,48 @@ const DELETE_TRANSACTION_LEGACY = async () => { /* replaced by modal-based delet
       return year === yearFilter && month === monthFilter;
     });
 
+  const incomeCategories = categories.filter(c => c.type === 'income');
+  console.log('Rendering with accounts:', accounts);
+  console.log('Rendering with income categories:', incomeCategories);
+
   return (
-    <div className="max-w-6xl mx-auto p-4 space-y-6">
+    <div class="max-w-6xl mx-auto p-4 space-y-6">
       {error && (
-        <Alert variant="error" message={error} onClose={()=>setError('')} />
+        <Alert variant="error" message={error} onClose={() => setError('')} />
       )}
       {success && (
-        <Alert variant="success" message={success} onClose={()=>setSuccess('')} />
+        <Alert variant="success" message={success} onClose={() => setSuccess('')} />
       )}
       <ConfirmDialog
         open={deleteTargetId !== null}
-        onOpenChange={(open)=>{ if(!open) setDeleteTargetId(null); }}
+        onOpenChange={(open) => { if (!open) setDeleteTargetId(null); }}
         title="Delete transaction"
         description="Are you sure you want to delete this transaction? This action cannot be undone."
         confirmText="Delete"
         cancelText="Cancel"
         onConfirm={confirmDelete}
-        onCancel={()=>setDeleteTargetId(null)}
+        onCancel={() => setDeleteTargetId(null)}
       />
       <ConfirmDialog
         open={deleteBudgetId !== null}
-        onOpenChange={(open)=>{ if(!open) setDeleteBudgetId(null); }}
+        onOpenChange={(open) => { if (!open) setDeleteBudgetId(null); }}
         title="Delete budget"
         description="Are you sure you want to delete this budget? This action cannot be undone."
         confirmText="Delete"
         cancelText="Cancel"
         onConfirm={deleteBudget}
-        onCancel={()=>setDeleteBudgetId(null)}
+        onCancel={() => setDeleteBudgetId(null)}
       />
       <div className="bg-white dark:bg-slate-800 rounded-xl shadow p-4">
         <h3 className="text-lg font-semibold mb-3">Budget</h3>
         <form className="space-y-3" onSubmit={setMonthlyBudget}>
           <div className="flex gap-3 flex-wrap">
-            <Select value={budget.month} onChange={(e)=>setBudget(v=>({ ...v, month:e.target.value }))} required>
+            <Select value={budget.month} onChange={(e) => setBudget(v => ({ ...v, month: e.target.value }))} required>
               <option value="">Month</option>
-              {Array.from({length:12},(_,i)=> <option key={i+1} value={String(i+1).padStart(2,'0')}>{new Date(0,i).toLocaleString('en',{ month:'long'})}</option>)}
+              {Array.from({ length: 12 }, (_, i) => <option key={i + 1} value={String(i + 1).padStart(2, '0')}>{new Date(0, i).toLocaleString('en', { month: 'long' })}</option>)}
             </Select>
-            <Input type="number" placeholder="Year" value={budget.year} onChange={(e)=>setBudget(v=>({ ...v, year:e.target.value }))} required />
-            <Input type="number" step="0.01" placeholder="Amount" value={budget.amount} onChange={(e)=>setBudget(v=>({ ...v, amount:e.target.value }))} required />
+            <Input type="number" placeholder="Year" value={budget.year} onChange={(e) => setBudget(v => ({ ...v, year: e.target.value }))} required />
+            <Input type="number" step="0.01" placeholder="Amount" value={budget.amount} onChange={(e) => setBudget(v => ({ ...v, amount: e.target.value }))} required />
             <Button type="submit">Set</Button>
           </div>
         </form>
@@ -292,41 +307,41 @@ const DELETE_TRANSACTION_LEGACY = async () => { /* replaced by modal-based delet
             <li key={b.id} className="flex items-center justify-between py-2">
               {editingBudgetId === b.id ? (
                 <div className="flex gap-2 flex-wrap items-center flex-1">
-                  <select 
-                    className="border border-gray-300 dark:border-slate-600 rounded-md px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:bg-slate-700 dark:text-white" 
-                    value={editBudgetData.month} 
-                    onChange={(e)=>setEditBudgetData(v=>({ ...v, month:e.target.value }))} 
+                  <select
+                    className="border border-gray-300 dark:border-slate-600 rounded-md px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:bg-slate-700 dark:text-white"
+                    value={editBudgetData.month}
+                    onChange={(e) => setEditBudgetData(v => ({ ...v, month: e.target.value }))}
                     required
                   >
                     <option value="">Month</option>
-                    {Array.from({length:12},(_,i)=> <option key={i+1} value={String(i+1).padStart(2,'0')}>{new Date(0,i).toLocaleString('en',{ month:'long'})}</option>)}
+                    {Array.from({ length: 12 }, (_, i) => <option key={i + 1} value={String(i + 1).padStart(2, '0')}>{new Date(0, i).toLocaleString('en', { month: 'long' })}</option>)}
                   </select>
-                  <input 
-                    className="border border-gray-300 dark:border-slate-600 rounded-md px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 w-20 dark:bg-slate-700 dark:text-white" 
-                    type="number" 
-                    placeholder="Year" 
-                    value={editBudgetData.year} 
-                    onChange={(e)=>setEditBudgetData(v=>({ ...v, year:e.target.value }))} 
-                    required 
+                  <input
+                    className="border border-gray-300 dark:border-slate-600 rounded-md px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 w-20 dark:bg-slate-700 dark:text-white"
+                    type="number"
+                    placeholder="Year"
+                    value={editBudgetData.year}
+                    onChange={(e) => setEditBudgetData(v => ({ ...v, year: e.target.value }))}
+                    required
                   />
-                  <input 
-                    className="border border-gray-300 dark:border-slate-600 rounded-md px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 w-24 dark:bg-slate-700 dark:text-white" 
-                    type="number" 
-                    step="0.01" 
-                    placeholder="Amount" 
-                    value={editBudgetData.amount} 
-                    onChange={(e)=>setEditBudgetData(v=>({ ...v, amount:e.target.value }))} 
-                    required 
+                  <input
+                    className="border border-gray-300 dark:border-slate-600 rounded-md px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 w-24 dark:bg-slate-700 dark:text-white"
+                    type="number"
+                    step="0.01"
+                    placeholder="Amount"
+                    value={editBudgetData.amount}
+                    onChange={(e) => setEditBudgetData(v => ({ ...v, amount: e.target.value }))}
+                    required
                   />
                   <div className="flex gap-1">
-                    <button 
-                      className="px-2 py-1 text-xs rounded bg-green-600 text-white hover:bg-green-700" 
+                    <button
+                      className="px-2 py-1 text-xs rounded bg-green-600 text-white hover:bg-green-700"
                       onClick={saveEditBudget}
                     >
                       Save
                     </button>
-                    <button 
-                      className="px-2 py-1 text-xs rounded bg-gray-600 text-white hover:bg-gray-700" 
+                    <button
+                      className="px-2 py-1 text-xs rounded bg-gray-600 text-white hover:bg-gray-700"
                       onClick={cancelEditBudget}
                     >
                       Cancel
@@ -339,14 +354,14 @@ const DELETE_TRANSACTION_LEGACY = async () => { /* replaced by modal-based delet
                   <div className="flex items-center gap-2">
                     <span className="font-medium">${Number(b.amount).toFixed(2)}</span>
                     <div className="flex gap-1">
-                      <button 
-                        className="px-2 py-1 text-xs rounded bg-blue-600 text-white hover:bg-blue-700" 
+                      <button
+                        className="px-2 py-1 text-xs rounded bg-blue-600 text-white hover:bg-blue-700"
                         onClick={() => startEditBudget(b)}
                       >
                         Edit
                       </button>
-                      <button 
-                        className="px-2 py-1 text-xs rounded bg-red-600 text-white hover:bg-red-700" 
+                      <button
+                        className="px-2 py-1 text-xs rounded bg-red-600 text-white hover:bg-red-700"
                         onClick={() => setDeleteBudgetId(b.id)}
                       >
                         Delete
@@ -366,7 +381,7 @@ const DELETE_TRANSACTION_LEGACY = async () => { /* replaced by modal-based delet
         <div className="inline-flex w-full max-w-sm rounded-2xl border border-[var(--border)] bg-[var(--muted)] p-1">
           <button
             type="button"
-            onClick={()=>setTxMode('expense')}
+            onClick={() => setTxMode('expense')}
             className={cn(
               'flex-1 rounded-xl px-4 py-2 text-sm transition-colors',
               txMode === 'expense'
@@ -378,7 +393,7 @@ const DELETE_TRANSACTION_LEGACY = async () => { /* replaced by modal-based delet
           </button>
           <button
             type="button"
-            onClick={()=>setTxMode('income')}
+            onClick={() => setTxMode('income')}
             className={cn(
               'flex-1 rounded-xl px-4 py-2 text-sm transition-colors',
               txMode === 'income'
@@ -389,43 +404,63 @@ const DELETE_TRANSACTION_LEGACY = async () => { /* replaced by modal-based delet
             Income
           </button>
         </div>
-        <form className="space-y-3 mt-4" onSubmit={(e)=>{ if(txMode==='expense') { addExpense(e); } else { addIncome(e); } }}>
+        <form className="space-y-3 mt-4" onSubmit={(e) => { if (txMode === 'expense') { addExpense(e); } else { addIncome(e); } }}>
           <div className="space-y-4">
             <label className="text-sm font-medium text-gray-700 dark:text-gray-200 block mb-2">Description</label>
-            <Input className="w-full" placeholder="Enter description" value={txMode==='expense' ? expense.description : income.description} onChange={(e)=> txMode==='expense' ? setExpense(v=>({ ...v, description:e.target.value })) : setIncome(v=>({ ...v, description:e.target.value }))} required />
+            <Input className="w-full" placeholder="Enter description" value={txMode === 'expense' ? expense.description : income.description} onChange={(e) => txMode === 'expense' ? setExpense(v => ({ ...v, description: e.target.value })) : setIncome(v => ({ ...v, description: e.target.value }))} required />
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="space-y-4">
               <label className="text-sm font-medium text-gray-700 dark:text-gray-200 block mb-2">Amount</label>
-              <Input type="number" step="0.01" placeholder="0.00" value={txMode==='expense' ? expense.amount : income.amount} onChange={(e)=> txMode==='expense' ? setExpense(v=>({ ...v, amount:e.target.value })) : setIncome(v=>({ ...v, amount:e.target.value }))} required />
+              <Input type="number" step="0.01" placeholder="0.00" value={txMode === 'expense' ? expense.amount : income.amount} onChange={(e) => txMode === 'expense' ? setExpense(v => ({ ...v, amount: e.target.value })) : setIncome(v => ({ ...v, amount: e.target.value }))} required />
             </div>
             <div className="space-y-4">
               <label className="text-sm font-medium text-gray-700 dark:text-gray-200 block mb-2">Date</label>
-              <DateInput value={txMode==='expense' ? expense.date : income.date} onChange={(e)=> txMode==='expense' ? setExpense(v=>({ ...v, date:e.target.value })) : setIncome(v=>({ ...v, date:e.target.value }))} required placeholder="Date" />
+              <DateInput value={txMode === 'expense' ? expense.date : income.date} onChange={(e) => txMode === 'expense' ? setExpense(v => ({ ...v, date: e.target.value })) : setIncome(v => ({ ...v, date: e.target.value }))} required placeholder="Date" />
             </div>
           </div>
           <div className="space-y-4">
             <label className="text-sm font-medium text-gray-700 dark:text-gray-200 block mb-2">Category</label>
-            <Select value={txMode==='expense' ? expense.categoryId : income.categoryId} onChange={(e)=> txMode==='expense' ? setExpense(v=>({ ...v, categoryId:e.target.value })) : setIncome(v=>({ ...v, categoryId:e.target.value }))} required>
+            <Select value={txMode === 'expense' ? expense.categoryId : income.categoryId} onChange={(e) => txMode === 'expense' ? setExpense(v => ({ ...v, categoryId: e.target.value })) : setIncome(v => ({ ...v, categoryId: e.target.value }))} required>
               <option value="">Select category</option>
-              {(txMode==='expense' ? categories.filter(c=>c.type==='expense') : categories.filter(c=>c.type==='income')).map(c=> (
+              {(txMode === 'expense' ? expenseCats : incomeCats).map(c => (
                 <option key={c.id} value={c.id}>{c.name}</option>
               ))}
             </Select>
           </div>
-          {txMode==='expense' && (
+          {txMode === 'income' && (
+            <>
+              <div className="space-y-4">
+                <label className="text-sm font-medium text-gray-700 dark:text-gray-200 block mb-2">Method</label>
+                <Select value={income.incomeMethod} onChange={(e) => setIncome(v => ({ ...v, incomeMethod: e.target.value }))}>
+                  <option value="cash">Cash</option>
+                  <option value="account">Account</option>
+                </Select>
+              </div>
+              {income.incomeMethod === 'account' && (
+                <div className="space-y-4">
+                  <label className="text-sm font-medium text-gray-700 dark:text-gray-200 block mb-2">Account</label>
+                  <Select value={income.accountId} onChange={(e) => setIncome(v => ({ ...v, accountId: e.target.value }))} required>
+                    <option value="">Select Account</option>
+                    {accounts.map(acc => <option key={acc.id} value={acc.id}>{acc.name}</option>)}
+                  </Select>
+                </div>
+              )}
+            </>
+          )}
+          {txMode === 'expense' && (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="space-y-4">
                 <label className="text-sm font-medium text-gray-700 dark:text-gray-200 block mb-2">Payment</label>
-                <Select value={expense.method} onChange={(e)=>setExpense(v=>({ ...v, method:e.target.value }))}>
+                <Select value={expense.method} onChange={(e) => setExpense(v => ({ ...v, method: e.target.value }))}>
                   <option value="cash">Cash</option>
                   <option value="card">Credit Card</option>
                 </Select>
               </div>
-              {expense.method==='card' && (
+              {expense.method === 'card' && (
                 <div className="space-y-4">
                   <label className="text-sm font-medium text-gray-700 dark:text-gray-200 block mb-2">Card</label>
-                  <Select value={expense.cardId} onChange={(e)=>setExpense(v=>({ ...v, cardId:e.target.value }))} required>
+                  <Select value={expense.cardId} onChange={(e) => setExpense(v => ({ ...v, cardId: e.target.value }))} required>
                     <option value="">Select Card</option>
                     {cards.map(card => <option key={card.id} value={card.id}>{card.name}</option>)}
                   </Select>
@@ -433,7 +468,7 @@ const DELETE_TRANSACTION_LEGACY = async () => { /* replaced by modal-based delet
               )}
             </div>
           )}
-          <Button type="submit" variant="primary" className="w-full">{txMode==='expense' ? 'Add Expense' : 'Add Income'}</Button>
+          <Button type="submit" variant="primary" className="w-full">{txMode === 'expense' ? 'Add Expense' : 'Add Income'}</Button>
         </form>
       </div>
 
@@ -443,21 +478,21 @@ const DELETE_TRANSACTION_LEGACY = async () => { /* replaced by modal-based delet
             <h3 className="text-lg font-semibold">Transaction History</h3>
             <div className="flex items-center gap-4 flex-wrap">
               <label className="text-sm text-gray-600 dark:text-gray-300">Tipo:</label>
-              <Select value={typeFilter} onChange={(e)=>setTypeFilter(e.target.value)}>
+              <Select value={typeFilter} onChange={(e) => setTypeFilter(e.target.value)}>
                 <option value="all">All</option>
                 <option value="expense">Expenses</option>
                 <option value="income">Income</option>
               </Select>
               <label className="text-sm text-gray-600 dark:text-gray-300">Payment:</label>
-              <Select value={paymentFilter} onChange={(e)=>setPaymentFilter(e.target.value)}>
+              <Select value={paymentFilter} onChange={(e) => setPaymentFilter(e.target.value)}>
                 <option value="all">All</option>
                 <option value="cash">Cash</option>
                 <option value="card">Credit Card</option>
               </Select>
               <label className="text-sm text-gray-600 dark:text-gray-300">Category:</label>
-              <Select value={categoryFilter} onChange={(e)=>setCategoryFilter(e.target.value)}>
+              <Select value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)}>
                 <option value="">All</option>
-                {categories.filter(c=> typeFilter==='all' || c.type===typeFilter).map(c=> (
+                {categories.filter(c => typeFilter === 'all' || c.type === typeFilter).map(c => (
                   <option key={c.id} value={c.id}>{c.name}</option>
                 ))}
               </Select>
@@ -466,20 +501,20 @@ const DELETE_TRANSACTION_LEGACY = async () => { /* replaced by modal-based delet
           <div className="flex items-center gap-3 flex-wrap">
             <div className="flex flex-col">
               <span className="text-sm text-gray-600 dark:text-gray-300">Month</span>
-              <Select value={monthFilter} onChange={(e)=>setMonthFilter(e.target.value)} disabled={showYearAll}>
-                {Array.from({length:12},(_,i)=> {
-                  const val = String(i+1).padStart(2,'0');
-                  const label = new Date(0,i).toLocaleString('es', { month: 'long' });
+              <Select value={monthFilter} onChange={(e) => setMonthFilter(e.target.value)} disabled={showYearAll}>
+                {Array.from({ length: 12 }, (_, i) => {
+                  const val = String(i + 1).padStart(2, '0');
+                  const label = new Date(0, i).toLocaleString('es', { month: 'long' });
                   return <option key={val} value={val}>{label}</option>;
                 })}
               </Select>
             </div>
             <div className="flex flex-col">
               <span className="text-sm text-gray-600 dark:text-gray-300">Year</span>
-              <input className="border border-gray-300 dark:border-slate-600 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 w-28 dark:bg-slate-700 dark:text-white" type="number" value={yearFilter} onChange={(e)=>setYearFilter(e.target.value)} />
+              <input className="border border-gray-300 dark:border-slate-600 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 w-28 dark:bg-slate-700 dark:text-white" type="number" value={yearFilter} onChange={(e) => setYearFilter(e.target.value)} />
             </div>
             <label className="inline-flex items-center gap-2 mt-5 sm:mt-0">
-              <input type="checkbox" className="rounded dark:bg-slate-700 dark:text-white" checked={showYearAll} onChange={(e)=>setShowYearAll(e.target.checked)} />
+              <input type="checkbox" className="rounded dark:bg-slate-700 dark:text-white" checked={showYearAll} onChange={(e) => setShowYearAll(e.target.checked)} />
               <span className="text-sm text-gray-700 dark:text-gray-200">Mostrar todo el año</span>
             </label>
           </div>
@@ -503,21 +538,21 @@ const DELETE_TRANSACTION_LEGACY = async () => { /* replaced by modal-based delet
                 </tr>
               </thead>
               <tbody>
-              {filtered.map(t => (
-                <tr key={t.id}>
-                  <td className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${t.type==='expense' ? 'bg-rose-100 dark:bg-rose-900/30 text-rose-700 dark:text-rose-300' : 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300'}`}>{t.type}</td>
-                  <td className="max-w-[180px] truncate" title={t.description}>{t.description}</td>
-                  <td className="whitespace-nowrap">{t.Category?.name || ''}</td>
-                  <td className={`text-sm ${t.type==='expense' ? 'text-rose-600' : 'text-emerald-600'} whitespace-nowrap`}>${parseFloat(t.amount ?? 0).toFixed(2)}</td>
-                  <td className="whitespace-nowrap">{t.date}</td>
-                  <td className="whitespace-nowrap">{t.paymentMethod==='card' ? (t.Card?.name || 'Card') : 'Cash'}</td>
-                  <td className="w-40">
-                     <div className="flex items-center gap-3">
-                       <button
+                {filtered.map(t => (
+                  <tr key={t.id}>
+                    <td className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${t.type === 'expense' ? 'bg-rose-100 dark:bg-rose-900/30 text-rose-700 dark:text-rose-300' : 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300'}`}>{t.type}</td>
+                    <td className="max-w-[180px] truncate" title={t.description}>{t.description}</td>
+                    <td className="whitespace-nowrap">{t.Category?.name || ''}</td>
+                    <td className={`text-sm ${t.type === 'expense' ? 'text-rose-600' : 'text-emerald-600'} whitespace-nowrap`}>${parseFloat(t.amount ?? 0).toFixed(2)}</td>
+                    <td className="whitespace-nowrap">{t.date}</td>
+                    <td className="whitespace-nowrap">{t.type === 'income' ? (t.Account?.name || 'Cash') : (t.paymentMethod === 'card' ? (t.Card?.name || 'Card') : 'Cash')}</td>
+                    <td className="w-40">
+                      <div className="flex items-center gap-3">
+                        <button
                           className="p-2 rounded-md hover:bg-gray-100 dark:hover:bg-slate-700 dark:bg-slate-700 text-gray-800 dark:text-gray-100"
                           aria-label="Edit"
                           title="Edit"
-                          onClick={()=>startEditTx(t)}
+                          onClick={() => startEditTx(t)}
                         >
                           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                             <path d="M12 20h9" />
@@ -528,7 +563,7 @@ const DELETE_TRANSACTION_LEGACY = async () => { /* replaced by modal-based delet
                           className="p-2 rounded-md hover:bg-rose-50 text-rose-600"
                           aria-label="Delete"
                           title="Delete"
-                          onClick={()=>setDeleteTargetId(t.id)}
+                          onClick={() => setDeleteTargetId(t.id)}
                         >
                           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                             <path d="M3 6h18" />
@@ -538,10 +573,10 @@ const DELETE_TRANSACTION_LEGACY = async () => { /* replaced by modal-based delet
                             <path d="M15 6V4a2 2 0 0 0-2-2h-2a2 2 0 0 0-2 2v2" />
                           </svg>
                         </button>
-                     </div>
-                   </td>
-                </tr>
-              ))}
+                      </div>
+                    </td>
+                  </tr>
+                ))}
               </tbody>
             </table>
           )}
@@ -549,7 +584,7 @@ const DELETE_TRANSACTION_LEGACY = async () => { /* replaced by modal-based delet
       </div>
       <EditTransactionDialog
         open={editOpen}
-        onOpenChange={(o)=>{ if(!o) cancelEditTx(); }}
+        onOpenChange={(o) => { if (!o) cancelEditTx(); }}
         initial={editTxData}
         expenseCats={expenseCats}
         incomeCats={incomeCats}

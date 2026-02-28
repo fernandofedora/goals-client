@@ -143,7 +143,7 @@ export default function Settings() {
             <h3 className="text-lg font-semibold">Categories</h3>
             <p className="text-xs text-gray-500 dark:text-gray-400">Manage your expense and income categories</p>
           </div>
-          <Button variant="secondary" onClick={()=>setShowCatForm(v=>!v)}>+ Add Category</Button>
+          {/* <Button variant="secondary" onClick={()=>setShowCatForm(v=>!v)}>+ Add Category</Button> */}
         </div>
 
         {showCatForm && (
@@ -162,7 +162,10 @@ export default function Settings() {
 
         {/* Expense categories */}
         <div className="mt-6">
-          <h4 className="text-sm font-medium text-gray-700 dark:text-gray-200">Expense Categories</h4>
+          <div className="flex items-center justify-between">
+            <h4 className="text-sm font-medium text-gray-700 dark:text-gray-200">Expense Categories</h4>
+            <Button variant="outline" size="sm" onClick={() => { setCatForm({ name: '', type: 'expense', color: '#3b82f6' }); setShowCatForm(true); }}>+ Add Expense</Button>
+          </div>
           <ul className="divide-y divide-gray-100 dark:divide-slate-700 mt-2">
             {expenseCats.map(cat => (
               <li key={cat.id} className="flex items-center justify-between py-3">
@@ -205,7 +208,10 @@ export default function Settings() {
 
         {/* Income categories */}
         <div className="mt-6">
-          <h4 className="text-sm font-medium text-gray-700 dark:text-gray-200">Income Categories</h4>
+          <div className="flex items-center justify-between">
+            <h4 className="text-sm font-medium text-gray-700 dark:text-gray-200">Income Categories</h4>
+            <Button variant="outline" size="sm" onClick={() => { setCatForm({ name: '', type: 'income', color: '#16a34a' }); setShowCatForm(true); }}>+ Add Income</Button>
+          </div>
           <ul className="divide-y divide-gray-100 dark:divide-slate-700 mt-2">
             {incomeCats.map(cat => (
               <li key={cat.id} className="flex items-center justify-between py-3">
