@@ -283,17 +283,17 @@ export default function Dashboard() {
               { label: 'Balance', value: summary.totals.income - summary.totals.expense, color: 'indigo' },
               { label: 'Transactions', value: summary.totals.transactions, color: 'amber', isCount: true },
             ].map(({ label, value, color, isCount }) => (
-              <div key={label} className={`rounded-xl p-4 bg-${color}-50 dark:bg-${color}-950/30 border border-${color}-100 dark:border-${color}-900/40`}>
+              <div key={label} className={`rounded-xl p-4 bg-${color}-50 dark:bg-slate-800 border border-${color}-100 dark:border-slate-700/60`}>
                 <p className={`text-xs font-medium text-${color}-600 dark:text-${color}-400 uppercase tracking-widest mb-1`}>{label}</p>
-                <p className={`text-2xl font-bold text-${color}-700 dark:text-${color}-300 tabular-nums`}>
+                <p className={`text-2xl font-bold text-${color}-700 dark:text-slate-100 tabular-nums`}>
                   {isCount ? value : `$${Number(value).toFixed(2)}`}
                 </p>
               </div>
             ))}
             {period !== 'all' && allTimeSummary && (
-              <div className="rounded-xl p-4 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700">
-                <p className="text-xs font-medium text-slate-500 uppercase tracking-widest mb-1">All-Time Balance</p>
-                <p className="text-2xl font-bold text-slate-700 dark:text-slate-200 tabular-nums">
+              <div className="rounded-xl p-4 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700/60">
+                <p className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-1">All-Time Balance</p>
+                <p className="text-2xl font-bold text-slate-700 dark:text-slate-100 tabular-nums">
                   ${(allTimeSummary.totals.income - allTimeSummary.totals.expense).toFixed(2)}
                 </p>
               </div>
