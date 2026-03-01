@@ -24,6 +24,13 @@ body {
   --secondary-foreground: #ffffff;
   --destructive: #e11d48;
   --destructive-foreground: #ffffff;
+
+  /* shadcn chart palette */
+  --chart-1: #6366f1;
+  --chart-2: #10b981;
+  --chart-3: #f59e0b;
+  --chart-4: #f43f5e;
+  --chart-5: #0ea5e9;
 }
 
 [data-theme="dark"] {
@@ -40,4 +47,11 @@ body {
   --secondary-foreground: #0b0f19;
   --destructive: #ef4444;
   --destructive-foreground: #0b0f19;
+
+  /* shadcn chart palette (dark) */
+  --chart-1: #818cf8;
+  --chart-2: #34d399;
+  --chart-3: #fbbf24;
+  --chart-4: #fb7185;
+  --chart-5: #38bdf8;
 }

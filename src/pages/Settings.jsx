@@ -7,18 +7,21 @@ import Select from '../components/ui/select';
 export default function Settings() {
   const [categories, setCategories] = useState([]);
   const [cards, setCards] = useState([]);
+  const [accounts, setAccounts] = useState([]);
   const [catForm, setCatForm] = useState({ name:'', type:'expense', color:'#3b82f6' });
   const [cardForm, setCardForm] = useState({ name:'', color:'#0ea5e9', last4:'' });
+  const [accountForm, setAccountForm] = useState({ name: '', color: '#a3e635', initialBalance: '' });
   const [showCatForm, setShowCatForm] = useState(false);
   const [showCardForm, setShowCardForm] = useState(false);
+  const [showAccountForm, setShowAccountForm] = useState(false);
   const [editingCatId, setEditingCatId] = useState(null);
   const [editCatForm, setEditCatForm] = useState({ name:'', type:'expense', color:'#3b82f6' });
   const [editingCardId, setEditingCardId] = useState(null);
   const [editCardForm, setEditCardForm] = useState({ name:'', color:'#0ea5e9', last4:'' });
 
   const load = async () => {
-    const [catRes, cardRes] = await Promise.all([api.get('/categories'), api.get('/cards')]);
-    setCategories(catRes.data); setCards(cardRes.data);
+    const [catRes, cardRes, accRes] = await Promise.all([api.get('/categories'), api.get('/cards'), api.get('/accounts')]);
+    setCategories(catRes.data); setCards(cardRes.data); setAccounts(accRes.data);
   };
   useEffect(()=>{ load(); },[]);
 
@@ -35,6 +38,14 @@ export default function Settings() {
     await api.post('/cards', cardForm);
     setCardForm({ name:'', color:'#0ea5e9', last4:'' });
     setShowCardForm(false);
+    load();
+  };
+
+  const addAccount = async (e) => {
+    e.preventDefault();
+    await api.post('/accounts', accountForm);
+    setAccountForm({ name: '', color: '#a3e635', initialBalance: '' });
+    setShowAccountForm(false);
     load();
   };
 
@@ -90,6 +101,41 @@ export default function Settings() {
         </div>
       </div>
 
+      {/* Accounts */}
+      <div className="bg-white dark:bg-slate-800 rounded-xl shadow p-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className="text-lg font-semibold">Accounts</h3>
+            <p className="text-xs text-gray-500 dark:text-gray-400">Manage your bank accounts</p>
+          </div>
+          <Button variant="secondary" onClick={() => setShowAccountForm(v => !v)}>+ Add Account</Button>
+        </div>
+        {showAccountForm && (
+          <form className="mt-4" onSubmit={addAccount}>
+          <div className="flex gap-3 flex-wrap items-center">
+            <Input placeholder="Account Name" value={accountForm.name} onChange={(e) => setAccountForm(v => ({ ...v, name: e.target.value }))} required />
+            <Input className="w-8 h-8 p-0 cursor-pointer bg-transparent [appearance:auto]" type="color" value={accountForm.color} onChange={(e) => setAccountForm(v => ({ ...v, color: e.target.value }))} />
+            <Input type="number" placeholder="Initial Balance" value={accountForm.initialBalance} onChange={(e) => setAccountForm(v => ({ ...v, initialBalance: e.target.value }))} />
+            <Button type="submit">Save</Button>
+          </div>
+        </form>
+        )}
+
+        <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+          {accounts.map(account => (
+            <div key={account.id} className="relative rounded-xl p-4 text-white overflow-hidden" style={{ background: account.color }}>
+               <div className="relative flex items-center justify-between">
+                <div>
+                  <div className="text-lg font-semibold">{account.name}</div>
+                  <div className="text-sm">Initial: ${account.initialBalance}</div>
+                </div>
+                {/* Edit/Delete buttons here */}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
       {/* Categories card */}
       <div className="bg-white dark:bg-slate-800 rounded-xl shadow p-6">
         <div className="flex items-center justify-between">
@@ -97,7 +143,7 @@ export default function Settings() {
             <h3 className="text-lg font-semibold">Categories</h3>
             <p className="text-xs text-gray-500 dark:text-gray-400">Manage your expense and income categories</p>
           </div>
-          <Button variant="secondary" onClick={()=>setShowCatForm(v=>!v)}>+ Add Category</Button>
+          {/* <Button variant="secondary" onClick={()=>setShowCatForm(v=>!v)}>+ Add Category</Button> */}
         </div>
 
         {showCatForm && (
@@ -116,7 +162,10 @@ export default function Settings() {
 
         {/* Expense categories */}
         <div className="mt-6">
-          <h4 className="text-sm font-medium text-gray-700 dark:text-gray-200">Expense Categories</h4>
+          <div className="flex items-center justify-between">
+            <h4 className="text-sm font-medium text-gray-700 dark:text-gray-200">Expense Categories</h4>
+            <Button variant="outline" size="sm" onClick={() => { setCatForm({ name: '', type: 'expense', color: '#3b82f6' }); setShowCatForm(true); }}>+ Add Expense</Button>
+          </div>
           <ul className="divide-y divide-gray-100 dark:divide-slate-700 mt-2">
             {expenseCats.map(cat => (
               <li key={cat.id} className="flex items-center justify-between py-3">
@@ -159,7 +208,10 @@ export default function Settings() {
 
         {/* Income categories */}
         <div className="mt-6">
-          <h4 className="text-sm font-medium text-gray-700 dark:text-gray-200">Income Categories</h4>
+          <div className="flex items-center justify-between">
+            <h4 className="text-sm font-medium text-gray-700 dark:text-gray-200">Income Categories</h4>
+            <Button variant="outline" size="sm" onClick={() => { setCatForm({ name: '', type: 'income', color: '#16a34a' }); setShowCatForm(true); }}>+ Add Income</Button>
+          </div>
           <ul className="divide-y divide-gray-100 dark:divide-slate-700 mt-2">
             {incomeCats.map(cat => (
               <li key={cat.id} className="flex items-center justify-between py-3">
