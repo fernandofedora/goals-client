@@ -112,6 +112,8 @@ export default function SavingPlan() {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
 
+  const [initialLoad, setInitialLoad] = useState(true);
+
   const currentPlan = useMemo(() => plans.find(p => String(p.id) === String(selectedPlanId)), [plans, selectedPlanId]);
 
   // auto-dismiss message
@@ -124,19 +126,25 @@ export default function SavingPlan() {
   // ── async-parallel: load categories + plans together ─────────────────────
   useEffect(() => {
     (async () => {
-      const [catsRes, plansRes] = await Promise.all([
-        api.get('/categories'),
-        api.get('/savings/plans'),
-      ]);
-      setCategories(catsRes.data || []);
-      const p = plansRes.data || [];
-      setPlans(p);
-      if (p.length > 0) {
-        const savedId = localStorage.getItem('savingPlan.selectedPlanId');
-        const chosen = p.find(x => String(x.id) === String(savedId)) || p[0];
-        setSelectedPlanId(String(chosen.id));
-        setPlanForm({ name: chosen.name || '', targetAmount: String(chosen.targetAmount || ''), linkedCategoryId: String(chosen.linkedCategoryId || '') });
-        setPrevLinkedId(String(chosen.linkedCategoryId || ''));
+      try {
+        const [catsRes, plansRes] = await Promise.all([
+          api.get('/categories'),
+          api.get('/savings/plans'),
+        ]);
+        setCategories(catsRes.data || []);
+        const p = plansRes.data || [];
+        setPlans(p);
+        if (p.length > 0) {
+          const savedId = localStorage.getItem('savingPlan.selectedPlanId');
+          const chosen = p.find(x => String(x.id) === String(savedId)) || p[0];
+          setSelectedPlanId(String(chosen.id));
+          setPlanForm({ name: chosen.name || '', targetAmount: String(chosen.targetAmount || ''), linkedCategoryId: String(chosen.linkedCategoryId || '') });
+          setPrevLinkedId(String(chosen.linkedCategoryId || ''));
+        }
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setInitialLoad(false);
       }
     })();
   }, []);
@@ -349,7 +357,7 @@ export default function SavingPlan() {
       )}
 
       {/* ── Plan tabs ─────────────────────────────────────────────────────── */}
-      {plans.length > 0 && (
+      {!initialLoad && plans.length > 0 && (
         <div className="flex gap-2 flex-wrap">
           {plans.map(p => (
             <button
@@ -369,8 +377,16 @@ export default function SavingPlan() {
         </div>
       )}
 
+      {/* ── Loading state ───────────────────────────────────────────────────── */}
+      {initialLoad && (
+        <div className="flex flex-col items-center justify-center py-32 gap-4">
+          <div className="w-8 h-8 rounded-full border-[3px] border-indigo-200 border-t-indigo-600 animate-spin" />
+          <p className="text-sm font-medium text-gray-500 animate-pulse">Cargando planes de ahorro...</p>
+        </div>
+      )}
+
       {/* ── Empty state ───────────────────────────────────────────────────── */}
-      {plans.length === 0 && !showNewPlan && (
+      {!initialLoad && plans.length === 0 && !showNewPlan && (
         <div className="flex flex-col items-center justify-center py-20 gap-3 text-center">
           <span className="text-5xl opacity-40">🎯</span>
           <h3 className="text-base font-semibold text-gray-600 dark:text-gray-300">No savings plans yet</h3>
@@ -380,7 +396,7 @@ export default function SavingPlan() {
       )}
 
       {/* ── Selected plan content ─────────────────────────────────────────── */}
-      {currentPlan && (
+      {!initialLoad && currentPlan && (
         <>
           {/* Progress hero */}
           <div className="bg-white dark:bg-slate-900 rounded-2xl border border-[var(--border)] shadow-sm overflow-hidden">

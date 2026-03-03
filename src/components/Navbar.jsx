@@ -101,6 +101,20 @@ export default function Navbar({ theme, onToggleTheme }) {
               >
                 Accounts
               </NavLink>
+              <NavLink
+                to="/plans/scheduled-payments"
+                onClick={() => { onItemClick?.(); setIsPlansOpen(false); }}
+                className={({ isActive }) =>
+                  cn(
+                    'block px-3 py-1.5 rounded-md transition-colors',
+                    isActive
+                      ? 'bg-[var(--muted)] text-[var(--foreground)] font-semibold'
+                      : 'text-[var(--muted-foreground)] hover:bg-[var(--muted)] hover:text-[var(--foreground)]'
+                  )
+                }
+              >
+                Scheduled Payments
+              </NavLink>
             </nav>
           </div>
         )}
@@ -134,6 +148,20 @@ export default function Navbar({ theme, onToggleTheme }) {
               }
             >
               Accounts
+            </NavLink>
+            <NavLink
+              to="/plans/scheduled-payments"
+              onClick={onItemClick}
+              className={({ isActive }) =>
+                cn(
+                  'inline-flex items-center gap-2 px-3 py-1 rounded-lg transition-colors w-full justify-start',
+                  isActive
+                    ? 'bg-[var(--muted)] text-[var(--foreground)] font-semibold shadow-sm'
+                    : 'text-[var(--muted-foreground)] hover:bg-[var(--muted)] hover:text-[var(--foreground)]'
+                )
+              }
+            >
+              Scheduled Payments
             </NavLink>
           </div>
         )}
