@@ -11,6 +11,7 @@ import Settings from './pages/Settings';
 import SavingPlan from './pages/SavingPlan';
 import Accounts from './pages/Accounts';
 import Profile from './pages/Profile';
+import ScheduledPayments from './pages/ScheduledPayments';
 import useTheme from './hooks/useTheme';
 
 function ProtectedRoute({ children }) {
@@ -43,6 +44,7 @@ export default function App() {
           <Route path="/plans" element={<Navigate to="/plans/savings" replace />} />
           <Route path="/plans/savings" element={<ProtectedRoute><SavingPlan /></ProtectedRoute>} />
           <Route path="/plans/accounts" element={<ProtectedRoute><Accounts /></ProtectedRoute>} />
+          <Route path="/plans/scheduled-payments" element={<ProtectedRoute><ScheduledPayments /></ProtectedRoute>} />
           <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
           <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
           <Route path="*" element={<Navigate to="/" replace />} />
