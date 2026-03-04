@@ -108,7 +108,6 @@ export default function SavingPlan() {
   const [confirm, setConfirm] = useState({ open: false, id: null });
   const [confirmPlan, setConfirmPlan] = useState({ open: false });
   const [showNewPlan, setShowNewPlan] = useState(false);
-  const [prevLinkedId, setPrevLinkedId] = useState('');
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
 
@@ -139,7 +138,6 @@ export default function SavingPlan() {
           const chosen = p.find(x => String(x.id) === String(savedId)) || p[0];
           setSelectedPlanId(String(chosen.id));
           setPlanForm({ name: chosen.name || '', targetAmount: String(chosen.targetAmount || ''), linkedCategoryId: String(chosen.linkedCategoryId || '') });
-          setPrevLinkedId(String(chosen.linkedCategoryId || ''));
         }
       } catch (err) {
         console.error(err);
@@ -163,25 +161,9 @@ export default function SavingPlan() {
   useEffect(() => {
     if (!currentPlan) return;
     setPlanForm({ name: currentPlan.name || '', targetAmount: String(currentPlan.targetAmount || ''), linkedCategoryId: String(currentPlan.linkedCategoryId || '') });
-    setPrevLinkedId(String(currentPlan.linkedCategoryId || ''));
   }, [currentPlan]);
 
-  // auto-save when linked category changes
-  useEffect(() => {
-    const run = async () => {
-      if (!selectedPlanId) return;
-      const cur = String(planForm.linkedCategoryId || '');
-      if (cur === String(prevLinkedId || '')) return;
-      try {
-        const body = { name: planForm.name.trim(), targetAmount: Number(planForm.targetAmount), linkedCategoryId: cur ? Number(cur) : null };
-        const res = await api.put(`/savings/plans/${selectedPlanId}`, body);
-        setPlans(prev => prev.map(p => String(p.id) === String(selectedPlanId) ? res.data : p));
-        setPrevLinkedId(cur);
-      } catch { }
-    };
-    run();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [planForm.linkedCategoryId, selectedPlanId]);
+
 
   const onPlanField = useCallback(e => setPlanForm(prev => ({ ...prev, [e.target.name]: e.target.value })), []);
   const onContrField = useCallback(e => setContrForm(prev => ({ ...prev, [e.target.name]: e.target.value })), []);
@@ -225,9 +207,14 @@ export default function SavingPlan() {
     try {
       setConfirmPlan({ open: false });
       await api.delete(`/savings/plans/${selectedPlanId}`);
-      setPlans(prev => prev.filter(p => String(p.id) !== String(selectedPlanId)));
-      setSelectedPlanId('');
-      setPlanForm({ name: '', targetAmount: '', linkedCategoryId: '' });
+      const updatedPlans = plans.filter(p => String(p.id) !== String(selectedPlanId));
+      setPlans(updatedPlans);
+      if (updatedPlans.length > 0) {
+        setSelectedPlanId(String(updatedPlans[0].id));
+      } else {
+        setSelectedPlanId('');
+        setPlanForm({ name: '', targetAmount: '', linkedCategoryId: '' });
+      }
       setSummary(null);
       setMessage({ type: 'success', text: 'Plan eliminado' });
     } catch {
@@ -320,8 +307,19 @@ export default function SavingPlan() {
           <p className="text-sm text-gray-400 mt-0.5">Track your savings goals and contributions</p>
         </div>
         <Button
-          variant="secondary"
-          onClick={() => { setShowNewPlan(v => !v); if (!showNewPlan) { setPlanForm({ name: '', targetAmount: '', linkedCategoryId: '' }); setSelectedPlanId(''); } }}
+          variant={showNewPlan ? 'outline' : 'secondary'}
+          onClick={() => {
+            if (showNewPlan) {
+              setShowNewPlan(false);
+              const savedId = localStorage.getItem('savingPlan.selectedPlanId');
+              const chosen = plans.find(x => String(x.id) === String(savedId)) || plans[0];
+              if (chosen) setSelectedPlanId(String(chosen.id));
+            } else {
+              setShowNewPlan(true);
+              setSelectedPlanId('');
+              setPlanForm({ name: '', targetAmount: '', linkedCategoryId: '' });
+            }
+          }}
         >
           {showNewPlan ? 'Cancel' : '+ New Plan'}
         </Button>
@@ -363,7 +361,10 @@ export default function SavingPlan() {
             <button
               key={p.id}
               type="button"
-              onClick={() => setSelectedPlanId(String(p.id))}
+              onClick={() => {
+                setSelectedPlanId(String(p.id));
+                setShowNewPlan(false);
+              }}
               className={cn(
                 'px-4 py-2 rounded-xl text-sm font-medium transition-all border',
                 String(p.id) === selectedPlanId
