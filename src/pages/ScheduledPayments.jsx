@@ -1,254 +1,480 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import api from '../api';
 import Button from '../components/ui/button';
-import * as Dialog from '@radix-ui/react-dialog';
 import Input from '../components/ui/input';
-import Label from '../components/ui/label';
 import Select from '../components/ui/select';
+import { cn } from '../lib/utils';
 
+// ── Period labels ─────────────────────────────────────────────────────────────
+const PERIOD_LABELS = {
+  daily: 'Daily',
+  weekly: 'Weekly',
+  'bi-weekly': 'Bi-weekly',
+  monthly: 'Monthly',
+  quarterly: 'Quarterly',
+  yearly: 'Yearly',
+};
+
+const PERIOD_ICONS = {
+  daily: '☀️',
+  weekly: '📅',
+  'bi-weekly': '🗓️',
+  monthly: '📆',
+  quarterly: '📊',
+  yearly: '🗃️',
+};
+
+const EMPTY_FORM = {
+  name: '',
+  type: 'expense',
+  amount: '',
+  period: 'monthly',
+  CardId: '',
+  CategoryId: '',
+  description: '',
+  startDate: '',
+  endDate: '',
+  specificDay: '',
+};
+
+// ── Field wrapper ─────────────────────────────────────────────────────────────
+function Field({ label, children }) {
+  return (
+    <div className="flex flex-col gap-1.5">
+      <label className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-widest">
+        {label}
+      </label>
+      {children}
+    </div>
+  );
+}
+
+// ── Modal ─────────────────────────────────────────────────────────────────────
+function Modal({ open, onClose, children }) {
+  if (!open) return null;
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center">
+      <div
+        className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+        onClick={onClose}
+      />
+      <div className="relative z-10 bg-white dark:bg-slate-900 rounded-2xl border border-[var(--border)] shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto mx-4">
+        {children}
+      </div>
+    </div>
+  );
+}
+
+// ── Main Component ────────────────────────────────────────────────────────────
 export default function ScheduledPayments() {
-  const [scheduledPayments, setScheduledPayments] = useState([]);
+  const [payments, setPayments] = useState([]);
   const [categories, setCategories] = useState([]);
   const [cards, setCards] = useState([]);
   const [isFormOpen, setIsFormOpen] = useState(false);
-  const [editingPayment, setEditingPayment] = useState(null);
+  const [editingId, setEditingId] = useState(null);
+  const [formState, setFormState] = useState(EMPTY_FORM);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+  const [deleteTargetId, setDeleteTargetId] = useState(null);
 
-  const [formState, setFormState] = useState({
-    name: '',
-    type: 'expense',
-    amount: '',
-    period: 'monthly',
-    account: '',
-    category: '',
-    description: '',
-    startDate: '',
-    endDate: '',
-    specificDay: '',
-  });
-
-  useEffect(() => {
-    fetchScheduledPayments();
-    fetchCategories();
-    fetchCards();
+  // ── Data loading (parallel) ───────────────────────────────────────────────
+  const load = useCallback(async () => {
+    try {
+      const [payRes, catRes, cardRes] = await Promise.all([
+        api.get('/scheduled-payments'),
+        api.get('/categories'),
+        api.get('/cards'),
+      ]);
+      setPayments(payRes.data);
+      setCategories(catRes.data);
+      setCards(cardRes.data);
+    } catch (err) {
+      console.error(err);
+      setError('Failed to load data');
+    }
   }, []);
 
-  const fetchScheduledPayments = async () => {
-    try {
-      const res = await api.get('/scheduled-payments');
-      setScheduledPayments(res.data);
-    } catch (err) {
-      console.error(err);
-    }
-  };
+  useEffect(() => { load(); }, [load]);
+  useEffect(() => { if (!success) return; const t = setTimeout(() => setSuccess(''), 4000); return () => clearTimeout(t); }, [success]);
+  useEffect(() => { if (!error) return; const t = setTimeout(() => setError(''), 6000); return () => clearTimeout(t); }, [error]);
 
-  const fetchCategories = async () => {
-    try {
-      const res = await api.get('/categories');
-      setCategories(res.data);
-    } catch (err) {
-      console.error(err);
-    }
-  };
-
-  const fetchCards = async () => {
-    try {
-      const res = await api.get('/cards');
-      setCards(res.data);
-    } catch (err) {
-      console.error(err);
-    }
-  };
-
+  // ── Form ──────────────────────────────────────────────────────────────────
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormState((prevState) => ({ ...prevState, [name]: value }));
+    setFormState(prev => ({ ...prev, [name]: value }));
+  };
+
+  const openNew = () => {
+    setEditingId(null);
+    setFormState(EMPTY_FORM);
+    setIsFormOpen(true);
+  };
+
+  const openEdit = (payment) => {
+    setEditingId(payment.id);
+    setFormState({
+      name: payment.name || '',
+      type: payment.type || 'expense',
+      amount: payment.amount || '',
+      period: payment.period || 'monthly',
+      // Safe access – backend returns Category and Card objects (Sequelize), not account
+      CategoryId: payment.CategoryId ?? payment.Category?.id ?? '',
+      CardId: payment.CardId ?? payment.Card?.id ?? '',
+      description: payment.description || '',
+      startDate: payment.startDate ? String(payment.startDate).slice(0, 10) : '',
+      endDate: payment.endDate ? String(payment.endDate).slice(0, 10) : '',
+      specificDay: payment.specificDay ?? '',
+    });
+    setIsFormOpen(true);
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      if (editingPayment) {
-        await api.put(`/scheduled-payments/${editingPayment._id}`, formState);
+      const payload = {
+        ...formState,
+        amount: parseFloat(formState.amount || 0),
+        CategoryId: formState.CategoryId || null,
+        CardId: formState.CardId || null,
+        specificDay: formState.specificDay ? parseInt(formState.specificDay) : null,
+      };
+      if (editingId) {
+        await api.put(`/scheduled-payments/${editingId}`, payload);
+        setSuccess('Payment updated');
       } else {
-        await api.post('/scheduled-payments', formState);
+        await api.post('/scheduled-payments', payload);
+        setSuccess('Payment created');
       }
-      fetchScheduledPayments();
       setIsFormOpen(false);
-      setEditingPayment(null);
+      setEditingId(null);
+      load();
     } catch (err) {
       console.error(err);
-    }
-  };
-
-  const openForm = (payment = null) => {
-    if (payment) {
-      setEditingPayment(payment);
-      setFormState({
-        name: payment.name,
-        type: payment.type,
-        amount: payment.amount,
-        period: payment.period,
-        account: payment.account._id,
-        category: payment.category._id,
-        description: payment.description || '',
-        startDate: new Date(payment.startDate).toISOString().split('T')[0],
-        endDate: payment.endDate ? new Date(payment.endDate).toISOString().split('T')[0] : '',
-        specificDay: payment.specificDay || '',
-      });
-    } else {
-      setEditingPayment(null);
-      setFormState({
-        name: '',
-        type: 'expense',
-        amount: '',
-        period: 'monthly',
-        account: '',
-        category: '',
-        description: '',
-        startDate: '',
-        endDate: '',
-        specificDay: '',
-      });
-    }
-    setIsFormOpen(true);
-  };
-
-  const handleDelete = async (id) => {
-    try {
-      await api.delete(`/scheduled-payments/${id}`);
-      fetchScheduledPayments();
-    } catch (err) {
-      console.error(err);
+      setError('Failed to save payment');
     }
   };
 
   const handleStatusChange = async (payment) => {
     try {
       const newStatus = payment.status === 'active' ? 'paused' : 'active';
-      await api.put(`/scheduled-payments/${payment._id}`, { status: newStatus });
-      fetchScheduledPayments();
+      await api.put(`/scheduled-payments/${payment.id}`, { status: newStatus });
+      setSuccess(`Payment ${newStatus === 'active' ? 'resumed' : 'paused'}`);
+      load();
     } catch (err) {
       console.error(err);
+      setError('Failed to update status');
     }
   };
 
-  return (
-    <div>
-      <div className="flex justify-between items-center mb-4">
-        <h1 className="text-2xl font-bold">Scheduled Payments</h1>
-        <Dialog.Root open={isFormOpen} onOpenChange={setIsFormOpen}>
-          <Dialog.Trigger asChild>
-            <Button onClick={() => openForm()}>Create Payment</Button>
-          </Dialog.Trigger>
-          <Dialog.Content>
-            <Dialog.Header>
-              <Dialog.Title>{editingPayment ? 'Edit' : 'Create'} Scheduled Payment</Dialog.Title>
-            </Dialog.Header>
-            <form onSubmit={handleSubmit}>
-              {/* Form fields */}
-              <div className="grid gap-4 py-4">
-                {/* Name */}
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="name" className="text-right">Name</Label>
-                  <Input id="name" name="name" value={formState.name} onChange={handleInputChange} className="col-span-3" required />
-                </div>
-                {/* Type */}
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="type" className="text-right">Type</Label>
-                  <select id="type" name="type" value={formState.type} onChange={handleInputChange} className="col-span-3">
-                    <option value="expense">Expense</option>
-                    <option value="income">Income</option>
-                  </select>
-                </div>
-                {/* Amount */}
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="amount" className="text-right">Amount</Label>
-                  <Input id="amount" name="amount" type="number" value={formState.amount} onChange={handleInputChange} className="col-span-3" required />
-                </div>
-                {/* Period */}
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="period" className="text-right">Period</Label>
-                  <select id="period" name="period" value={formState.period} onChange={handleInputChange} className="col-span-3">
-                    <option value="daily">Daily</option>
-                    <option value="weekly">Weekly</option>
-                    <option value="bi-weekly">Bi-weekly</option>
-                    <option value="monthly">Monthly</option>
-                    <option value="quarterly">Quarterly</option>
-                    <option value="yearly">Yearly</option>
-                  </select>
-                </div>
-                {/* Account */}
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="account" className="text-right">Account</Label>
-                  <select id="account" name="account" value={formState.account} onChange={handleInputChange} className="col-span-3" required>
-                    <option value="">Select Account</option>
-                    {cards.map(card => <option key={card._id} value={card._id}>{card.name}</option>)}
-                  </select>
-                </div>
-                {/* Category */}
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="category" className="text-right">Category</Label>
-                  <select id="category" name="category" value={formState.category} onChange={handleInputChange} className="col-span-3" required>
-                    <option value="">Select Category</option>
-                    {categories.map(cat => <option key={cat._id} value={cat._id}>{cat.name}</option>)}
-                  </select>
-                </div>
-                {/* Description */}
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="description" className="text-right">Description</Label>
-                  <Input id="description" name="description" value={formState.description} onChange={handleInputChange} className="col-span-3" />
-                </div>
-                {/* Start Date */}
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="startDate" className="text-right">Start Date</Label>
-                  <Input id="startDate" name="startDate" type="date" value={formState.startDate} onChange={handleInputChange} className="col-span-3" required />
-                </div>
-                {/* End Date */}
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="endDate" className="text-right">End Date</Label>
-                  <Input id="endDate" name="endDate" type="date" value={formState.endDate} onChange={handleInputChange} className="col-span-3" />
-                </div>
-                {/* Specific Day */}
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="specificDay" className="text-right">Specific Day</Label>
-                  <Input id="specificDay" name="specificDay" type="number" value={formState.specificDay} onChange={handleInputChange} className="col-span-3" placeholder="e.g., 15 for monthly"/>
-                </div>
-              </div>
-              <div className="flex justify-end">
-                <Button type="submit">{editingPayment ? 'Update' : 'Create'}</Button>
-              </div>
-            </form>
-          </Dialog.Content>
-        </Dialog.Root>
-      </div>
+  const handleDelete = async () => {
+    if (!deleteTargetId) return;
+    try {
+      await api.delete(`/scheduled-payments/${deleteTargetId}`);
+      setDeleteTargetId(null);
+      setSuccess('Payment deleted');
+      load();
+    } catch (err) {
+      console.error(err);
+      setError('Failed to delete payment');
+    }
+  };
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {scheduledPayments.map(payment => (
-          <div key={payment._id} className="p-4 border rounded-lg shadow-sm">
-            <div className="flex justify-between items-start">
-              <h2 className="font-bold text-lg">{payment.name}</h2>
-              <span className={`px-2 py-1 text-xs font-semibold rounded-full ${payment.status === 'active' ? 'bg-green-200 text-green-800' : 'bg-yellow-200 text-yellow-800'}`}>
-                {payment.status}
-              </span>
-            </div>
-            <p className="text-sm text-gray-500">{payment.type === 'income' ? 'Income' : 'Expense'}</p>
-            <p className="text-xl font-bold">${payment.amount.toFixed(2)}</p>
-            <div className="text-sm mt-2">
-              <p><strong>Period:</strong> {payment.period}</p>
-              <p><strong>Category:</strong> {payment.category?.name}</p>
-              <p><strong>Account:</strong> {payment.account?.name}</p>
-              <p><strong>Next Due:</strong> {new Date(payment.nextDueDate).toLocaleDateString()}</p>
-            </div>
-            <div className="flex justify-end gap-2 mt-4">
-              <Button variant="outline" size="sm" onClick={() => openForm(payment)}>Edit</Button>
-              <Button variant="outline" size="sm" onClick={() => handleStatusChange(payment)}>
-                {payment.status === 'active' ? 'Pause' : 'Resume'}
-              </Button>
-              <Button variant="destructive" size="sm" onClick={() => handleDelete(payment._id)}>Delete</Button>
+  // ── Derived stats ─────────────────────────────────────────────────────────
+  const activeCount = payments.filter(p => p.status === 'active').length;
+  const totalMonthly = payments
+    .filter(p => p.status === 'active')
+    .reduce((acc, p) => {
+      const amt = Number(p.amount);
+      if (p.period === 'monthly') return acc + amt;
+      if (p.period === 'yearly') return acc + amt / 12;
+      if (p.period === 'weekly') return acc + amt * 4.33;
+      if (p.period === 'bi-weekly') return acc + amt * 2.17;
+      if (p.period === 'daily') return acc + amt * 30;
+      if (p.period === 'quarterly') return acc + amt / 3;
+      return acc;
+    }, 0);
+
+  // ── Render ────────────────────────────────────────────────────────────────
+  return (
+    <div className="max-w-6xl mx-auto p-4 space-y-5">
+      {/* Toasts */}
+      {error && (
+        <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-800 text-rose-700 dark:text-rose-400 text-sm">
+          <span>⚠️</span> {error}
+          <button onClick={() => setError('')} className="ml-auto text-rose-400 hover:text-rose-600">✕</button>
+        </div>
+      )}
+      {success && (
+        <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-400 text-sm">
+          <span>✓</span> {success}
+          <button onClick={() => setSuccess('')} className="ml-auto text-emerald-400 hover:text-emerald-600">✕</button>
+        </div>
+      )}
+
+      {/* Delete confirm */}
+      {deleteTargetId && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setDeleteTargetId(null)} />
+          <div className="relative z-10 bg-white dark:bg-slate-900 rounded-2xl border border-[var(--border)] shadow-2xl p-6 w-full max-w-sm mx-4">
+            <h3 className="font-semibold text-base mb-1">Delete payment?</h3>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mb-5">This action cannot be undone.</p>
+            <div className="flex gap-2 justify-end">
+              <button onClick={() => setDeleteTargetId(null)} className="px-4 py-2 text-sm rounded-lg border border-[var(--border)] text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-800 font-medium">Cancel</button>
+              <button onClick={handleDelete} className="px-4 py-2 text-sm rounded-lg bg-rose-600 text-white hover:bg-rose-700 font-semibold">Delete</button>
             </div>
           </div>
-        ))}
-      </div>
+        </div>
+      )}
+
+      {/* Header */}
+      <section className="bg-white dark:bg-slate-900 rounded-2xl border border-[var(--border)] shadow-sm overflow-hidden">
+        <div className="px-5 pt-5 pb-4 border-b border-[var(--border)] flex items-start justify-between gap-4 flex-wrap">
+          <div>
+            <h1 className="text-base font-semibold tracking-tight">Scheduled Payments</h1>
+            <p className="text-xs text-gray-400 mt-0.5">Manage your recurring income and expenses</p>
+          </div>
+          {/* Summary pills */}
+          <div className="flex gap-2 flex-wrap text-xs font-semibold items-center">
+            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-400">
+              {activeCount} active
+            </span>
+            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400">
+              ≈ ${totalMonthly.toFixed(2)}/mo
+            </span>
+            <Button
+              onClick={openNew}
+              className="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold"
+            >
+              + New Payment
+            </Button>
+          </div>
+        </div>
+      </section>
+
+      {/* Cards grid */}
+      {payments.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-20 text-center gap-3">
+          <span className="text-5xl opacity-20">🗓️</span>
+          <p className="text-sm text-gray-400 font-medium">No scheduled payments yet</p>
+          <p className="text-xs text-gray-300 dark:text-gray-600">Create your first recurring payment to get started.</p>
+          <Button onClick={openNew} className="mt-2 bg-indigo-600 hover:bg-indigo-700 text-white">+ New Payment</Button>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {payments.map(payment => {
+            const isExpense = payment.type === 'expense';
+            const isActive = payment.status === 'active';
+            const category = payment.Category;
+            const card = payment.Card;
+            return (
+              <div
+                key={payment.id}
+                className={cn(
+                  'group bg-white dark:bg-slate-900 rounded-2xl border shadow-sm overflow-hidden flex flex-col transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md',
+                  isActive ? 'border-[var(--border)]' : 'border-[var(--border)] opacity-70'
+                )}
+              >
+                {/* Card top accent bar */}
+                <div className={cn(
+                  'h-1 w-full',
+                  isExpense ? 'bg-rose-500' : 'bg-emerald-500'
+                )} />
+
+                {/* Card body */}
+                <div className="px-4 pt-4 pb-3 flex flex-col gap-3 flex-1">
+                  {/* Title row */}
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex-1 min-w-0">
+                      <p className="font-semibold text-sm text-gray-900 dark:text-gray-100 truncate">{payment.name}</p>
+                      <p className="text-xs text-gray-400 capitalize mt-0.5">{payment.type}</p>
+                    </div>
+                    <span className={cn(
+                      'text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full flex-shrink-0',
+                      isActive
+                        ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-400'
+                        : 'bg-amber-100 text-amber-700 dark:bg-amber-950/50 dark:text-amber-400'
+                    )}>
+                      {payment.status}
+                    </span>
+                  </div>
+
+                  {/* Amount */}
+                  <div className={cn(
+                    'text-2xl font-bold tabular-nums',
+                    isExpense ? 'text-rose-600 dark:text-rose-400' : 'text-emerald-600 dark:text-emerald-400'
+                  )}>
+                    {isExpense ? '−' : '+'}${Number(payment.amount).toFixed(2)}
+                  </div>
+
+                  {/* Next Due Date — always shown, prominent */}
+                  <div className={cn(
+                    'flex items-center gap-2 text-xs font-semibold rounded-lg px-2.5 py-1.5 w-fit',
+                    isActive
+                      ? 'bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300'
+                      : 'bg-gray-100 dark:bg-slate-800 text-gray-500 dark:text-gray-400'
+                  )}>
+                    <span>📅</span>
+                    <span>Next due: {payment.nextDueDate
+                      ? new Date(payment.nextDueDate + 'T00:00:00').toLocaleDateString('en', { month: 'short', day: 'numeric', year: 'numeric' })
+                      : '—'}
+                    </span>
+                  </div>
+
+                  {/* Meta grid */}
+                  <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-xs">
+                    <div className="flex items-center gap-1.5 text-gray-500 dark:text-gray-400">
+                      <span>{PERIOD_ICONS[payment.period] || '🔁'}</span>
+                      <span className="capitalize">{PERIOD_LABELS[payment.period] || payment.period}</span>
+                    </div>
+                    {category && (
+                      <div className="flex items-center gap-1.5 col-span-2">
+                        {category.color && <span className="h-2 w-2 rounded-full flex-shrink-0" style={{ background: category.color }} />}
+                        <span className="text-gray-600 dark:text-gray-300 truncate">{category.name}</span>
+                      </div>
+                    )}
+                    {card && (
+                      <div className="flex items-center gap-1.5 col-span-2 text-gray-500 dark:text-gray-400">
+                        <span>💳</span>
+                        <span className="truncate">{card.name}</span>
+                      </div>
+                    )}
+                    {payment.description && (
+                      <div className="col-span-2 text-gray-400 dark:text-gray-500 truncate" title={payment.description}>
+                        {payment.description}
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Actions footer */}
+                <div className="px-4 py-3 border-t border-[var(--border)] flex items-center justify-between gap-2 bg-gray-50/50 dark:bg-slate-800/20">
+                  <div className="flex gap-1.5">
+                    <button
+                      onClick={() => openEdit(payment)}
+                      className="px-3 py-1.5 text-xs rounded-lg border border-[var(--border)] text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-800 font-medium transition-colors"
+                    >
+                      Edit
+                    </button>
+                    <button
+                      onClick={() => handleStatusChange(payment)}
+                      className={cn(
+                        'px-3 py-1.5 text-xs rounded-lg font-medium transition-colors',
+                        isActive
+                          ? 'border border-amber-300 dark:border-amber-700 text-amber-600 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950/30'
+                          : 'border border-emerald-300 dark:border-emerald-700 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/30'
+                      )}
+                    >
+                      {isActive ? 'Pause' : 'Resume'}
+                    </button>
+                  </div>
+                  <button
+                    onClick={() => setDeleteTargetId(payment.id)}
+                    className="px-3 py-1.5 text-xs rounded-lg text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/30 font-medium transition-colors"
+                  >
+                    Delete
+                  </button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Create / Edit Modal */}
+      <Modal open={isFormOpen} onClose={() => { setIsFormOpen(false); setEditingId(null); }}>
+        <div className="px-6 pt-6 pb-4 border-b border-[var(--border)]">
+          <h2 className="text-base font-semibold">{editingId ? 'Edit' : 'New'} Scheduled Payment</h2>
+          <p className="text-xs text-gray-400 mt-0.5">Fill in the details for your recurring payment.</p>
+        </div>
+
+        <form onSubmit={handleSubmit} className="p-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {/* Name */}
+          <div className="sm:col-span-2">
+            <Field label="Name">
+              <Input name="name" value={formState.name} onChange={handleInputChange} placeholder="e.g. Netflix, Rent…" required />
+            </Field>
+          </div>
+
+          {/* Type */}
+          <Field label="Type">
+            <Select name="type" value={formState.type} onChange={handleInputChange}>
+              <option value="expense">Expense</option>
+              <option value="income">Income</option>
+            </Select>
+          </Field>
+
+          {/* Amount */}
+          <Field label="Amount ($)">
+            <Input name="amount" type="number" step="0.01" value={formState.amount} onChange={handleInputChange} placeholder="0.00" required />
+          </Field>
+
+          {/* Period */}
+          <Field label="Period">
+            <Select name="period" value={formState.period} onChange={handleInputChange}>
+              <option value="daily">Daily</option>
+              <option value="weekly">Weekly</option>
+              <option value="bi-weekly">Bi-weekly</option>
+              <option value="monthly">Monthly</option>
+              <option value="quarterly">Quarterly</option>
+              <option value="yearly">Yearly</option>
+            </Select>
+          </Field>
+
+          {/* Specific Day */}
+          <Field label="Specific Day (optional)">
+            <Input name="specificDay" type="number" min="1" max="31" value={formState.specificDay} onChange={handleInputChange} placeholder="e.g. 15" />
+          </Field>
+
+          {/* Category */}
+          <Field label="Category">
+            <Select name="CategoryId" value={formState.CategoryId} onChange={handleInputChange}>
+              <option value="">Select category</option>
+              {categories
+                .filter(c => c.type === formState.type)
+                .map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+            </Select>
+          </Field>
+
+          {/* Card */}
+          <Field label="Credit card (optional)">
+            <Select name="CardId" value={formState.CardId} onChange={handleInputChange}>
+              <option value="">None</option>
+              {cards.map(card => <option key={card.id} value={card.id}>{card.name}</option>)}
+            </Select>
+          </Field>
+
+          {/* Start Date */}
+          <Field label="Start Date">
+            <Input name="startDate" type="date" value={formState.startDate} onChange={handleInputChange} required />
+          </Field>
+
+          {/* End Date */}
+          <Field label="End Date (optional)">
+            <Input name="endDate" type="date" value={formState.endDate} onChange={handleInputChange} />
+          </Field>
+
+          {/* Description */}
+          <div className="sm:col-span-2">
+            <Field label="Description (optional)">
+              <Input name="description" value={formState.description} onChange={handleInputChange} placeholder="Additional notes…" />
+            </Field>
+          </div>
+
+          {/* Actions */}
+          <div className="sm:col-span-2 flex justify-end gap-2 pt-2">
+            <button
+              type="button"
+              onClick={() => { setIsFormOpen(false); setEditingId(null); }}
+              className="px-4 py-2 text-sm rounded-lg border border-[var(--border)] text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-800 font-medium"
+            >
+              Cancel
+            </button>
+            <Button type="submit" className="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold">
+              {editingId ? 'Save Changes' : 'Create Payment'}
+            </Button>
+          </div>
+        </form>
+      </Modal>
     </div>
   );
 }
