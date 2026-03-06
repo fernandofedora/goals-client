@@ -1,4 +1,5 @@
 import { useEffect, useState, useMemo, useCallback } from 'react';
+import { Link } from 'react-router-dom';
 import api from '../api';
 import DateInput from '../components/DateInput';
 import Input from '../components/ui/input';
@@ -10,10 +11,13 @@ import ConfirmDialog from '../components/ui/confirm-dialog';
 import { cn } from '../lib/utils';
 
 // ── Inline Field wrapper for consistent label+input spacing ──────────────────
-function Field({ label, children }) {
+function Field({ label, labelRight, children }) {
   return (
     <div className="flex flex-col gap-1.5">
-      <label className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-widest">{label}</label>
+      <div className="flex items-center justify-between">
+        <label className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-widest">{label}</label>
+        {labelRight && labelRight}
+      </div>
       {children}
     </div>
   );
@@ -339,7 +343,14 @@ export default function Transactions() {
           </Field>
 
           {/* Category */}
-          <Field label="Category">
+          <Field
+            label="Category"
+            labelRight={
+              <Link to="/settings" className="text-[11px] font-medium text-indigo-500 hover:text-indigo-600 dark:text-indigo-400 dark:hover:text-indigo-300 transition-colors">
+                + New category
+              </Link>
+            }
+          >
             <Select
               value={txMode === 'expense' ? expense.categoryId : income.categoryId}
               onChange={(e) => txMode === 'expense'

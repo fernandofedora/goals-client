@@ -108,9 +108,10 @@ export default function SavingPlan() {
   const [confirm, setConfirm] = useState({ open: false, id: null });
   const [confirmPlan, setConfirmPlan] = useState({ open: false });
   const [showNewPlan, setShowNewPlan] = useState(false);
-  const [prevLinkedId, setPrevLinkedId] = useState('');
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
+
+  const [initialLoad, setInitialLoad] = useState(true);
 
   const currentPlan = useMemo(() => plans.find(p => String(p.id) === String(selectedPlanId)), [plans, selectedPlanId]);
 
@@ -124,19 +125,24 @@ export default function SavingPlan() {
   // ── async-parallel: load categories + plans together ─────────────────────
   useEffect(() => {
     (async () => {
-      const [catsRes, plansRes] = await Promise.all([
-        api.get('/categories'),
-        api.get('/savings/plans'),
-      ]);
-      setCategories(catsRes.data || []);
-      const p = plansRes.data || [];
-      setPlans(p);
-      if (p.length > 0) {
-        const savedId = localStorage.getItem('savingPlan.selectedPlanId');
-        const chosen = p.find(x => String(x.id) === String(savedId)) || p[0];
-        setSelectedPlanId(String(chosen.id));
-        setPlanForm({ name: chosen.name || '', targetAmount: String(chosen.targetAmount || ''), linkedCategoryId: String(chosen.linkedCategoryId || '') });
-        setPrevLinkedId(String(chosen.linkedCategoryId || ''));
+      try {
+        const [catsRes, plansRes] = await Promise.all([
+          api.get('/categories'),
+          api.get('/savings/plans'),
+        ]);
+        setCategories(catsRes.data || []);
+        const p = plansRes.data || [];
+        setPlans(p);
+        if (p.length > 0) {
+          const savedId = localStorage.getItem('savingPlan.selectedPlanId');
+          const chosen = p.find(x => String(x.id) === String(savedId)) || p[0];
+          setSelectedPlanId(String(chosen.id));
+          setPlanForm({ name: chosen.name || '', targetAmount: String(chosen.targetAmount || ''), linkedCategoryId: String(chosen.linkedCategoryId || '') });
+        }
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setInitialLoad(false);
       }
     })();
   }, []);
@@ -155,25 +161,9 @@ export default function SavingPlan() {
   useEffect(() => {
     if (!currentPlan) return;
     setPlanForm({ name: currentPlan.name || '', targetAmount: String(currentPlan.targetAmount || ''), linkedCategoryId: String(currentPlan.linkedCategoryId || '') });
-    setPrevLinkedId(String(currentPlan.linkedCategoryId || ''));
   }, [currentPlan]);
 
-  // auto-save when linked category changes
-  useEffect(() => {
-    const run = async () => {
-      if (!selectedPlanId) return;
-      const cur = String(planForm.linkedCategoryId || '');
-      if (cur === String(prevLinkedId || '')) return;
-      try {
-        const body = { name: planForm.name.trim(), targetAmount: Number(planForm.targetAmount), linkedCategoryId: cur ? Number(cur) : null };
-        const res = await api.put(`/savings/plans/${selectedPlanId}`, body);
-        setPlans(prev => prev.map(p => String(p.id) === String(selectedPlanId) ? res.data : p));
-        setPrevLinkedId(cur);
-      } catch { }
-    };
-    run();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [planForm.linkedCategoryId, selectedPlanId]);
+
 
   const onPlanField = useCallback(e => setPlanForm(prev => ({ ...prev, [e.target.name]: e.target.value })), []);
   const onContrField = useCallback(e => setContrForm(prev => ({ ...prev, [e.target.name]: e.target.value })), []);
@@ -217,9 +207,14 @@ export default function SavingPlan() {
     try {
       setConfirmPlan({ open: false });
       await api.delete(`/savings/plans/${selectedPlanId}`);
-      setPlans(prev => prev.filter(p => String(p.id) !== String(selectedPlanId)));
-      setSelectedPlanId('');
-      setPlanForm({ name: '', targetAmount: '', linkedCategoryId: '' });
+      const updatedPlans = plans.filter(p => String(p.id) !== String(selectedPlanId));
+      setPlans(updatedPlans);
+      if (updatedPlans.length > 0) {
+        setSelectedPlanId(String(updatedPlans[0].id));
+      } else {
+        setSelectedPlanId('');
+        setPlanForm({ name: '', targetAmount: '', linkedCategoryId: '' });
+      }
       setSummary(null);
       setMessage({ type: 'success', text: 'Plan eliminado' });
     } catch {
@@ -312,8 +307,19 @@ export default function SavingPlan() {
           <p className="text-sm text-gray-400 mt-0.5">Track your savings goals and contributions</p>
         </div>
         <Button
-          variant="secondary"
-          onClick={() => { setShowNewPlan(v => !v); if (!showNewPlan) { setPlanForm({ name: '', targetAmount: '', linkedCategoryId: '' }); setSelectedPlanId(''); } }}
+          variant={showNewPlan ? 'outline' : 'secondary'}
+          onClick={() => {
+            if (showNewPlan) {
+              setShowNewPlan(false);
+              const savedId = localStorage.getItem('savingPlan.selectedPlanId');
+              const chosen = plans.find(x => String(x.id) === String(savedId)) || plans[0];
+              if (chosen) setSelectedPlanId(String(chosen.id));
+            } else {
+              setShowNewPlan(true);
+              setSelectedPlanId('');
+              setPlanForm({ name: '', targetAmount: '', linkedCategoryId: '' });
+            }
+          }}
         >
           {showNewPlan ? 'Cancel' : '+ New Plan'}
         </Button>
@@ -349,13 +355,16 @@ export default function SavingPlan() {
       )}
 
       {/* ── Plan tabs ─────────────────────────────────────────────────────── */}
-      {plans.length > 0 && (
+      {!initialLoad && plans.length > 0 && (
         <div className="flex gap-2 flex-wrap">
           {plans.map(p => (
             <button
               key={p.id}
               type="button"
-              onClick={() => setSelectedPlanId(String(p.id))}
+              onClick={() => {
+                setSelectedPlanId(String(p.id));
+                setShowNewPlan(false);
+              }}
               className={cn(
                 'px-4 py-2 rounded-xl text-sm font-medium transition-all border',
                 String(p.id) === selectedPlanId
@@ -369,8 +378,16 @@ export default function SavingPlan() {
         </div>
       )}
 
+      {/* ── Loading state ───────────────────────────────────────────────────── */}
+      {initialLoad && (
+        <div className="flex flex-col items-center justify-center py-32 gap-4">
+          <div className="w-8 h-8 rounded-full border-[3px] border-indigo-200 border-t-indigo-600 animate-spin" />
+          <p className="text-sm font-medium text-gray-500 animate-pulse">Cargando planes de ahorro...</p>
+        </div>
+      )}
+
       {/* ── Empty state ───────────────────────────────────────────────────── */}
-      {plans.length === 0 && !showNewPlan && (
+      {!initialLoad && plans.length === 0 && !showNewPlan && (
         <div className="flex flex-col items-center justify-center py-20 gap-3 text-center">
           <span className="text-5xl opacity-40">🎯</span>
           <h3 className="text-base font-semibold text-gray-600 dark:text-gray-300">No savings plans yet</h3>
@@ -380,7 +397,7 @@ export default function SavingPlan() {
       )}
 
       {/* ── Selected plan content ─────────────────────────────────────────── */}
-      {currentPlan && (
+      {!initialLoad && currentPlan && (
         <>
           {/* Progress hero */}
           <div className="bg-white dark:bg-slate-900 rounded-2xl border border-[var(--border)] shadow-sm overflow-hidden">
