@@ -24,12 +24,21 @@ const PERIOD_ICONS = {
   yearly: '🗃️',
 };
 
+// ── Payment method config ─────────────────────────────────────────────────────
+const PAYMENT_METHODS = [
+  { value: 'cash', label: 'Cash', icon: '💵' },
+  { value: 'card', label: 'Card', icon: '💳' },
+  { value: 'account', label: 'Account', icon: '🏦' },
+];
+
 const EMPTY_FORM = {
   name: '',
   type: 'expense',
   amount: '',
   period: 'monthly',
+  paymentMethod: '',
   CardId: '',
+  AccountId: '',
   CategoryId: '',
   description: '',
   startDate: '',
@@ -38,11 +47,11 @@ const EMPTY_FORM = {
 };
 
 // ── Field wrapper ─────────────────────────────────────────────────────────────
-function Field({ label, children }) {
+function Field({ label, children, required }) {
   return (
     <div className="flex flex-col gap-1.5">
       <label className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-widest">
-        {label}
+        {label}{required && <span className="text-rose-500 ml-0.5">*</span>}
       </label>
       {children}
     </div>
@@ -65,14 +74,53 @@ function Modal({ open, onClose, children }) {
   );
 }
 
+// ── Payment Method Picker ─────────────────────────────────────────────────────
+function PaymentMethodPicker({ value, onChange, hasError }) {
+  return (
+    <div className="flex flex-col gap-1.5">
+      <label className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-widest">
+        Payment Method<span className="text-rose-500 ml-0.5">*</span>
+      </label>
+      <div className={cn(
+        'flex gap-2 p-1 rounded-xl border bg-gray-50 dark:bg-slate-800/50',
+        hasError
+          ? 'border-rose-400 dark:border-rose-500'
+          : 'border-[var(--border)]'
+      )}>
+        {PAYMENT_METHODS.map(m => (
+          <button
+            key={m.value}
+            type="button"
+            onClick={() => onChange(m.value)}
+            className={cn(
+              'flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg text-sm font-semibold transition-all duration-150',
+              value === m.value
+                ? 'bg-indigo-600 text-white shadow-sm shadow-indigo-200 dark:shadow-indigo-900/40 scale-[1.02]'
+                : 'text-gray-500 dark:text-gray-400 hover:bg-white dark:hover:bg-slate-700 hover:text-gray-700 dark:hover:text-gray-200'
+            )}
+          >
+            <span>{m.icon}</span>
+            <span>{m.label}</span>
+          </button>
+        ))}
+      </div>
+      {hasError && (
+        <p className="text-xs text-rose-500 font-medium">Please select a payment method.</p>
+      )}
+    </div>
+  );
+}
+
 // ── Main Component ────────────────────────────────────────────────────────────
 export default function ScheduledPayments() {
   const [payments, setPayments] = useState([]);
   const [categories, setCategories] = useState([]);
   const [cards, setCards] = useState([]);
+  const [accounts, setAccounts] = useState([]);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [formState, setFormState] = useState(EMPTY_FORM);
+  const [methodError, setMethodError] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [deleteTargetId, setDeleteTargetId] = useState(null);
@@ -80,14 +128,16 @@ export default function ScheduledPayments() {
   // ── Data loading (parallel) ───────────────────────────────────────────────
   const load = useCallback(async () => {
     try {
-      const [payRes, catRes, cardRes] = await Promise.all([
+      const [payRes, catRes, cardRes, accRes] = await Promise.all([
         api.get('/scheduled-payments'),
         api.get('/categories'),
         api.get('/cards'),
+        api.get('/accounts'),
       ]);
       setPayments(payRes.data);
       setCategories(catRes.data);
       setCards(cardRes.data);
+      setAccounts(accRes.data);
     } catch (err) {
       console.error(err);
       setError('Failed to load data');
@@ -104,22 +154,30 @@ export default function ScheduledPayments() {
     setFormState(prev => ({ ...prev, [name]: value }));
   };
 
+  const handleMethodChange = (method) => {
+    setMethodError(false);
+    setFormState(prev => ({ ...prev, paymentMethod: method, CardId: '', AccountId: '' }));
+  };
+
   const openNew = () => {
     setEditingId(null);
     setFormState(EMPTY_FORM);
+    setMethodError(false);
     setIsFormOpen(true);
   };
 
   const openEdit = (payment) => {
     setEditingId(payment.id);
+    setMethodError(false);
     setFormState({
       name: payment.name || '',
       type: payment.type || 'expense',
       amount: payment.amount || '',
       period: payment.period || 'monthly',
-      // Safe access – backend returns Category and Card objects (Sequelize), not account
+      paymentMethod: payment.paymentMethod || '',
       CategoryId: payment.CategoryId ?? payment.Category?.id ?? '',
       CardId: payment.CardId ?? payment.Card?.id ?? '',
+      AccountId: payment.AccountId ?? payment.Account?.id ?? '',
       description: payment.description || '',
       startDate: payment.startDate ? String(payment.startDate).slice(0, 10) : '',
       endDate: payment.endDate ? String(payment.endDate).slice(0, 10) : '',
@@ -130,12 +188,17 @@ export default function ScheduledPayments() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!formState.paymentMethod) {
+      setMethodError(true);
+      return;
+    }
     try {
       const payload = {
         ...formState,
         amount: parseFloat(formState.amount || 0),
         CategoryId: formState.CategoryId || null,
-        CardId: formState.CardId || null,
+        CardId: formState.paymentMethod === 'card' ? (formState.CardId || null) : null,
+        AccountId: formState.paymentMethod === 'account' ? (formState.AccountId || null) : null,
         specificDay: formState.specificDay ? parseInt(formState.specificDay) : null,
       };
       if (editingId) {
@@ -193,6 +256,15 @@ export default function ScheduledPayments() {
       if (p.period === 'quarterly') return acc + amt / 3;
       return acc;
     }, 0);
+
+  // ── Helpers ───────────────────────────────────────────────────────────────
+  const getPaymentMethodBadge = (payment) => {
+    if (payment.paymentMethod === 'cash') return <span className="flex items-center gap-1">💵 <span>Cash</span></span>;
+    if (payment.paymentMethod === 'account' && payment.Account) return <span className="flex items-center gap-1">🏦 <span>{payment.Account.name}</span></span>;
+    if (payment.paymentMethod === 'card' && payment.Card) return <span className="flex items-center gap-1">💳 <span>{payment.Card.name}</span></span>;
+    if (payment.Card) return <span className="flex items-center gap-1">💳 <span>{payment.Card.name}</span></span>;
+    return null;
+  };
 
   // ── Render ────────────────────────────────────────────────────────────────
   return (
@@ -265,7 +337,7 @@ export default function ScheduledPayments() {
             const isExpense = payment.type === 'expense';
             const isActive = payment.status === 'active';
             const category = payment.Category;
-            const card = payment.Card;
+            const methodBadge = getPaymentMethodBadge(payment);
             return (
               <div
                 key={payment.id}
@@ -332,10 +404,9 @@ export default function ScheduledPayments() {
                         <span className="text-gray-600 dark:text-gray-300 truncate">{category.name}</span>
                       </div>
                     )}
-                    {card && (
+                    {methodBadge && (
                       <div className="flex items-center gap-1.5 col-span-2 text-gray-500 dark:text-gray-400">
-                        <span>💳</span>
-                        <span className="truncate">{card.name}</span>
+                        {methodBadge}
                       </div>
                     )}
                     {payment.description && (
@@ -390,7 +461,7 @@ export default function ScheduledPayments() {
         <form onSubmit={handleSubmit} className="p-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
           {/* Name */}
           <div className="sm:col-span-2">
-            <Field label="Name">
+            <Field label="Name" required>
               <Input name="name" value={formState.name} onChange={handleInputChange} placeholder="e.g. Netflix, Rent…" required />
             </Field>
           </div>
@@ -404,7 +475,7 @@ export default function ScheduledPayments() {
           </Field>
 
           {/* Amount */}
-          <Field label="Amount ($)">
+          <Field label="Amount ($)" required>
             <Input name="amount" type="number" step="0.01" value={formState.amount} onChange={handleInputChange} placeholder="0.00" required />
           </Field>
 
@@ -426,8 +497,8 @@ export default function ScheduledPayments() {
           </Field>
 
           {/* Category */}
-          <Field label="Category">
-            <Select name="CategoryId" value={formState.CategoryId} onChange={handleInputChange}>
+          <Field label="Category" required>
+            <Select name="CategoryId" value={formState.CategoryId} onChange={handleInputChange} required>
               <option value="">Select category</option>
               {categories
                 .filter(c => c.type === formState.type)
@@ -435,22 +506,14 @@ export default function ScheduledPayments() {
             </Select>
           </Field>
 
-          {/* Card */}
-          <Field label="Credit card (optional)">
-            <Select name="CardId" value={formState.CardId} onChange={handleInputChange}>
-              <option value="">None</option>
-              {cards.map(card => <option key={card.id} value={card.id}>{card.name}</option>)}
-            </Select>
-          </Field>
-
           {/* Start Date */}
-          <Field label="Start Date">
+          <Field label="Start Date" required>
             <Input name="startDate" type="date" value={formState.startDate} onChange={handleInputChange} required />
           </Field>
 
           {/* End Date */}
-          <Field label="End Date (optional)">
-            <Input name="endDate" type="date" value={formState.endDate} onChange={handleInputChange} />
+          <Field label="End Date" required>
+            <Input name="endDate" type="date" value={formState.endDate} onChange={handleInputChange} required />
           </Field>
 
           {/* Description */}
@@ -459,6 +522,39 @@ export default function ScheduledPayments() {
               <Input name="description" value={formState.description} onChange={handleInputChange} placeholder="Additional notes…" />
             </Field>
           </div>
+
+          {/* ── Payment Method (mandatory) ── */}
+          <div className="sm:col-span-2">
+            <PaymentMethodPicker
+              value={formState.paymentMethod}
+              onChange={handleMethodChange}
+              hasError={methodError}
+            />
+          </div>
+
+          {/* Sub-field: Card (only when 'card' selected) */}
+          {formState.paymentMethod === 'card' && (
+            <div className="sm:col-span-2">
+              <Field label="Credit Card">
+                <Select name="CardId" value={formState.CardId} onChange={handleInputChange}>
+                  <option value="">Select a card</option>
+                  {cards.map(card => <option key={card.id} value={card.id}>{card.name}</option>)}
+                </Select>
+              </Field>
+            </div>
+          )}
+
+          {/* Sub-field: Account (only when 'account' selected) */}
+          {formState.paymentMethod === 'account' && (
+            <div className="sm:col-span-2">
+              <Field label="Bank Account">
+                <Select name="AccountId" value={formState.AccountId} onChange={handleInputChange}>
+                  <option value="">Select an account</option>
+                  {accounts.map(acc => <option key={acc.id} value={acc.id}>{acc.name}</option>)}
+                </Select>
+              </Field>
+            </div>
+          )}
 
           {/* Actions */}
           <div className="sm:col-span-2 flex justify-end gap-2 pt-2">
