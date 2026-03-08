@@ -512,8 +512,8 @@ export default function ScheduledPayments() {
           </Field>
 
           {/* End Date */}
-          <Field label="End Date (optional)">
-            <Input name="endDate" type="date" value={formState.endDate} onChange={handleInputChange} />
+          <Field label="End Date" required>
+            <Input name="endDate" type="date" value={formState.endDate} onChange={handleInputChange} required />
           </Field>
 
           {/* Description */}

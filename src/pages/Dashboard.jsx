@@ -52,7 +52,6 @@ export default function Dashboard() {
   const [cards, setCards] = useState([]);
   // ── Bank accounts: current balance per account ────────────────────────────
   const [bankBalances, setBankBalances] = useState([]);
-  const [bankLoading, setBankLoading] = useState(false);
   const [initialBalance, setInitialBalance] = useState(null);
   const [finalBalance, setFinalBalance] = useState(null);
   const [allTimeSummary, setAllTimeSummary] = useState(null);
@@ -60,9 +59,6 @@ export default function Dashboard() {
     const saved = localStorage.getItem('dashboard_year');
     return saved ? Number(saved) : new Date().getFullYear();
   });
-  const [yearLoadError, setYearLoadError] = useState('');
-
-  // Active pie slices
   const [activeCatIdx, setActiveCatIdx] = useState(0);
   const [activeIncomeIdx, setActiveIncomeIdx] = useState(0);
 
@@ -83,81 +79,82 @@ export default function Dashboard() {
     return Array.from({ length: 7 }, (_, i) => currentYear - i);
   }, [summary, period]);
 
-  const fetchSummary = async () => {
-    setLoading(true); setError('');
-    try {
-      const params = period === 'all' ? { period } : { period: `${selectedYear}-${period}` };
-      const { data } = await api.get('/stats/summary', { params });
-      setSummary(data);
+  useEffect(() => {
+    const loadData = async () => {
+      setLoading(true);
+      setError('');
+      try {
+        const periodParam = period === 'all' ? { period } : { period: `${selectedYear}-${period}` };
+        const requests = [
+          api.get('/stats/summary', { params: periodParam }),
+          api.get('/cards'),
+          api.get('/accounts')
+        ];
 
-      if (period !== 'all') {
-        const allTime = await api.get('/stats/summary', { params: { period: 'all' } });
-        setAllTimeSummary(allTime.data);
-        const curIncome = Number(data?.totals?.income || 0);
-        const curExpense = Number(data?.totals?.expense || 0);
-        const monthNet = curIncome - curExpense;
-        const curMonth = Number(period);
-        const prevMonth = String(curMonth === 1 ? 12 : curMonth - 1).padStart(2, '0');
-        const prevYear = curMonth === 1 ? selectedYear - 1 : selectedYear;
-        try {
-          const prev = await api.get('/stats/summary', { params: { period: `${prevYear}-${prevMonth}` } });
-          const prevBalance = Number(prev?.data?.totals?.income || 0) - Number(prev?.data?.totals?.expense || 0);
+        // async-parallel: Pre-emptively add allTime and prev month if needed to avoid waterfall
+        if (period !== 'all') {
+          requests.push(api.get('/stats/summary', { params: { period: 'all' } }));
+          const curMonth = Number(period);
+          const prevMonth = String(curMonth === 1 ? 12 : curMonth - 1).padStart(2, '0');
+          const prevYear = curMonth === 1 ? selectedYear - 1 : selectedYear;
+          requests.push(
+            api.get('/stats/summary', { params: { period: `${prevYear}-${prevMonth}` } })
+              .catch(() => ({ data: null })) // catch to handle graceful fallback directly
+          );
+        }
+
+        const responses = await Promise.all(requests);
+        const [summaryRes, cardsRes, accountsRes, allTimeRes, prevRes] = responses;
+
+        setSummary(summaryRes.data);
+        setCards(cardsRes.data || []);
+
+        if (accountsRes.data.length > 0) {
+          const txResults = await Promise.all(
+            accountsRes.data.map(acc => api.get('/transactions', { params: { accountId: acc.id } }))
+          );
+          const balances = accountsRes.data.map((acc, i) => {
+            const txList = Array.isArray(txResults[i].data) ? txResults[i].data : (txResults[i].data.items || []);
+            const income = txList.filter(t => t.type === 'income').reduce((s, t) => s + Number(t.amount), 0);
+            const expense = txList.filter(t => t.type === 'expense').reduce((s, t) => s + Number(t.amount), 0);
+            const current = Number(acc.initialBalance || 0) + income - expense;
+            return { ...acc, income, expense, current };
+          });
+          setBankBalances(balances);
+        }
+
+        if (period !== 'all') {
+          setAllTimeSummary(allTimeRes.data);
+          const curIncome = Number(summaryRes.data?.totals?.income || 0);
+          const curExpense = Number(summaryRes.data?.totals?.expense || 0);
+          const monthNet = curIncome - curExpense;
+          const prevBalance = Number(prevRes?.data?.totals?.income || 0) - Number(prevRes?.data?.totals?.expense || 0);
           setInitialBalance(prevBalance);
           setFinalBalance(prevBalance + monthNet);
-        } catch {
-          setInitialBalance(0); setFinalBalance(monthNet);
+        } else {
+          setInitialBalance(null); setFinalBalance(null); setAllTimeSummary(null);
         }
-      } else {
-        setInitialBalance(null); setFinalBalance(null); setAllTimeSummary(null);
+      } catch (err) {
+        setError(err.response?.data?.message || 'Failed to load data');
+      } finally {
+        setLoading(false);
       }
-    } catch (err) { setError(err.response?.data?.message || 'Failed to load summary'); }
-    finally { setLoading(false); }
-  };
+    };
 
-  useEffect(() => { fetchSummary(); }, [period, selectedYear]);
+    loadData();
+  }, [period, selectedYear]);
 
-  // async-parallel: fetch accounts then all their tx sums concurrently
-  const fetchBankBalances = async () => {
-    setBankLoading(true);
-    try {
-      const { data: accounts } = await api.get('/accounts');
-      if (!accounts.length) { setBankBalances([]); return; }
-
-      // Fetch all accounts' transactions in parallel (no waterfall)
-      const txResults = await Promise.all(
-        accounts.map(acc => api.get('/transactions', { params: { accountId: acc.id } }))
-      );
-
-      const balances = accounts.map((acc, i) => {
-        const txList = Array.isArray(txResults[i].data) ? txResults[i].data : (txResults[i].data.items || []);
-        const income = txList.filter(t => t.type === 'income').reduce((s, t) => s + Number(t.amount), 0);
-        const expense = txList.filter(t => t.type === 'expense').reduce((s, t) => s + Number(t.amount), 0);
-        const current = Number(acc.initialBalance || 0) + income - expense;
-        return { ...acc, income, expense, current };
-      });
-      setBankBalances(balances);
-    } catch { /* non-blocking: leave stale data */ }
-    finally { setBankLoading(false); }
-  };
-
-  useEffect(() => { fetchBankBalances(); }, []);
-
-  useEffect(() => {
-    (async () => {
-      try { const { data } = await api.get('/cards'); setCards(data || []); } catch { }
-    })();
-  }, []);
-
-  const [barData, setBarData] = useState([]);
-  useEffect(() => {
+  const barData = useMemo(() => {
     const monthLabels = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
     const months = Array.from({ length: 12 }, (_, i) => ({
-      key: `${selectedYear}-${String(i + 1).padStart(2, '0')}`, label: monthLabels[i]
+      key: `${selectedYear}-${String(i + 1).padStart(2, '0')}`,
+      label: monthLabels[i]
     }));
-    setYearLoadError('');
 
-    const buildFromSummaryAll = () => {
-      const agg = (summary?.incomeVsExpense || []).reduce((acc, item) => {
+    const targetSummaryData = period === 'all' ? summary?.incomeVsExpense : allTimeSummary?.incomeVsExpense;
+
+    if (targetSummaryData) {
+      const agg = targetSummaryData.reduce((acc, item) => {
         const key = String(item.date).slice(0, 7);
         const yr = Number(String(item.date).slice(0, 4));
         if (yr !== selectedYear) return acc;
@@ -166,32 +163,19 @@ export default function Dashboard() {
         acc[key].expense += Number(item.expense || 0);
         return acc;
       }, {});
-      setBarData(months.map(m => ({ month: m.label, income: agg[m.key]?.income || 0, expense: agg[m.key]?.expense || 0 })));
-    };
+      return months.map(m => ({ month: m.label, income: agg[m.key]?.income || 0, expense: agg[m.key]?.expense || 0 }));
+    }
 
-    const buildByFetchingYear = async () => {
-      try {
-        const results = await Promise.all(months.map(async (m, i) => {
-          const { data } = await api.get('/stats/summary', { params: { period: `${selectedYear}-${String(i + 1).padStart(2, '0')}` } });
-          return { month: monthLabels[i], income: Number(data?.totals?.income || 0), expense: Number(data?.totals?.expense || 0) };
-        }));
-        setBarData(results); setYearLoadError('');
-      } catch (e) {
-        setYearLoadError('Could not load year data.');
-        setBarData(months.map(m => ({ month: m.label, income: 0, expense: 0 })));
-      }
-    };
-
-    if (period === 'all') buildFromSummaryAll();
-    else buildByFetchingYear();
-  }, [selectedYear, period, summary]);
+    return months.map(m => ({ month: m.label, income: 0, expense: 0 }));
+  }, [selectedYear, period, summary, allTimeSummary]);
 
   const paymentTotals = useMemo(() => {
     const cash = Number(summary?.paymentMethods?.cash || 0);
     const card = Number(summary?.paymentMethods?.card || 0);
-    const total = cash + card;
+    const account = Number(summary?.paymentMethods?.account || 0);
+    const total = cash + card + account;
     const pct = (v) => (total > 0 ? Math.round((v / total) * 1000) / 10 : 0);
-    return { cash, card, total, cashPct: pct(cash), cardPct: pct(card) };
+    return { cash, card, account, total, cashPct: pct(cash), cardPct: pct(card), accountPct: pct(account) };
   }, [summary]);
 
   const perCardUsage = useMemo(() => {
@@ -248,6 +232,38 @@ export default function Dashboard() {
     ...c, color: c.color || categoryColors[i % categoryColors.length]
   }));
 
+  const renderSummary = () => {
+    if (loading) return <p className="text-sm text-gray-400 animate-pulse">Loading…</p>;
+    if (error) return <div className="px-3 py-2 rounded-lg bg-rose-50 dark:bg-rose-900/20 text-rose-600 dark:text-rose-400 text-sm">{error}</div>;
+    if (!summary) return null;
+
+    return (
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        {[
+          { label: 'Income', value: summary.totals.income, color: 'emerald' },
+          { label: 'Expenses', value: summary.totals.expense, color: 'rose' },
+          { label: 'Balance', value: summary.totals.income - summary.totals.expense, color: 'indigo' },
+          { label: 'Transactions', value: summary.totals.transactions, color: 'amber', isCount: true },
+        ].map(({ label, value, color, isCount }) => (
+          <div key={label} className={`rounded-xl p-4 bg-${color}-50 dark:bg-slate-800 border border-${color}-100 dark:border-slate-700/60`}>
+            <p className={`text-xs font-medium text-${color}-600 dark:text-${color}-400 uppercase tracking-widest mb-1`}>{label}</p>
+            <p className={`text-2xl font-bold text-${color}-700 dark:text-slate-100 tabular-nums`}>
+              {isCount ? value : `$${Number(value).toFixed(2)}`}
+            </p>
+          </div>
+        ))}
+        {period !== 'all' && allTimeSummary && (
+          <div className="rounded-xl p-4 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700/60">
+            <p className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-1">All-Time Balance</p>
+            <p className="text-2xl font-bold text-slate-700 dark:text-slate-100 tabular-nums">
+              ${(allTimeSummary.totals.income - allTimeSummary.totals.expense).toFixed(2)}
+            </p>
+          </div>
+        )}
+      </div>
+    );
+  };
+
   return (
     <div className="max-w-6xl mx-auto p-4 space-y-5">
 
@@ -271,35 +287,7 @@ export default function Dashboard() {
             </button>
           </div>
         </div>
-
-        {loading && <p className="text-sm text-gray-400 animate-pulse">Loading…</p>}
-        {error && <div className="px-3 py-2 rounded-lg bg-rose-50 dark:bg-rose-900/20 text-rose-600 dark:text-rose-400 text-sm">{error}</div>}
-
-        {summary && (
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            {[
-              { label: 'Income', value: summary.totals.income, color: 'emerald' },
-              { label: 'Expenses', value: summary.totals.expense, color: 'rose' },
-              { label: 'Balance', value: summary.totals.income - summary.totals.expense, color: 'indigo' },
-              { label: 'Transactions', value: summary.totals.transactions, color: 'amber', isCount: true },
-            ].map(({ label, value, color, isCount }) => (
-              <div key={label} className={`rounded-xl p-4 bg-${color}-50 dark:bg-slate-800 border border-${color}-100 dark:border-slate-700/60`}>
-                <p className={`text-xs font-medium text-${color}-600 dark:text-${color}-400 uppercase tracking-widest mb-1`}>{label}</p>
-                <p className={`text-2xl font-bold text-${color}-700 dark:text-slate-100 tabular-nums`}>
-                  {isCount ? value : `$${Number(value).toFixed(2)}`}
-                </p>
-              </div>
-            ))}
-            {period !== 'all' && allTimeSummary && (
-              <div className="rounded-xl p-4 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700/60">
-                <p className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-1">All-Time Balance</p>
-                <p className="text-2xl font-bold text-slate-700 dark:text-slate-100 tabular-nums">
-                  ${(allTimeSummary.totals.income - allTimeSummary.totals.expense).toFixed(2)}
-                </p>
-              </div>
-            )}
-          </div>
-        )}
+        {renderSummary()}
       </div>
 
 
@@ -311,23 +299,23 @@ export default function Dashboard() {
             <p className="text-xs text-gray-400">Monthly breakdown for {selectedYear}</p>
           </div>
         </div>
-        {yearLoadError && (
-          <div className="mb-3 px-3 py-2 rounded-lg bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-300 text-xs">{yearLoadError}</div>
+        {loading && <div className="h-[280px] flex items-center justify-center text-sm text-gray-400 animate-pulse">Loading chart…</div>}
+        {!loading && (
+          <ChartContainer config={barChartConfig} style={{ height: 280 }}>
+            <BarChart data={barData} barGap={3} barCategoryGap="30%">
+              <CartesianGrid vertical={false} strokeDasharray="3 3" stroke="currentColor" className="text-gray-100 dark:text-slate-800" opacity={0.6} />
+              <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#9ca3af' }} />
+              <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#9ca3af' }} tickFormatter={(v) => `$${v >= 1000 ? `${(v / 1000).toFixed(0)}k` : v}`} />
+              <ChartTooltip
+                cursor={{ fill: 'currentColor', className: 'text-gray-100 dark:text-slate-800', opacity: 0.5 }}
+                content={<ChartTooltipContent formatter={(v, name) => [`$${Number(v).toFixed(2)}`, name]} indicator="square" />}
+              />
+              <ChartLegend content={<ChartLegendContent />} />
+              <Bar dataKey="expense" name="Expenses" fill={barChartConfig.expense.color} radius={[6, 6, 0, 0]} />
+              <Bar dataKey="income" name="Income" fill={barChartConfig.income.color} radius={[6, 6, 0, 0]} />
+            </BarChart>
+          </ChartContainer>
         )}
-        <ChartContainer config={barChartConfig} style={{ height: 280 }}>
-          <BarChart data={barData} barGap={3} barCategoryGap="30%">
-            <CartesianGrid vertical={false} strokeDasharray="3 3" stroke="currentColor" className="text-gray-100 dark:text-slate-800" opacity={0.6} />
-            <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#9ca3af' }} />
-            <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#9ca3af' }} tickFormatter={(v) => `$${v >= 1000 ? `${(v / 1000).toFixed(0)}k` : v}`} />
-            <ChartTooltip
-              cursor={{ fill: 'currentColor', className: 'text-gray-100 dark:text-slate-800', opacity: 0.5 }}
-              content={<ChartTooltipContent formatter={(v, name) => [`$${Number(v).toFixed(2)}`, name]} indicator="square" />}
-            />
-            <ChartLegend content={<ChartLegendContent />} />
-            <Bar dataKey="expense" name="Expenses" fill={barChartConfig.expense.color} radius={[6, 6, 0, 0]} />
-            <Bar dataKey="income" name="Income" fill={barChartConfig.income.color} radius={[6, 6, 0, 0]} />
-          </BarChart>
-        </ChartContainer>
       </div>
 
       {/* ── Two pie charts row ── */}
@@ -490,6 +478,7 @@ export default function Dashboard() {
             {[
               { label: 'Cash', amount: paymentTotals.cash, pct: paymentTotals.cashPct, color: '#10b981', icon: '💵' },
               { label: 'Credit Cards', amount: paymentTotals.card, pct: paymentTotals.cardPct, color: '#0ea5e9', icon: '💳' },
+              { label: 'Account', amount: paymentTotals.account, pct: paymentTotals.accountPct, color: '#f59e0b', icon: '🏦' },
             ].map(({ label, amount, pct, color, icon }) => (
               <div key={label} className="rounded-xl p-4 flex items-center justify-between" style={{ background: color + '12', border: `1px solid ${color}30` }}>
                 <div className="flex items-center gap-3">
@@ -534,7 +523,7 @@ export default function Dashboard() {
       </div>
 
       {/* ── Bank Accounts overview ── */}
-      {(bankBalances.length > 0 || bankLoading) && (
+      {(bankBalances.length > 0 || loading) && (
         <div className="bg-white dark:bg-slate-900 rounded-2xl border border-[var(--border)] shadow-sm overflow-hidden">
           <div className="px-5 pt-5 pb-4 border-b border-[var(--border)] flex items-center justify-between">
             <div>
@@ -552,7 +541,7 @@ export default function Dashboard() {
             )}
           </div>
 
-          {bankLoading ? (
+          {loading ? (
             <div className="px-5 py-8 flex items-center gap-2 text-sm text-gray-400 animate-pulse">
               <span className="h-2 w-2 rounded-full bg-current inline-block" />
               Loading balances…
