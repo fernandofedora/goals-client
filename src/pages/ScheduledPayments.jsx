@@ -117,6 +117,7 @@ export default function ScheduledPayments() {
   const [categories, setCategories] = useState([]);
   const [cards, setCards] = useState([]);
   const [accounts, setAccounts] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [formState, setFormState] = useState(EMPTY_FORM);
@@ -126,7 +127,8 @@ export default function ScheduledPayments() {
   const [deleteTargetId, setDeleteTargetId] = useState(null);
 
   // ── Data loading (parallel) ───────────────────────────────────────────────
-  const load = useCallback(async () => {
+  const load = useCallback(async (showSpinner = false) => {
+    if (showSpinner) setLoading(true);
     try {
       const [payRes, catRes, cardRes, accRes] = await Promise.all([
         api.get('/scheduled-payments'),
@@ -141,10 +143,12 @@ export default function ScheduledPayments() {
     } catch (err) {
       console.error(err);
       setError('Failed to load data');
+    } finally {
+      setLoading(false);
     }
   }, []);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => { load(true); }, [load]);
   useEffect(() => { if (!success) return; const t = setTimeout(() => setSuccess(''), 4000); return () => clearTimeout(t); }, [success]);
   useEffect(() => { if (!error) return; const t = setTimeout(() => setError(''), 6000); return () => clearTimeout(t); }, [error]);
 
@@ -324,7 +328,34 @@ export default function ScheduledPayments() {
       </section>
 
       {/* Cards grid */}
-      {payments.length === 0 ? (
+      {loading ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {[1, 2, 3].map(i => (
+            <div key={i} className="bg-white dark:bg-slate-900 rounded-2xl border border-[var(--border)] shadow-sm overflow-hidden flex flex-col animate-pulse">
+              <div className="h-1 w-full bg-gray-200 dark:bg-slate-700" />
+              <div className="px-4 pt-4 pb-3 flex flex-col gap-3">
+                <div className="flex justify-between">
+                  <div className="space-y-1.5 flex-1">
+                    <div className="h-4 bg-gray-200 dark:bg-slate-700 rounded w-3/4" />
+                    <div className="h-3 bg-gray-100 dark:bg-slate-800 rounded w-1/4" />
+                  </div>
+                  <div className="h-5 w-14 bg-gray-100 dark:bg-slate-800 rounded-full" />
+                </div>
+                <div className="h-7 bg-gray-200 dark:bg-slate-700 rounded w-1/3" />
+                <div className="h-7 bg-gray-100 dark:bg-slate-800 rounded-lg w-2/3" />
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="h-3 bg-gray-100 dark:bg-slate-800 rounded" />
+                  <div className="h-3 bg-gray-100 dark:bg-slate-800 rounded" />
+                </div>
+              </div>
+              <div className="px-4 py-3 border-t border-[var(--border)] flex gap-2">
+                <div className="h-7 w-14 bg-gray-100 dark:bg-slate-800 rounded-lg" />
+                <div className="h-7 w-16 bg-gray-100 dark:bg-slate-800 rounded-lg" />
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : payments.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-20 text-center gap-3">
           <span className="text-5xl opacity-20">🗓️</span>
           <p className="text-sm text-gray-400 font-medium">No scheduled payments yet</p>
