@@ -3,8 +3,8 @@ import api from '../api';
 import Input from '../components/ui/input';
 import Button from '../components/ui/button';
 import Select from '../components/ui/select';
-import Alert from '../components/ui/alert';
 import ConfirmDialog from '../components/ui/confirm-dialog';
+import { toast } from 'sonner';
 import { cn } from '../lib/utils';
 
 // ── Field wrapper ─────────────────────────────────────────────────────────────
@@ -107,13 +107,6 @@ export default function Settings() {
   const [deleteCardId, setDeleteCardId] = useState(null);
   const [deleteAccountId, setDeleteAccountId] = useState(null);
 
-  // ── Feedback ───────────────────────────────────────────────────────────────
-  const [success, setSuccess] = useState('');
-  const [error, setError] = useState('');
-
-  useEffect(() => { if (!success) return; const t = setTimeout(() => setSuccess(''), 4000); return () => clearTimeout(t); }, [success]);
-  useEffect(() => { if (!error) return; const t = setTimeout(() => setError(''), 5000); return () => clearTimeout(t); }, [error]);
-
   // ── Load ───────────────────────────────────────────────────────────────────
   const load = useCallback(async () => {
     try {
@@ -124,7 +117,7 @@ export default function Settings() {
       setCards(cardRes.data);
       setAccounts(accRes.data);
     } catch {
-      setError('Failed to load data');
+      toast.error('Failed to load data');
     }
   }, []);
 
@@ -137,8 +130,8 @@ export default function Settings() {
       await api.post('/categories', catForm);
       setCatForm({ name: '', type: 'expense', color: '#3b82f6' });
       setShowCatForm(false);
-      setSuccess('Category added'); load();
-    } catch { setError('Failed to add category'); }
+      toast.success('Category added'); load();
+    } catch { toast.error('Failed to add category'); }
   };
 
   const startEditCat = (cat) => { setEditingCatId(cat.id); setEditCatForm({ name: cat.name, type: cat.type, color: cat.color }); };
@@ -146,18 +139,18 @@ export default function Settings() {
   const saveEditCat = async (id) => {
     try {
       await api.put(`/categories/${id}`, editCatForm);
-      setEditingCatId(null); setSuccess('Category updated'); load();
-    } catch { setError('Failed to update category'); }
+      setEditingCatId(null); toast.success('Category updated'); load();
+    } catch { toast.error('Failed to update category'); }
   };
 
   const confirmDeleteCat = async () => {
     try {
       const txRes = await api.get('/transactions');
       const inUse = txRes.data.some(t => t.Category?.id === deleteCatId);
-      if (inUse) { setDeleteCatId(null); setError('Cannot delete: category is used in transactions'); return; }
+      if (inUse) { setDeleteCatId(null); toast.error('Cannot delete: category is used in transactions'); return; }
       await api.delete(`/categories/${deleteCatId}`);
-      setDeleteCatId(null); setSuccess('Category deleted'); load();
-    } catch { setError('Failed to delete category'); }
+      setDeleteCatId(null); toast.success('Category deleted'); load();
+    } catch { toast.error('Failed to delete category'); }
   };
 
   // ── CRUD: cards ────────────────────────────────────────────────────────────
@@ -167,8 +160,8 @@ export default function Settings() {
       await api.post('/cards', cardForm);
       setCardForm({ name: '', color: '#0ea5e9', last4: '' });
       setShowCardForm(false);
-      setSuccess('Card added'); load();
-    } catch { setError('Failed to add card'); }
+      toast.success('Card added'); load();
+    } catch { toast.error('Failed to add card'); }
   };
 
   const startEditCard = (card) => { setEditingCardId(card.id); setEditCardForm({ name: card.name, color: card.color, last4: card.last4 }); };
@@ -176,15 +169,15 @@ export default function Settings() {
   const saveEditCard = async (id) => {
     try {
       await api.put(`/cards/${id}`, editCardForm);
-      setEditingCardId(null); setSuccess('Card updated'); load();
-    } catch { setError('Failed to update card'); }
+      setEditingCardId(null); toast.success('Card updated'); load();
+    } catch { toast.error('Failed to update card'); }
   };
 
   const confirmDeleteCard = async () => {
     try {
       await api.delete(`/cards/${deleteCardId}`);
-      setDeleteCardId(null); setSuccess('Card deleted'); load();
-    } catch { setError('Failed to delete card'); }
+      setDeleteCardId(null); toast.success('Card deleted'); load();
+    } catch { toast.error('Failed to delete card'); }
   };
 
   // ── CRUD: accounts ─────────────────────────────────────────────────────────
@@ -194,15 +187,15 @@ export default function Settings() {
       await api.post('/accounts', accountForm);
       setAccountForm({ name: '', color: '#a3e635', initialBalance: '' });
       setShowAccountForm(false);
-      setSuccess('Account added'); load();
-    } catch { setError('Failed to add account'); }
+      toast.success('Account added'); load();
+    } catch { toast.error('Failed to add account'); }
   };
 
   const confirmDeleteAccount = async () => {
     try {
       await api.delete(`/accounts/${deleteAccountId}`);
-      setDeleteAccountId(null); setSuccess('Account deleted'); load();
-    } catch { setError('Failed to delete account'); }
+      setDeleteAccountId(null); toast.success('Account deleted'); load();
+    } catch { toast.error('Failed to delete account'); }
   };
 
   // ── Derived ───────────────────────────────────────────────────────────────
@@ -246,13 +239,8 @@ export default function Settings() {
     </li>
   );
 
-  // ─────────────────────────────────────────────────────────────────────────
   return (
     <div className="max-w-4xl mx-auto p-4 space-y-5">
-
-      {/* Toasts */}
-      {error && <Alert variant="error" message={error} onClose={() => setError('')} />}
-      {success && <Alert variant="success" message={success} onClose={() => setSuccess('')} />}
 
       {/* Confirm dialogs */}
       <ConfirmDialog

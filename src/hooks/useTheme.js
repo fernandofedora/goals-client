@@ -11,18 +11,15 @@ function applyTheme(theme) {
   }
 }
 
-export default function useTheme() {
-  const [theme, setTheme] = useState('light');
+function getInitialTheme() {
+  const saved = localStorage.getItem(STORAGE_KEY);
+  return saved === 'dark' ? 'dark' : 'light';
+}
 
-  useEffect(() => {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    let initial = saved;
-    if (!initial) {
-      initial = 'light';
-    }
-    setTheme(initial);
-    applyTheme(initial);
-  }, []);
+export default function useTheme() {
+  // Lazy initializer reads localStorage synchronously on first render
+  // so there's no flash of the wrong theme (FOUC)
+  const [theme, setTheme] = useState(getInitialTheme);
 
   useEffect(() => {
     applyTheme(theme);
