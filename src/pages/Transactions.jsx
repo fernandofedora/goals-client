@@ -6,8 +6,8 @@ import Input from '../components/ui/input';
 import Button from '../components/ui/button';
 import Select from '../components/ui/select';
 import EditTransactionDialog from '../components/ui/edit-transaction-dialog';
-import Alert from '../components/ui/alert';
 import ConfirmDialog from '../components/ui/confirm-dialog';
+import { toast } from 'sonner';
 import { cn } from '../lib/utils';
 
 // ── Inline Field wrapper for consistent label+input spacing ──────────────────
@@ -73,8 +73,6 @@ export default function Transactions() {
   const [showYearAll, setShowYearAll] = useState(false);
   const monthNameEs = new Date(0, Number(monthFilter) - 1).toLocaleString('es', { month: 'long' });
 
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
   const [deleteTargetId, setDeleteTargetId] = useState(null);
 
   const [expense, setExpense] = useState({ description: '', categoryId: '', amount: '', date: '', method: 'cash', cardId: '', accountId: '' });
@@ -105,13 +103,10 @@ export default function Transactions() {
       setTransactions(trxRes.data);
       setBudgets(budRes.data);
       setAccounts(accRes.data);
-      setError('');
-    } catch { setError('Failed to load data'); }
+    } catch { toast.error('Failed to load data'); }
   }, []);
 
   useEffect(() => { load(); }, [load]);
-  useEffect(() => { if (!success) return; const t = setTimeout(() => setSuccess(''), 4000); return () => clearTimeout(t); }, [success]);
-  useEffect(() => { if (!error) return; const t = setTimeout(() => setError(''), 6000); return () => clearTimeout(t); }, [error]);
 
   // ── CRUD handlers ─────────────────────────────────────────────────────────
   const addExpense = async (e) => {
@@ -127,8 +122,8 @@ export default function Transactions() {
       };
       await api.post('/transactions', expPayload);
       setExpense({ description: '', categoryId: '', amount: '', date: '', method: 'cash', cardId: '', accountId: '' });
-      setSuccess('Expense added'); setError(''); load();
-    } catch { setError('Failed to add expense'); setSuccess(''); }
+      toast.success('Expense added'); load();
+    } catch { toast.error('Failed to add expense'); }
   };
 
   const addIncome = async (e) => {
@@ -138,8 +133,8 @@ export default function Transactions() {
       if (income.incomeMethod === 'cash') payload.accountId = null;
       await api.post('/transactions', payload);
       setIncome({ description: '', categoryId: '', amount: '', date: '', incomeMethod: 'cash', accountId: '' });
-      setSuccess('Income added'); setError(''); load();
-    } catch { setError('Failed to add income'); setSuccess(''); }
+      toast.success('Income added'); load();
+    } catch { toast.error('Failed to add income'); }
   };
 
   const setMonthlyBudget = async (e) => {
@@ -147,8 +142,8 @@ export default function Transactions() {
     try {
       await api.post('/budgets', { month: budget.month, year: budget.year, amount: parseFloat(budget.amount || 0) });
       setBudget({ month: '', year: '', amount: '' });
-      setSuccess('Budget set'); setError(''); load();
-    } catch { setError('Failed to set budget'); setSuccess(''); }
+      toast.success('Budget set'); load();
+    } catch { toast.error('Failed to set budget'); }
   };
 
   const startEditBudget = (b) => { setEditingBudgetId(b.id); setEditBudgetData({ month: b.month, year: b.year, amount: b.amount.toString() }); };
@@ -157,15 +152,15 @@ export default function Transactions() {
   const saveEditBudget = async () => {
     try {
       await api.put(`/budgets/${editingBudgetId}`, { month: editBudgetData.month, year: editBudgetData.year, amount: parseFloat(editBudgetData.amount || 0) });
-      cancelEditBudget(); setSuccess('Budget updated'); setError(''); load();
-    } catch { setError('Failed to update budget'); setSuccess(''); }
+      cancelEditBudget(); toast.success('Budget updated'); load();
+    } catch { toast.error('Failed to update budget'); }
   };
 
   const deleteBudget = async () => {
     try {
       await api.delete(`/budgets/${deleteBudgetId}`);
-      setDeleteBudgetId(null); setSuccess('Budget deleted'); setError(''); load();
-    } catch { setError('Failed to delete budget'); setSuccess(''); }
+      setDeleteBudgetId(null); toast.success('Budget deleted'); load();
+    } catch { toast.error('Failed to delete budget'); }
   };
 
   const startEditTx = (t) => {
@@ -208,7 +203,7 @@ export default function Transactions() {
         }
       }
       await api.put(`/transactions/${editingTxId}`, payload);
-      cancelEditTx(); setSuccess('Changes saved'); setError(''); load();
+      cancelEditTx(); toast.success('Changes saved'); load();
     } catch { setEditError('Failed to save changes'); }
   };
 
@@ -216,8 +211,8 @@ export default function Transactions() {
     if (deleteTargetId === null) return;
     try {
       await api.delete(`/transactions/${deleteTargetId}`);
-      setDeleteTargetId(null); setSuccess('Transaction deleted'); setError(''); load();
-    } catch { setError('Failed to delete transaction'); setSuccess(''); }
+      setDeleteTargetId(null); toast.success('Transaction deleted'); load();
+    } catch { toast.error('Failed to delete transaction'); }
   };
 
   // ── Filtering ─────────────────────────────────────────────────────────────
@@ -255,10 +250,6 @@ export default function Transactions() {
   // ── Render ────────────────────────────────────────────────────────────────
   return (
     <div className="max-w-6xl mx-auto p-4 space-y-5">
-
-      {/* Toasts */}
-      {error && <Alert variant="error" message={error} onClose={() => setError('')} />}
-      {success && <Alert variant="success" message={success} onClose={() => setSuccess('')} />}
 
       {/* Dialogs */}
       <ConfirmDialog open={deleteTargetId !== null} onOpenChange={(o) => { if (!o) setDeleteTargetId(null); }}
