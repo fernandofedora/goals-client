@@ -6,8 +6,8 @@ import Input from '../components/ui/input';
 import Button from '../components/ui/button';
 import Select from '../components/ui/select';
 import EditTransactionDialog from '../components/ui/edit-transaction-dialog';
-import Alert from '../components/ui/alert';
 import ConfirmDialog from '../components/ui/confirm-dialog';
+import { toast } from 'sonner';
 import { cn } from '../lib/utils';
 
 // ── Inline Field wrapper for consistent label+input spacing ──────────────────
@@ -73,8 +73,6 @@ export default function Transactions() {
   const [showYearAll, setShowYearAll] = useState(false);
   const monthNameEs = new Date(0, Number(monthFilter) - 1).toLocaleString('es', { month: 'long' });
 
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
   const [deleteTargetId, setDeleteTargetId] = useState(null);
 
   const [expense, setExpense] = useState({ description: '', categoryId: '', amount: '', date: '', method: 'cash', cardId: '', accountId: '' });
@@ -105,13 +103,10 @@ export default function Transactions() {
       setTransactions(trxRes.data);
       setBudgets(budRes.data);
       setAccounts(accRes.data);
-      setError('');
-    } catch { setError('Failed to load data'); }
+    } catch { toast.error('Failed to load data'); }
   }, []);
 
   useEffect(() => { load(); }, [load]);
-  useEffect(() => { if (!success) return; const t = setTimeout(() => setSuccess(''), 4000); return () => clearTimeout(t); }, [success]);
-  useEffect(() => { if (!error) return; const t = setTimeout(() => setError(''), 6000); return () => clearTimeout(t); }, [error]);
 
   // ── CRUD handlers ─────────────────────────────────────────────────────────
   const addExpense = async (e) => {
@@ -127,8 +122,8 @@ export default function Transactions() {
       };
       await api.post('/transactions', expPayload);
       setExpense({ description: '', categoryId: '', amount: '', date: '', method: 'cash', cardId: '', accountId: '' });
-      setSuccess('Expense added'); setError(''); load();
-    } catch { setError('Failed to add expense'); setSuccess(''); }
+      toast.success('Expense added'); load();
+    } catch { toast.error('Failed to add expense'); }
   };
 
   const addIncome = async (e) => {
@@ -138,8 +133,8 @@ export default function Transactions() {
       if (income.incomeMethod === 'cash') payload.accountId = null;
       await api.post('/transactions', payload);
       setIncome({ description: '', categoryId: '', amount: '', date: '', incomeMethod: 'cash', accountId: '' });
-      setSuccess('Income added'); setError(''); load();
-    } catch { setError('Failed to add income'); setSuccess(''); }
+      toast.success('Income added'); load();
+    } catch { toast.error('Failed to add income'); }
   };
 
   const setMonthlyBudget = async (e) => {
@@ -147,8 +142,8 @@ export default function Transactions() {
     try {
       await api.post('/budgets', { month: budget.month, year: budget.year, amount: parseFloat(budget.amount || 0) });
       setBudget({ month: '', year: '', amount: '' });
-      setSuccess('Budget set'); setError(''); load();
-    } catch { setError('Failed to set budget'); setSuccess(''); }
+      toast.success('Budget set'); load();
+    } catch { toast.error('Failed to set budget'); }
   };
 
   const startEditBudget = (b) => { setEditingBudgetId(b.id); setEditBudgetData({ month: b.month, year: b.year, amount: b.amount.toString() }); };
@@ -157,15 +152,15 @@ export default function Transactions() {
   const saveEditBudget = async () => {
     try {
       await api.put(`/budgets/${editingBudgetId}`, { month: editBudgetData.month, year: editBudgetData.year, amount: parseFloat(editBudgetData.amount || 0) });
-      cancelEditBudget(); setSuccess('Budget updated'); setError(''); load();
-    } catch { setError('Failed to update budget'); setSuccess(''); }
+      cancelEditBudget(); toast.success('Budget updated'); load();
+    } catch { toast.error('Failed to update budget'); }
   };
 
   const deleteBudget = async () => {
     try {
       await api.delete(`/budgets/${deleteBudgetId}`);
-      setDeleteBudgetId(null); setSuccess('Budget deleted'); setError(''); load();
-    } catch { setError('Failed to delete budget'); setSuccess(''); }
+      setDeleteBudgetId(null); toast.success('Budget deleted'); load();
+    } catch { toast.error('Failed to delete budget'); }
   };
 
   const startEditTx = (t) => {
@@ -208,7 +203,7 @@ export default function Transactions() {
         }
       }
       await api.put(`/transactions/${editingTxId}`, payload);
-      cancelEditTx(); setSuccess('Changes saved'); setError(''); load();
+      cancelEditTx(); toast.success('Changes saved'); load();
     } catch { setEditError('Failed to save changes'); }
   };
 
@@ -216,8 +211,8 @@ export default function Transactions() {
     if (deleteTargetId === null) return;
     try {
       await api.delete(`/transactions/${deleteTargetId}`);
-      setDeleteTargetId(null); setSuccess('Transaction deleted'); setError(''); load();
-    } catch { setError('Failed to delete transaction'); setSuccess(''); }
+      setDeleteTargetId(null); toast.success('Transaction deleted'); load();
+    } catch { toast.error('Failed to delete transaction'); }
   };
 
   // ── Filtering ─────────────────────────────────────────────────────────────
@@ -255,10 +250,6 @@ export default function Transactions() {
   // ── Render ────────────────────────────────────────────────────────────────
   return (
     <div className="max-w-6xl mx-auto p-4 space-y-5">
-
-      {/* Toasts */}
-      {error && <Alert variant="error" message={error} onClose={() => setError('')} />}
-      {success && <Alert variant="success" message={success} onClose={() => setSuccess('')} />}
 
       {/* Dialogs */}
       <ConfirmDialog open={deleteTargetId !== null} onOpenChange={(o) => { if (!o) setDeleteTargetId(null); }}
@@ -614,102 +605,164 @@ export default function Transactions() {
           </div>
         </div>
 
-        {/* Table */}
-        <div className="overflow-x-auto">
-          {filtered.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-16 text-center gap-3">
-              <span className="text-4xl opacity-30">📭</span>
-              <p className="text-sm text-gray-400">
-                No transactions for {showYearAll ? yearFilter : `${monthNameEs} ${yearFilter}`}
-              </p>
-              <p className="text-xs text-gray-300 dark:text-gray-600">Add your first transaction using the form above.</p>
-            </div>
-          ) : (
-            <table className="min-w-[700px] w-full text-sm">
-              <thead>
-                <tr className="bg-gray-50 dark:bg-slate-800/50 border-b border-[var(--border)]">
-                  {['Type', 'Description', 'Category', 'Amount', 'Date', 'Method', ''].map((h, i) => (
-                    <th
-                      key={i}
-                      className={cn(
-                        'px-4 py-2.5 text-left text-[11px] font-bold uppercase tracking-widest text-gray-400 whitespace-nowrap',
-                        i === 6 && 'text-right'
-                      )}
-                    >
-                      {h}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-[var(--border)]">
-                {filtered.map(t => (
-                  <tr key={t.id} className="group hover:bg-gray-50/60 dark:hover:bg-slate-800/30 transition-colors">
-                    <td className="px-4 py-3">
-                      <Badge type={t.type} />
-                    </td>
-                    <td className="px-4 py-3 max-w-[180px]">
-                      <span className="truncate block font-medium text-gray-800 dark:text-gray-100" title={t.description}>
-                        {t.description}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 whitespace-nowrap">
-                      {t.Category ? (
-                        <span className="inline-flex items-center gap-1.5 text-gray-600 dark:text-gray-300">
-                          {t.Category.color && (
-                            <span className="h-2 w-2 rounded-full flex-shrink-0" style={{ background: t.Category.color }} />
-                          )}
-                          {t.Category.name}
+        {/* ── Empty state (shared) ──────────────────────────────────────── */}
+        {filtered.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-16 text-center gap-3">
+            <span className="text-4xl opacity-30">📭</span>
+            <p className="text-sm text-gray-400">
+              No transactions for {showYearAll ? yearFilter : `${monthNameEs} ${yearFilter}`}
+            </p>
+            <p className="text-xs text-gray-300 dark:text-gray-600">Add your first transaction using the form above.</p>
+          </div>
+        ) : (
+          <>
+            {/* ── Mobile card list (< sm) — buttons always visible ─────── */}
+            <ul className="sm:hidden divide-y divide-[var(--border)]">
+              {filtered.map(t => {
+                const methodPill = t.Account
+                  ? <span className="inline-flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-sky-50 dark:bg-sky-950/40 text-sky-700 dark:text-sky-400">🏦 {t.Account.name}</span>
+                  : t.paymentMethod === 'card'
+                    ? <span className="inline-flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-violet-50 dark:bg-violet-950/40 text-violet-700 dark:text-violet-400">💳 {t.Card?.name || 'Card'}</span>
+                    : <span className="inline-flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-gray-100 dark:bg-slate-800 text-gray-500 dark:text-gray-400">💵 Cash</span>;
+
+                return (
+                  <li key={t.id} className="px-4 py-3 flex items-start gap-3">
+                    {/* Left: info */}
+                    <div className="flex-1 min-w-0 space-y-1">
+                      {/* Row 1: badge + description */}
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <Badge type={t.type} />
+                        <span className="font-medium text-sm text-gray-800 dark:text-gray-100 truncate" title={t.description}>
+                          {t.description}
                         </span>
-                      ) : <span className="text-gray-300">—</span>}
-                    </td>
-                    <td className={cn(
-                      'px-4 py-3 font-semibold tabular-nums whitespace-nowrap',
-                      t.type === 'expense' ? 'text-rose-600 dark:text-rose-400' : 'text-emerald-600 dark:text-emerald-400'
-                    )}>
-                      {t.type === 'expense' ? '−' : '+'}${parseFloat(t.amount ?? 0).toFixed(2)}
-                    </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-gray-500 dark:text-gray-400 text-xs">{t.date}</td>
-                    <td className="px-4 py-3 whitespace-nowrap">
-                      {/* Resolve method display for both income and expense */}
-                      {(() => {
-                        if (t.Account) return (
-                          <span className="inline-flex items-center gap-1.5 text-[11px] font-medium px-2 py-0.5 rounded-full bg-sky-50 dark:bg-sky-950/40 text-sky-700 dark:text-sky-400">
-                            🏦 {t.Account.name}
-                          </span>
-                        );
-                        if (t.paymentMethod === 'card') return (
-                          <span className="inline-flex items-center gap-1.5 text-[11px] font-medium px-2 py-0.5 rounded-full bg-violet-50 dark:bg-violet-950/40 text-violet-700 dark:text-violet-400">
-                            💳 {t.Card?.name || 'Card'}
-                          </span>
-                        );
-                        return (
-                          <span className="inline-flex items-center gap-1.5 text-[11px] font-medium px-2 py-0.5 rounded-full bg-gray-100 dark:bg-slate-800 text-gray-500 dark:text-gray-400">
-                            💵 Cash
-                          </span>
-                        );
-                      })()}
-                    </td>
-                    <td className="px-4 py-3 text-right">
-                      <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <IconButton onClick={() => startEditTx(t)} title="Edit">
-                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                            <path d="M12 20h9" /><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L8 18l-4 1 1-4 11.5-11.5z" />
-                          </svg>
-                        </IconButton>
-                        <IconButton onClick={() => setDeleteTargetId(t.id)} title="Delete" danger>
-                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                            <path d="M3 6h18" /><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
-                            <path d="M10 11v6M14 11v6M15 6V4a2 2 0 0 0-2-2h-2a2 2 0 0 0-2 2v2" />
-                          </svg>
-                        </IconButton>
                       </div>
-                    </td>
+                      {/* Row 2: category · amount · date · method */}
+                      <div className="flex items-center gap-2 flex-wrap text-xs text-gray-500 dark:text-gray-400">
+                        {t.Category && (
+                          <span className="inline-flex items-center gap-1">
+                            {t.Category.color && (
+                              <span className="h-2 w-2 rounded-full flex-shrink-0" style={{ background: t.Category.color }} />
+                            )}
+                            {t.Category.name}
+                          </span>
+                        )}
+                        <span className={cn(
+                          'font-semibold tabular-nums',
+                          t.type === 'expense' ? 'text-rose-600 dark:text-rose-400' : 'text-emerald-600 dark:text-emerald-400'
+                        )}>
+                          {t.type === 'expense' ? '−' : '+'}${parseFloat(t.amount ?? 0).toFixed(2)}
+                        </span>
+                        <span>{t.date}</span>
+                        {methodPill}
+                      </div>
+                    </div>
+
+                    {/* Right: action buttons — always visible on mobile */}
+                    <div className="flex items-center gap-1 flex-shrink-0">
+                      <IconButton onClick={() => startEditTx(t)} title="Edit">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M12 20h9" /><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L8 18l-4 1 1-4 11.5-11.5z" />
+                        </svg>
+                      </IconButton>
+                      <IconButton onClick={() => setDeleteTargetId(t.id)} title="Delete" danger>
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M3 6h18" /><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+                          <path d="M10 11v6M14 11v6M15 6V4a2 2 0 0 0-2-2h-2a2 2 0 0 0-2 2v2" />
+                        </svg>
+                      </IconButton>
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+
+            {/* ── Desktop table (≥ sm) — hover-reveal unchanged ───────── */}
+            <div className="hidden sm:block overflow-x-auto">
+              <table className="min-w-[700px] w-full text-sm">
+                <thead>
+                  <tr className="bg-gray-50 dark:bg-slate-800/50 border-b border-[var(--border)]">
+                    {['Type', 'Description', 'Category', 'Amount', 'Date', 'Method', ''].map((h, i) => (
+                      <th
+                        key={i}
+                        className={cn(
+                          'px-4 py-2.5 text-left text-[11px] font-bold uppercase tracking-widest text-gray-400 whitespace-nowrap',
+                          i === 6 && 'text-right'
+                        )}
+                      >
+                        {h}
+                      </th>
+                    ))}
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
-        </div>
+                </thead>
+                <tbody className="divide-y divide-[var(--border)]">
+                  {filtered.map(t => (
+                    <tr key={t.id} className="group hover:bg-gray-50/60 dark:hover:bg-slate-800/30 transition-colors">
+                      <td className="px-4 py-3">
+                        <Badge type={t.type} />
+                      </td>
+                      <td className="px-4 py-3 max-w-[180px]">
+                        <span className="truncate block font-medium text-gray-800 dark:text-gray-100" title={t.description}>
+                          {t.description}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 whitespace-nowrap">
+                        {t.Category ? (
+                          <span className="inline-flex items-center gap-1.5 text-gray-600 dark:text-gray-300">
+                            {t.Category.color && (
+                              <span className="h-2 w-2 rounded-full flex-shrink-0" style={{ background: t.Category.color }} />
+                            )}
+                            {t.Category.name}
+                          </span>
+                        ) : <span className="text-gray-300">—</span>}
+                      </td>
+                      <td className={cn(
+                        'px-4 py-3 font-semibold tabular-nums whitespace-nowrap',
+                        t.type === 'expense' ? 'text-rose-600 dark:text-rose-400' : 'text-emerald-600 dark:text-emerald-400'
+                      )}>
+                        {t.type === 'expense' ? '−' : '+'}${parseFloat(t.amount ?? 0).toFixed(2)}
+                      </td>
+                      <td className="px-4 py-3 whitespace-nowrap text-gray-500 dark:text-gray-400 text-xs">{t.date}</td>
+                      <td className="px-4 py-3 whitespace-nowrap">
+                        {(() => {
+                          if (t.Account) return (
+                            <span className="inline-flex items-center gap-1.5 text-[11px] font-medium px-2 py-0.5 rounded-full bg-sky-50 dark:bg-sky-950/40 text-sky-700 dark:text-sky-400">
+                              🏦 {t.Account.name}
+                            </span>
+                          );
+                          if (t.paymentMethod === 'card') return (
+                            <span className="inline-flex items-center gap-1.5 text-[11px] font-medium px-2 py-0.5 rounded-full bg-violet-50 dark:bg-violet-950/40 text-violet-700 dark:text-violet-400">
+                              💳 {t.Card?.name || 'Card'}
+                            </span>
+                          );
+                          return (
+                            <span className="inline-flex items-center gap-1.5 text-[11px] font-medium px-2 py-0.5 rounded-full bg-gray-100 dark:bg-slate-800 text-gray-500 dark:text-gray-400">
+                              💵 Cash
+                            </span>
+                          );
+                        })()}
+                      </td>
+                      <td className="px-4 py-3 text-right">
+                        <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <IconButton onClick={() => startEditTx(t)} title="Edit">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                              <path d="M12 20h9" /><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L8 18l-4 1 1-4 11.5-11.5z" />
+                            </svg>
+                          </IconButton>
+                          <IconButton onClick={() => setDeleteTargetId(t.id)} title="Delete" danger>
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                              <path d="M3 6h18" /><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+                              <path d="M10 11v6M14 11v6M15 6V4a2 2 0 0 0-2-2h-2a2 2 0 0 0-2 2v2" />
+                            </svg>
+                          </IconButton>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </>
+        )}
       </section>
 
       {/* Edit Dialog */}
