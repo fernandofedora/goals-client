@@ -102,6 +102,10 @@ export default function Settings() {
   const [editingCardId, setEditingCardId] = useState(null);
   const [editCardForm, setEditCardForm] = useState({ name: '', color: '#0ea5e9', last4: '' });
 
+  // ── Account edit ───────────────────────────────────────────────────────────
+  const [editingAccountId, setEditingAccountId] = useState(null);
+  const [editAccountForm, setEditAccountForm] = useState({ name: '', color: '#a3e635', initialBalance: '' });
+
   // ── Confirm delete ─────────────────────────────────────────────────────────
   const [deleteCatId, setDeleteCatId] = useState(null);
   const [deleteCardId, setDeleteCardId] = useState(null);
@@ -196,6 +200,18 @@ export default function Settings() {
       await api.delete(`/accounts/${deleteAccountId}`);
       setDeleteAccountId(null); toast.success('Account deleted'); load();
     } catch { toast.error('Failed to delete account'); }
+  };
+
+  const startEditAccount = (account) => {
+    setEditingAccountId(account.id);
+    setEditAccountForm({ name: account.name, color: account.color, initialBalance: account.initialBalance ?? '' });
+  };
+  const cancelEditAccount = () => setEditingAccountId(null);
+  const saveEditAccount = async (id) => {
+    try {
+      await api.put(`/accounts/${id}`, editAccountForm);
+      setEditingAccountId(null); toast.success('Account updated'); load();
+    } catch { toast.error('Failed to update account'); }
   };
 
   // ── Derived ───────────────────────────────────────────────────────────────
@@ -309,30 +325,72 @@ export default function Settings() {
               <div
                 key={account.id}
                 className="relative rounded-xl p-4 text-white overflow-hidden"
-                style={{ background: account.color }}
+                style={{ background: editingAccountId === account.id ? editAccountForm.color : account.color }}
               >
                 {/* subtle inner overlay for depth */}
                 <div className="absolute inset-0 bg-black/10 pointer-events-none" aria-hidden />
                 <div className="relative flex items-center justify-between gap-2">
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-lg">🏦</span>
-                      <span className="font-semibold text-base leading-tight">{account.name}</span>
+                  {editingAccountId === account.id ? (
+                    <div className="flex flex-wrap gap-2 items-end flex-1">
+                      <Field label="Name">
+                        <Input
+                          className="bg-white/20 border-white/30 text-white placeholder-white/60 backdrop-blur-sm"
+                          value={editAccountForm.name}
+                          onChange={e => setEditAccountForm(v => ({ ...v, name: e.target.value }))}
+                        />
+                      </Field>
+                      <Field label="Initial Balance ($)">
+                        <Input
+                          type="number" step="0.01"
+                          className="w-28 bg-white/20 border-white/30 text-white placeholder-white/60 backdrop-blur-sm"
+                          value={editAccountForm.initialBalance}
+                          onChange={e => setEditAccountForm(v => ({ ...v, initialBalance: e.target.value }))}
+                        />
+                      </Field>
+                      <Field label="Color">
+                        <input
+                          className="w-9 h-9 rounded-lg border border-white/30 cursor-pointer bg-transparent [appearance:auto]"
+                          type="color"
+                          value={editAccountForm.color}
+                          onChange={e => setEditAccountForm(v => ({ ...v, color: e.target.value }))}
+                        />
+                      </Field>
+                      <div className="flex gap-1.5 pb-0.5">
+                        <button type="button" onClick={() => saveEditAccount(account.id)} className="px-3 py-1.5 text-xs rounded-lg bg-white/20 hover:bg-white/30 text-white font-medium backdrop-blur-sm">Save</button>
+                        <button type="button" onClick={cancelEditAccount} className="px-3 py-1.5 text-xs rounded-lg border border-white/30 text-white font-medium">Cancel</button>
+                      </div>
                     </div>
-                    <p className="text-[13px] text-white/80 mt-0.5">
-                      Initial: ${parseFloat(account.initialBalance ?? 0).toFixed(2)}
-                    </p>
-                  </div>
-                  <IconButton
-                    onClick={() => setDeleteAccountId(account.id)}
-                    title="Delete account"
-                    danger
-                  >
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M3 6h18" /><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
-                      <path d="M10 11v6M14 11v6M15 6V4a2 2 0 0 0-2-2h-2a2 2 0 0 0-2 2v2" />
-                    </svg>
-                  </IconButton>
+                  ) : (
+                    <>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-lg">🏦</span>
+                          <span className="font-semibold text-base leading-tight">{account.name}</span>
+                        </div>
+                        <p className="text-[13px] text-white/80 mt-0.5">
+                          Initial: ${parseFloat(account.initialBalance ?? 0).toFixed(2)}
+                        </p>
+                      </div>
+                      <div className="flex gap-1">
+                        <button
+                          type="button"
+                          onClick={() => startEditAccount(account)}
+                          title="Edit account"
+                          className="inline-flex items-center justify-center w-8 h-8 rounded-lg transition-colors text-white/80 hover:bg-white/20"
+                        >
+                          <EditIcon />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setDeleteAccountId(account.id)}
+                          title="Delete account"
+                          className="inline-flex items-center justify-center w-8 h-8 rounded-lg transition-colors text-white/80 hover:bg-white/20"
+                        >
+                          <TrashIcon />
+                        </button>
+                      </div>
+                    </>
+                  )}
                 </div>
               </div>
             ))}
