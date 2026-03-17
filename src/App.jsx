@@ -6,12 +6,13 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import ResetPassword from './pages/ResetPassword';
 import Dashboard from './pages/Dashboard';
-import Transactions from './pages/Transactions';
 import Settings from './pages/Settings';
 import SavingPlan from './pages/SavingPlan';
 import Accounts from './pages/Accounts';
 import Profile from './pages/Profile';
 import ScheduledPayments from './pages/ScheduledPayments';
+import Budget from './pages/Budget';
+import AddTransaction from './pages/AddTransaction';
 import useTheme from './hooks/useTheme';
 import { Toaster } from './components/ui/sonner';
 
@@ -41,7 +42,9 @@ export default function App() {
               <Route path="/register" element={<Register />} />
               <Route path="/reset-password" element={<ResetPassword />} />
               <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-              <Route path="/transactions" element={<ProtectedRoute><Transactions /></ProtectedRoute>} />
+              <Route path="/transactions" element={<Navigate to="/transactions/add" replace />} />
+              <Route path="/transactions/budget" element={<ProtectedRoute><Budget /></ProtectedRoute>} />
+              <Route path="/transactions/add" element={<ProtectedRoute><AddTransaction /></ProtectedRoute>} />
               <Route path="/saving-plan" element={<Navigate to="/plans/savings" replace />} />
               <Route path="/plans" element={<Navigate to="/plans/savings" replace />} />
               <Route path="/plans/savings" element={<ProtectedRoute><SavingPlan /></ProtectedRoute>} />
