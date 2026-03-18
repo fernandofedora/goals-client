@@ -19,10 +19,7 @@ const barChartConfig = {
   expense: { label: 'Expenses', color: '#f43f5e' },
 };
 
-const incomeMethodConfig = {
-  cash: { label: 'Cash', color: '#10b981' },
-  account: { label: 'Account', color: '#38bdf8' },
-};
+
 
 const currencyFormatter = (v) => `$${Number(v ?? 0).toFixed(2)}`;
 
@@ -206,8 +203,10 @@ export default function Dashboard() {
     return 'bg-emerald-500';
   }, [budgetProgress]);
 
-  const incomeMethodData = useMemo(() =>
-    Object.entries(summary?.incomeMethods || {}).map(([name, amount]) => ({ name, amount: Number(amount) })),
+  const incomeCatData = useMemo(() =>
+    (summary?.incomeCategories || []).map((c, i) => ({
+      ...c, color: c.color || categoryColors[i % categoryColors.length]
+    })).sort((a, b) => b.amount - a.amount),
     [summary]
   );
 
@@ -230,7 +229,7 @@ export default function Dashboard() {
 
   const catData = (summary?.categories || []).map((c, i) => ({
     ...c, color: c.color || categoryColors[i % categoryColors.length]
-  }));
+  })).sort((a, b) => b.amount - a.amount);
 
   const renderSummary = () => {
     if (loading) return <p className="text-sm text-gray-400 animate-pulse">Loading…</p>;
@@ -272,7 +271,7 @@ export default function Dashboard() {
         <div className="flex justify-between items-center mb-4 gap-3 flex-wrap">
           <h2 className="text-xl font-bold tracking-tight">Overview</h2>
           <div className="flex items-center gap-2 flex-wrap">
-            <Button onClick={() => navigate('/transactions')} variant="primary">+ New Transaction</Button>
+            <Button onClick={() => navigate('/transactions/add')} variant="primary">+ New Transaction</Button>
             <Select value={period} onChange={(e) => setPeriod(e.target.value)}>
               {monthOptions.map(m => <option key={m.value} value={m.value}>{m.label}</option>)}
             </Select>
@@ -370,20 +369,20 @@ export default function Dashboard() {
           )}
         </div>
 
-        {/* Income Methods Donut */}
+        {/* Income Categories Donut */}
         <div className="bg-white dark:bg-slate-900 rounded-2xl border border-[var(--border)] shadow-sm p-5">
-          <h3 className="text-base font-semibold mb-1">Income Methods</h3>
-          <p className="text-xs text-gray-400 mb-4">Cash vs. Account deposits</p>
-          {incomeMethodData.every(d => d.amount === 0) ? (
+          <h3 className="text-base font-semibold mb-1">Income Categories</h3>
+          <p className="text-xs text-gray-400 mb-4">Share of total income by category</p>
+          {incomeCatData.length === 0 ? (
             <div className="flex items-center justify-center h-48 text-gray-400 text-sm">No income data</div>
           ) : (
             <>
-              <ChartContainer config={incomeMethodConfig} style={{ height: 220 }}>
+              <ChartContainer config={{}} style={{ height: 220 }}>
                 <PieChart>
                   <Pie
                     activeIndex={activeIncomeIdx}
                     activeShape={renderActiveShape}
-                    data={incomeMethodData}
+                    data={incomeCatData}
                     dataKey="amount"
                     nameKey="name"
                     cx="50%"
@@ -392,22 +391,28 @@ export default function Dashboard() {
                     outerRadius={90}
                     onMouseEnter={(_, idx) => setActiveIncomeIdx(idx)}
                   >
-                    {incomeMethodData.map((d, i) => (
-                      <Cell key={i} fill={incomeMethodConfig[d.name]?.color || categoryColors[i]} />
-                    ))}
+                    {incomeCatData.map((c, i) => <Cell key={i} fill={c.color} />)}
                   </Pie>
-                  <ChartTooltip content={<ChartTooltipContent formatter={(v) => currencyFormatter(v)} />} />
                 </PieChart>
               </ChartContainer>
-              <div className="mt-3 flex gap-4 justify-center">
-                {incomeMethodData.map((d, i) => (
-                  <div key={d.name} className="flex items-center gap-2 text-sm">
-                    <span className="h-2.5 w-2.5 rounded-full" style={{ background: incomeMethodConfig[d.name]?.color || categoryColors[i] }} />
-                    <span className="capitalize text-gray-600 dark:text-gray-300">{d.name}</span>
-                    <span className="font-semibold tabular-nums">{currencyFormatter(d.amount)}</span>
-                  </div>
-                ))}
-              </div>
+              <ul className="mt-3 divide-y divide-gray-100 dark:divide-slate-800">
+                {incomeCatData.map((c) => {
+                  const totalInc = summary?.totals?.income || 0;
+                  const pct = totalInc > 0 ? ((c.amount / totalInc) * 100).toFixed(1) : 0;
+                  return (
+                    <li key={c.name} className="flex items-center justify-between py-1.5 text-sm">
+                      <div className="flex items-center gap-2">
+                        <span className="h-2.5 w-2.5 rounded-full flex-shrink-0" style={{ background: c.color }} />
+                        <span className="text-gray-700 dark:text-gray-300 truncate max-w-[160px]">{c.name}</span>
+                      </div>
+                      <div className="flex items-center gap-3 text-right">
+                        <span className="text-gray-400 text-xs">{pct}%</span>
+                        <span className="font-semibold text-gray-800 dark:text-gray-100 tabular-nums">${c.amount.toFixed(2)}</span>
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
             </>
           )}
         </div>
