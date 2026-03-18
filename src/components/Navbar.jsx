@@ -6,6 +6,7 @@ import { cn } from '../lib/utils';
 export default function Navbar({ theme, onToggleTheme }) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isPlansOpen, setIsPlansOpen] = useState(false);
+  const [isTransactionsOpen, setIsTransactionsOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
   const user = JSON.parse(localStorage.getItem('user') || 'null');
@@ -36,21 +37,93 @@ export default function Navbar({ theme, onToggleTheme }) {
       >
         Dashboard
       </NavLink>
-      <NavLink
-        to="/transactions"
-        onClick={onItemClick}
-        className={({ isActive }) =>
-          cn(
+      {/* Transactions submenu */}
+      <div className={cn('relative', mobile ? 'w-full' : '')}>
+        <button
+          type="button"
+          onClick={() => setIsTransactionsOpen(v => !v)}
+          className={cn(
             'inline-flex items-center gap-2 px-3 py-1 rounded-lg transition-colors',
             mobile ? 'w-full justify-start' : '',
-            isActive
+            location.pathname.startsWith('/transactions')
               ? 'bg-[var(--muted)] text-[var(--foreground)] font-semibold shadow-sm'
               : 'text-[var(--muted-foreground)] hover:bg-[var(--muted)] hover:text-[var(--foreground)]'
-          )
-        }
-      >
-        Transactions
-      </NavLink>
+          )}
+          aria-haspopup="menu"
+          aria-expanded={isTransactionsOpen}
+        >
+          Transactions
+          <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M6 9l6 6 6-6"/></svg>
+        </button>
+        {/* Desktop dropdown */}
+        {!mobile && isTransactionsOpen && (
+          <div className="absolute mt-2 w-48 rounded-lg border border-[var(--border)] bg-[var(--card)] shadow-lg z-50">
+            <nav className="py-2">
+              <NavLink
+                to="/transactions/budget"
+                onClick={() => { onItemClick?.(); setIsTransactionsOpen(false); }}
+                className={({ isActive }) =>
+                  cn(
+                    'block px-3 py-1.5 rounded-md transition-colors',
+                    isActive
+                      ? 'bg-[var(--muted)] text-[var(--foreground)] font-semibold'
+                      : 'text-[var(--muted-foreground)] hover:bg-[var(--muted)] hover:text-[var(--foreground)]'
+                  )
+                }
+              >
+                Budget
+              </NavLink>
+              <NavLink
+                to="/transactions/add"
+                onClick={() => { onItemClick?.(); setIsTransactionsOpen(false); }}
+                className={({ isActive }) =>
+                  cn(
+                    'block px-3 py-1.5 rounded-md transition-colors',
+                    isActive
+                      ? 'bg-[var(--muted)] text-[var(--foreground)] font-semibold'
+                      : 'text-[var(--muted-foreground)] hover:bg-[var(--muted)] hover:text-[var(--foreground)]'
+                  )
+                }
+              >
+                Add Transaction
+              </NavLink>
+            </nav>
+          </div>
+        )}
+        {/* Mobile submenu inline */}
+        {mobile && (
+          <div className="mt-2 space-y-1">
+            <NavLink
+              to="/transactions/budget"
+              onClick={onItemClick}
+              className={({ isActive }) =>
+                cn(
+                  'inline-flex items-center gap-2 px-3 py-1 rounded-lg transition-colors w-full justify-start',
+                  isActive
+                    ? 'bg-[var(--muted)] text-[var(--foreground)] font-semibold shadow-sm'
+                    : 'text-[var(--muted-foreground)] hover:bg-[var(--muted)] hover:text-[var(--foreground)]'
+                )
+              }
+            >
+              Budget
+            </NavLink>
+            <NavLink
+              to="/transactions/add"
+              onClick={onItemClick}
+              className={({ isActive }) =>
+                cn(
+                  'inline-flex items-center gap-2 px-3 py-1 rounded-lg transition-colors w-full justify-start',
+                  isActive
+                    ? 'bg-[var(--muted)] text-[var(--foreground)] font-semibold shadow-sm'
+                    : 'text-[var(--muted-foreground)] hover:bg-[var(--muted)] hover:text-[var(--foreground)]'
+                )
+              }
+            >
+              Add Transaction
+            </NavLink>
+          </div>
+        )}
+      </div>
       {/* Plans submenu */}
       <div className={cn('relative', mobile ? 'w-full' : '')}>
         <button
