@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import Button from '../components/ui/button';
 import api from '../api';
 import Select from '../components/ui/select';
+import DateRangePicker from '../components/ui/date-range-picker';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid,
   PieChart, Pie, Cell, Sector, Tooltip, Legend, ResponsiveContainer
@@ -42,7 +43,9 @@ const renderActiveShape = (props) => {
 
 export default function Dashboard() {
   const navigate = useNavigate();
+  const [filterMode, setFilterMode] = useState(() => localStorage.getItem('dashboard_filter_mode') || 'period'); // 'period' | 'range'
   const [period, setPeriod] = useState(() => localStorage.getItem('dashboard_period') || 'all');
+  const [dateRange, setDateRange] = useState({ from: undefined, to: undefined });
   const [summary, setSummary] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -61,6 +64,10 @@ export default function Dashboard() {
 
   useEffect(() => { localStorage.setItem('dashboard_period', period); }, [period]);
   useEffect(() => { localStorage.setItem('dashboard_year', String(selectedYear)); }, [selectedYear]);
+  useEffect(() => { localStorage.setItem('dashboard_filter_mode', filterMode); }, [filterMode]);
+
+  // Helper: format a Date to 'YYYY-MM-DD' for the API
+  const toISODate = (d) => d ? d.toISOString().slice(0, 10) : null;
 
   const formatCurrency = (value) => {
     try { return new Intl.NumberFormat('es', { style: 'currency', currency: 'USD' }).format(Number(value || 0)); }
@@ -81,15 +88,24 @@ export default function Dashboard() {
       setLoading(true);
       setError('');
       try {
-        const periodParam = period === 'all' ? { period } : { period: `${selectedYear}-${period}` };
+        // ── Build params based on active filter mode ──────────────────────
+        let summaryParams;
+        const isRangeMode = filterMode === 'range' && dateRange?.from && dateRange?.to;
+
+        if (isRangeMode) {
+          summaryParams = { from: toISODate(dateRange.from), to: toISODate(dateRange.to) };
+        } else {
+          summaryParams = period === 'all' ? { period } : { period: `${selectedYear}-${period}` };
+        }
+
         const requests = [
-          api.get('/stats/summary', { params: periodParam }),
+          api.get('/stats/summary', { params: summaryParams }),
           api.get('/cards'),
           api.get('/accounts')
         ];
 
         // async-parallel: Pre-emptively add allTime and prev month if needed to avoid waterfall
-        if (period !== 'all') {
+        if (!isRangeMode && period !== 'all') {
           requests.push(api.get('/stats/summary', { params: { period: 'all' } }));
           const curMonth = Number(period);
           const prevMonth = String(curMonth === 1 ? 12 : curMonth - 1).padStart(2, '0');
@@ -120,7 +136,7 @@ export default function Dashboard() {
           setBankBalances(balances);
         }
 
-        if (period !== 'all') {
+        if (!isRangeMode && period !== 'all') {
           setAllTimeSummary(allTimeRes.data);
           const curIncome = Number(summaryRes.data?.totals?.income || 0);
           const curExpense = Number(summaryRes.data?.totals?.expense || 0);
@@ -139,10 +155,49 @@ export default function Dashboard() {
     };
 
     loadData();
-  }, [period, selectedYear]);
+  }, [period, selectedYear, filterMode, dateRange]);
 
   const barData = useMemo(() => {
     const monthLabels = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const isRangeMode = filterMode === 'range' && dateRange?.from && dateRange?.to;
+
+    if (isRangeMode) {
+      // In range mode: aggregate summary.incomeVsExpense by YYYY-MM across the selected range
+      const source = summary?.incomeVsExpense;
+      if (!source || source.length === 0) return [];
+
+      // Build all YYYY-MM keys inside the selected range
+      const from = dateRange.from;
+      const to = dateRange.to;
+      const keys = [];
+      let cur = new Date(from.getFullYear(), from.getMonth(), 1);
+      const end = new Date(to.getFullYear(), to.getMonth(), 1);
+      while (cur <= end) {
+        keys.push(`${cur.getFullYear()}-${String(cur.getMonth() + 1).padStart(2, '0')}`);
+        cur = new Date(cur.getFullYear(), cur.getMonth() + 1, 1);
+      }
+
+      // Aggregate source data to those keys
+      const agg = source.reduce((acc, item) => {
+        const key = String(item.date).slice(0, 7);
+        if (!acc[key]) acc[key] = { income: 0, expense: 0 };
+        acc[key].income += Number(item.income || 0);
+        acc[key].expense += Number(item.expense || 0);
+        return acc;
+      }, {});
+
+      return keys.map(key => {
+        const [yr, mo] = key.split('-');
+        // Label: "Jan 2026" if spans multiple years, otherwise just "Jan"
+        const spanYears = from.getFullYear() !== to.getFullYear();
+        const label = spanYears
+          ? `${monthLabels[Number(mo) - 1]} ${yr}`
+          : monthLabels[Number(mo) - 1];
+        return { month: label, income: agg[key]?.income || 0, expense: agg[key]?.expense || 0 };
+      });
+    }
+
+    // ── Period mode (original logic) ──────────────────────────────────
     const months = Array.from({ length: 12 }, (_, i) => ({
       key: `${selectedYear}-${String(i + 1).padStart(2, '0')}`,
       label: monthLabels[i]
@@ -164,7 +219,8 @@ export default function Dashboard() {
     }
 
     return months.map(m => ({ month: m.label, income: 0, expense: 0 }));
-  }, [selectedYear, period, summary, allTimeSummary]);
+  }, [selectedYear, period, summary, allTimeSummary, filterMode, dateRange]);
+
 
   const paymentTotals = useMemo(() => {
     const cash = Number(summary?.paymentMethods?.cash || 0);
@@ -214,11 +270,17 @@ export default function Dashboard() {
 
   const onExport = async () => {
     try {
-      const params = period === 'all' ? { period } : { period: `${selectedYear}-${period}` };
+      const isRangeMode = filterMode === 'range' && dateRange?.from && dateRange?.to;
+      const params = isRangeMode
+        ? { from: toISODate(dateRange.from), to: toISODate(dateRange.to) }
+        : period === 'all' ? { period } : { period: `${selectedYear}-${period}` };
       const res = await api.get('/stats/export', { params, responseType: 'blob' });
       const url = window.URL.createObjectURL(new Blob([res.data]));
       const a = document.createElement('a');
-      a.href = url; a.download = `transactions_${params.period || 'all'}.xlsx`;
+      const name = isRangeMode
+        ? `transactions_${toISODate(dateRange.from)}_to_${toISODate(dateRange.to)}.xlsx`
+        : `transactions_${params.period || 'all'}.xlsx`;
+      a.href = url; a.download = name;
       a.click(); window.URL.revokeObjectURL(url);
     } catch { alert('Export failed'); }
   };
@@ -272,12 +334,44 @@ export default function Dashboard() {
           <h2 className="text-xl font-bold tracking-tight">Overview</h2>
           <div className="flex items-center gap-2 flex-wrap">
             <Button onClick={() => navigate('/transactions/add')} variant="primary">+ New Transaction</Button>
-            <Select value={period} onChange={(e) => setPeriod(e.target.value)}>
-              {monthOptions.map(m => <option key={m.value} value={m.value}>{m.label}</option>)}
-            </Select>
-            <Select value={String(selectedYear)} onChange={(e) => setSelectedYear(Number(e.target.value))}>
-              {yearOptions.map(y => <option key={y} value={y}>{y}</option>)}
-            </Select>
+
+            {/* ── Filter mode toggle ── */}
+            <div className="flex rounded-lg border border-[var(--border)] overflow-hidden text-sm font-medium">
+              <button
+                onClick={() => setFilterMode('period')}
+                className={`px-3 py-2 transition-colors ${
+                  filterMode === 'period'
+                    ? 'bg-indigo-600 text-white'
+                    : 'bg-white dark:bg-slate-800 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-slate-700'
+                }`}
+              >
+                Month
+              </button>
+              <button
+                onClick={() => setFilterMode('range')}
+                className={`px-3 py-2 transition-colors border-l border-[var(--border)] ${
+                  filterMode === 'range'
+                    ? 'bg-indigo-600 text-white'
+                    : 'bg-white dark:bg-slate-800 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-slate-700'
+                }`}
+              >
+                Range
+              </button>
+            </div>
+
+            {filterMode === 'period' ? (
+              <>
+                <Select value={period} onChange={(e) => setPeriod(e.target.value)}>
+                  {monthOptions.map(m => <option key={m.value} value={m.value}>{m.label}</option>)}
+                </Select>
+                <Select value={String(selectedYear)} onChange={(e) => setSelectedYear(Number(e.target.value))}>
+                  {yearOptions.map(y => <option key={y} value={y}>{y}</option>)}
+                </Select>
+              </>
+            ) : (
+              <DateRangePicker range={dateRange} onChange={setDateRange} />
+            )}
+
             <button
               onClick={onExport}
               className="px-3 py-2 text-sm rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 font-medium transition-colors"
@@ -295,7 +389,11 @@ export default function Dashboard() {
         <div className="flex justify-between items-center mb-4">
           <div>
             <h3 className="text-base font-semibold">Income vs Expenses</h3>
-            <p className="text-xs text-gray-400">Monthly breakdown for {selectedYear}</p>
+            <p className="text-xs text-gray-400">
+              {filterMode === 'range' && dateRange?.from && dateRange?.to
+                ? `${dateRange.from.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })} → ${dateRange.to.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`
+                : `Monthly breakdown for ${selectedYear}`}
+            </p>
           </div>
         </div>
         {loading && <div className="h-[280px] flex items-center justify-center text-sm text-gray-400 animate-pulse">Loading chart…</div>}
