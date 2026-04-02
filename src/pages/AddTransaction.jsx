@@ -108,7 +108,7 @@ export default function AddTransaction() {
       const expPayload = {
         ...expense,
         type: 'expense',
-        paymentMethod: expense.method === 'account' ? 'cash' : expense.method,
+        paymentMethod: expense.method,
         amount: parseFloat(expense.amount || 0),
         accountId: expense.method === 'account' ? expense.accountId || null : null,
         cardId: expense.method === 'card' ? expense.cardId || null : null,
@@ -122,7 +122,8 @@ export default function AddTransaction() {
   const addIncome = async (e) => {
     e.preventDefault();
     try {
-      const payload = { ...income, type: 'income', amount: parseFloat(income.amount || 0), paymentMethod: 'cash' };
+      const paymentMethod = income.incomeMethod === 'account' ? 'account' : 'cash';
+      const payload = { ...income, type: 'income', amount: parseFloat(income.amount || 0), paymentMethod };
       if (income.incomeMethod === 'cash') payload.accountId = null;
       await api.post('/transactions', payload);
       setIncome({ description: '', categoryId: '', amount: '', date: '', incomeMethod: 'cash', accountId: '' });
@@ -154,11 +155,13 @@ export default function AddTransaction() {
       if (!data.description.trim()) { setEditError('Description is required'); return; }
       if (!(amt > 0)) { setEditError('Amount must be greater than 0'); return; }
       const payload = { ...data, amount: amt };
-      if (payload.type === 'income') { payload.paymentMethod = 'cash'; payload.cardId = null; }
+      if (payload.type === 'income') {
+        payload.paymentMethod = payload.paymentMethod === 'account' ? 'account' : 'cash';
+        payload.cardId = null;
+      }
       if (payload.type === 'expense') {
         if (payload.paymentMethod === 'account') {
           if (!payload.accountId) { setEditError('Please select an account'); return; }
-          payload.paymentMethod = 'cash';
           payload.cardId = null;
         } else if (payload.paymentMethod === 'card') {
           if (!payload.cardId) { setEditError('Please select a card for card payments'); return; }
@@ -440,6 +443,7 @@ export default function AddTransaction() {
               <option value="all">All methods</option>
               <option value="cash">Cash</option>
               <option value="card">Card</option>
+              <option value="account">Account</option>
             </Select>
           </Field>
           <Field label="Category">
