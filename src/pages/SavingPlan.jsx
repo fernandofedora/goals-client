@@ -3,8 +3,8 @@ import api from '../api';
 import Button from '../components/ui/button';
 import Input from '../components/ui/input';
 import Select from '../components/ui/select';
-import Alert from '../components/ui/alert';
 import ConfirmDialog from '../components/ui/confirm-dialog';
+import { toast } from 'sonner';
 import DateInput from '../components/DateInput';
 import { formatAmount } from '../utils/format';
 import { cn } from '../lib/utils';
@@ -104,7 +104,6 @@ export default function SavingPlan() {
   const [contrForm, setContrForm] = useState({ amount: '', date: isoToday, note: '' });
   const [editingContrId, setEditingContrId] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState(null);
   const [confirm, setConfirm] = useState({ open: false, id: null });
   const [confirmPlan, setConfirmPlan] = useState({ open: false });
   const [showNewPlan, setShowNewPlan] = useState(false);
@@ -114,13 +113,6 @@ export default function SavingPlan() {
   const [initialLoad, setInitialLoad] = useState(true);
 
   const currentPlan = useMemo(() => plans.find(p => String(p.id) === String(selectedPlanId)), [plans, selectedPlanId]);
-
-  // auto-dismiss message
-  useEffect(() => {
-    if (!message) return;
-    const t = setTimeout(() => setMessage(null), 4000);
-    return () => clearTimeout(t);
-  }, [message]);
 
   // ── async-parallel: load categories + plans together ─────────────────────
   useEffect(() => {
@@ -185,9 +177,9 @@ export default function SavingPlan() {
       setSelectedPlanId(String(res.data.id));
       setShowNewPlan(false);
       e.target.reset();
-      setMessage({ type: 'success', text: 'Plan creado correctamente ✓' });
+      toast.success('Plan creado correctamente ✓');
     } catch (err) {
-      setMessage({ type: 'error', text: err.response?.data?.message || 'Error al crear el plan' });
+      toast.error(err.response?.data?.message || 'Error al crear el plan');
     } finally { setLoading(false); }
   };
 
@@ -201,9 +193,9 @@ export default function SavingPlan() {
       setPlans(prev => prev.map(p => String(p.id) === String(selectedPlanId) ? res.data : p));
       await reloadSummary();
       e.target.reset();
-      setMessage({ type: 'success', text: 'Plan actualizado ✓' });
+      toast.success('Plan actualizado ✓');
     } catch (err) {
-      setMessage({ type: 'error', text: err.response?.data?.message || 'Error al actualizar el plan' });
+      toast.error(err.response?.data?.message || 'Error al actualizar el plan');
     } finally { setLoading(false); }
   };
 
@@ -220,9 +212,9 @@ export default function SavingPlan() {
         setPlanForm({ name: '', targetAmount: '', linkedCategoryId: '' });
       }
       setSummary(null);
-      setMessage({ type: 'success', text: 'Plan eliminado' });
+      toast.success('Plan eliminado');
     } catch {
-      setMessage({ type: 'error', text: 'No se pudo eliminar el plan' });
+      toast.error('No se pudo eliminar el plan');
     }
   };
 
@@ -235,9 +227,9 @@ export default function SavingPlan() {
       setContrForm({ amount: '', date: isoToday, note: '' });
       await reloadSummary();
       e.target.reset();
-      setMessage({ type: 'success', text: 'Contribución agregada ✓' });
+      toast.success('Contribución agregada ✓');
     } catch (err) {
-      setMessage({ type: 'error', text: err.response?.data?.message || 'Error al agregar contribución' });
+      toast.error(err.response?.data?.message || 'Error al agregar contribución');
     } finally { setLoading(false); }
   };
 
@@ -251,9 +243,9 @@ export default function SavingPlan() {
       setEditingContrId(null);
       await reloadSummary();
       e.target.reset();
-      setMessage({ type: 'success', text: 'Contribución actualizada ✓' });
+      toast.success('Contribución actualizada ✓');
     } catch (err) {
-      setMessage({ type: 'error', text: err.response?.data?.message || 'Error al actualizar contribución' });
+      toast.error(err.response?.data?.message || 'Error al actualizar contribución');
     } finally { setLoading(false); }
   };
 
@@ -262,9 +254,9 @@ export default function SavingPlan() {
       setLoading(true);
       await api.delete(`/savings/contributions/${id}`);
       await reloadSummary();
-      setMessage({ type: 'success', text: 'Contribución eliminada' });
+      toast.success('Contribución eliminada');
     } catch (err) {
-      setMessage({ type: 'error', text: err.response?.data?.message || 'Error al eliminar' });
+      toast.error(err.response?.data?.message || 'Error al eliminar');
     } finally { setLoading(false); setConfirm({ open: false, id: null }); }
   };
 
@@ -286,15 +278,6 @@ export default function SavingPlan() {
   // ── Render ────────────────────────────────────────────────────────────────
   return (
     <div className="max-w-5xl mx-auto p-4 pb-12 space-y-5">
-
-      {/* Toasts */}
-      {message && (
-        <Alert
-          variant={message.type === 'error' ? 'error' : 'success'}
-          message={message.text}
-          onClose={() => setMessage(null)}
-        />
-      )}
 
       {/* Confirm dialogs */}
       <ConfirmDialog open={confirm.open} title="Eliminar contribución" description="Esta acción no se puede deshacer."
