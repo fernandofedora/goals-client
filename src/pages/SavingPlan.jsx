@@ -175,7 +175,8 @@ export default function SavingPlan() {
   }, [selectedPlanId]);
 
   // ── CRUD ──────────────────────────────────────────────────────────────────
-  const createPlan = async () => {
+  const createPlan = async (e) => {
+    e.preventDefault();
     try {
       setLoading(true);
       const body = { name: planForm.name.trim(), targetAmount: Number(planForm.targetAmount), linkedCategoryId: planForm.linkedCategoryId ? Number(planForm.linkedCategoryId) : null };
@@ -183,13 +184,15 @@ export default function SavingPlan() {
       setPlans(prev => [res.data, ...prev]);
       setSelectedPlanId(String(res.data.id));
       setShowNewPlan(false);
+      e.target.reset();
       setMessage({ type: 'success', text: 'Plan creado correctamente ✓' });
     } catch (err) {
       setMessage({ type: 'error', text: err.response?.data?.message || 'Error al crear el plan' });
     } finally { setLoading(false); }
   };
 
-  const updatePlan = async () => {
+  const updatePlan = async (e) => {
+    e.preventDefault();
     if (!selectedPlanId) return;
     try {
       setLoading(true);
@@ -197,6 +200,7 @@ export default function SavingPlan() {
       const res = await api.put(`/savings/plans/${selectedPlanId}`, body);
       setPlans(prev => prev.map(p => String(p.id) === String(selectedPlanId) ? res.data : p));
       await reloadSummary();
+      e.target.reset();
       setMessage({ type: 'success', text: 'Plan actualizado ✓' });
     } catch (err) {
       setMessage({ type: 'error', text: err.response?.data?.message || 'Error al actualizar el plan' });
@@ -222,20 +226,23 @@ export default function SavingPlan() {
     }
   };
 
-  const addContribution = async () => {
+  const addContribution = async (e) => {
+    e.preventDefault();
     if (!selectedPlanId) return;
     try {
       setLoading(true);
       await api.post('/savings/contributions', { planId: Number(selectedPlanId), amount: Number(contrForm.amount), date: contrForm.date, note: contrForm.note?.trim() || null });
       setContrForm({ amount: '', date: isoToday, note: '' });
       await reloadSummary();
+      e.target.reset();
       setMessage({ type: 'success', text: 'Contribución agregada ✓' });
     } catch (err) {
       setMessage({ type: 'error', text: err.response?.data?.message || 'Error al agregar contribución' });
     } finally { setLoading(false); }
   };
 
-  const updateContribution = async () => {
+  const updateContribution = async (e) => {
+    e.preventDefault();
     if (!editingContrId) return;
     try {
       setLoading(true);
@@ -243,6 +250,7 @@ export default function SavingPlan() {
       setContrForm({ amount: '', date: isoToday, note: '' });
       setEditingContrId(null);
       await reloadSummary();
+      e.target.reset();
       setMessage({ type: 'success', text: 'Contribución actualizada ✓' });
     } catch (err) {
       setMessage({ type: 'error', text: err.response?.data?.message || 'Error al actualizar contribución' });
@@ -328,29 +336,31 @@ export default function SavingPlan() {
       {/* ── New plan form ─────────────────────────────────────────────────── */}
       {showNewPlan && (
         <Card title="New Savings Plan" subtitle="Define your goal and start saving">
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <Field label="Plan Name">
-              <Input name="name" value={planForm.name} onChange={onPlanField} placeholder="e.g. Emergency Fund" />
-            </Field>
-            <Field label="Target Amount ($)">
-              <Input name="targetAmount" type="number" step="0.01" value={planForm.targetAmount} onChange={onPlanField} placeholder="1000.00" />
-            </Field>
-            <Field label="Linked Category (optional)">
-              <Select value={planForm.linkedCategoryId} onChange={onPlanField} name="linkedCategoryId">
-                <option value="">No category</option>
-                {categories.map(c => <option key={c.id} value={String(c.id)}>{c.name}</option>)}
-              </Select>
-            </Field>
-          </div>
-          <div className="mt-4 flex justify-end">
-            <Button
-              onClick={createPlan}
-              disabled={loading || !planForm.name || !planForm.targetAmount}
-              className="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-6"
-            >
-              {loading ? 'Creating…' : 'Create Plan'}
-            </Button>
-          </div>
+          <form onSubmit={createPlan}>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <Field label="Plan Name">
+                <Input name="name" value={planForm.name} onChange={onPlanField} placeholder="e.g. Emergency Fund" required />
+              </Field>
+              <Field label="Target Amount ($)">
+                <Input name="targetAmount" type="number" step="0.01" min="0.01" value={planForm.targetAmount} onChange={onPlanField} placeholder="1000.00" required />
+              </Field>
+              <Field label="Linked Category (optional)">
+                <Select value={planForm.linkedCategoryId} onChange={onPlanField} name="linkedCategoryId">
+                  <option value="">No category</option>
+                  {categories.map(c => <option key={c.id} value={String(c.id)}>{c.name}</option>)}
+                </Select>
+              </Field>
+            </div>
+            <div className="mt-4 flex justify-end">
+              <Button
+                type="submit"
+                disabled={loading}
+                className="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-6"
+              >
+                {loading ? 'Creating…' : 'Create Plan'}
+              </Button>
+            </div>
+          </form>
         </Card>
       )}
 
@@ -467,12 +477,12 @@ export default function SavingPlan() {
 
             {/* Edit plan */}
             <Card title="Edit Plan" subtitle="Update goal or linked category">
-              <div className="space-y-4">
+              <form onSubmit={updatePlan} className="space-y-4">
                 <Field label="Plan Name">
-                  <Input name="name" value={planForm.name} onChange={onPlanField} placeholder="Plan name" />
+                  <Input name="name" value={planForm.name} onChange={onPlanField} placeholder="Plan name" required />
                 </Field>
                 <Field label="Target Amount ($)">
-                  <Input name="targetAmount" type="number" step="0.01" value={planForm.targetAmount} onChange={onPlanField} placeholder="0.00" />
+                  <Input name="targetAmount" type="number" step="0.01" min="0.01" value={planForm.targetAmount} onChange={onPlanField} placeholder="0.00" required />
                 </Field>
                 <Field label="Linked Category (optional)">
                   <Select value={planForm.linkedCategoryId} onChange={onPlanField} name="linkedCategoryId">
@@ -482,13 +492,14 @@ export default function SavingPlan() {
                 </Field>
                 <div className="flex gap-2 pt-1">
                   <Button
-                    onClick={updatePlan}
+                    type="submit"
                     disabled={loading}
                     className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold"
                   >
                     {loading ? 'Saving…' : 'Save Changes'}
                   </Button>
                   <Button
+                    type="button"
                     variant="destructive"
                     onClick={() => setConfirmPlan({ open: true })}
                     className="px-4"
@@ -496,7 +507,7 @@ export default function SavingPlan() {
                     Delete
                   </Button>
                 </div>
-              </div>
+              </form>
             </Card>
 
             {/* Add/edit contribution */}
@@ -504,9 +515,9 @@ export default function SavingPlan() {
               title={editingContrId ? 'Edit Contribution' : 'Add Contribution'}
               subtitle={editingContrId ? 'Modify the selected contribution' : 'Record a new savings deposit'}
             >
-              <div className="space-y-4">
+              <form onSubmit={editingContrId ? updateContribution : addContribution} className="space-y-4">
                 <Field label="Amount ($)">
-                  <Input name="amount" type="number" step="0.01" value={contrForm.amount} onChange={onContrField} placeholder="0.00" />
+                  <Input name="amount" type="number" step="0.01" min="0.01" value={contrForm.amount} onChange={onContrField} placeholder="0.00" required />
                 </Field>
                 <Field label="Date">
                   <DateInput
@@ -522,20 +533,20 @@ export default function SavingPlan() {
                 <div className="flex gap-2 pt-1">
                   {editingContrId ? (
                     <>
-                      <Button onClick={updateContribution} disabled={loading || !contrForm.amount} className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold">
+                      <Button type="submit" disabled={loading} className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold">
                         {loading ? 'Updating…' : 'Update'}
                       </Button>
-                      <Button variant="outline" onClick={() => { setContrForm({ amount: '', date: isoToday, note: '' }); setEditingContrId(null); }} className="px-4">
+                      <Button type="button" variant="outline" onClick={() => { setContrForm({ amount: '', date: isoToday, note: '' }); setEditingContrId(null); }} className="px-4">
                         Cancel
                       </Button>
                     </>
                   ) : (
-                    <Button onClick={addContribution} disabled={loading || !contrForm.amount || !contrForm.date} className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold">
+                    <Button type="submit" disabled={loading} className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold">
                       {loading ? 'Adding…' : '+ Add Contribution'}
                     </Button>
                   )}
                 </div>
-              </div>
+              </form>
             </Card>
           </div>
 

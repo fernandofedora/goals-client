@@ -566,8 +566,8 @@ export default function ScheduledPayments() {
           {/* Sub-field: Card (only when 'card' selected) */}
           {formState.paymentMethod === 'card' && (
             <div className="sm:col-span-2">
-              <Field label="Credit Card">
-                <Select name="CardId" value={formState.CardId} onChange={handleInputChange}>
+              <Field label="Credit Card" required>
+                <Select name="CardId" value={formState.CardId} onChange={handleInputChange} required>
                   <option value="">Select a card</option>
                   {cards.map(card => <option key={card.id} value={card.id}>{card.name}</option>)}
                 </Select>
@@ -578,8 +578,8 @@ export default function ScheduledPayments() {
           {/* Sub-field: Account (only when 'account' selected) */}
           {formState.paymentMethod === 'account' && (
             <div className="sm:col-span-2">
-              <Field label="Bank Account">
-                <Select name="AccountId" value={formState.AccountId} onChange={handleInputChange}>
+              <Field label="Bank Account" required>
+                <Select name="AccountId" value={formState.AccountId} onChange={handleInputChange} required>
                   <option value="">Select an account</option>
                   {accounts.map(acc => <option key={acc.id} value={acc.id}>{acc.name}</option>)}
                 </Select>
