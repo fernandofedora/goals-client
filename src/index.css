@@ -11,6 +11,7 @@ body {
 
 /* shadcn-like theme variables */
 :root {
+  color-scheme: light;
   --background: #ffffff;
   --foreground: #111827;
   --card: #ffffff;
@@ -34,6 +35,7 @@ body {
 }
 
 [data-theme="dark"] {
+  color-scheme: dark;
   --background: #0b0f19;
   --foreground: #e5e7eb;
   --card: #111827;
@@ -144,4 +146,20 @@ body {
   text-transform: uppercase;
   letter-spacing: 0.05em;
   color: var(--muted-foreground);
+}
+
+/* ── Form Validation ──────────────────────────────────────────────────────── */
+input:user-invalid,
+textarea:user-invalid,
+select:user-invalid,
+div:has(> select:user-invalid) > button[role="combobox"] {
+  border-color: var(--destructive) !important;
+}
+
+input:user-invalid:focus,
+textarea:user-invalid:focus,
+select:user-invalid:focus,
+div:has(> select:user-invalid) > button[role="combobox"]:focus {
+  --tw-ring-color: var(--destructive) !important;
+  outline-color: var(--destructive) !important;
 }

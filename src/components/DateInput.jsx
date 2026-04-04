@@ -20,6 +20,9 @@ export default function DateInput({ value, onChange, placeholder = 'Date', class
           'border-[var(--border)] bg-[var(--background)] text-[var(--foreground)]',
           'focus:outline-none focus:ring-2 focus:ring-[var(--ring)]',
           'disabled:cursor-not-allowed disabled:opacity-50',
+          // color-scheme tells the browser to render native date-picker UI
+          // (including the calendar icon) matching the current theme.
+          '[color-scheme:light] dark:[color-scheme:dark]',
           // Hide native "mm/dd/yyyy" hint when empty and not focused.
           // group-focus-within:text-[var(--foreground)] restores it on focus.
           isEmpty
@@ -39,7 +42,7 @@ export default function DateInput({ value, onChange, placeholder = 'Date', class
 
       {/* Placeholder overlay — hidden as soon as the input is focused */}
       {isEmpty && (
-        <span className="pointer-events-none absolute inset-y-0 left-3 right-3 flex items-center justify-between text-sm text-[var(--muted-foreground)] group-focus-within:hidden">
+        <span className="pointer-events-none absolute inset-y-0 left-3 right-3 flex items-center justify-between text-sm text-[var(--muted-foreground)] group-focus-within:hidden [&_svg]:text-[var(--foreground)] [&_svg]:opacity-60">
           <span>{placeholder}</span>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
