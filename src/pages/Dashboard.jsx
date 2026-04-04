@@ -61,10 +61,12 @@ export default function Dashboard() {
   });
   const [activeCatIdx, setActiveCatIdx] = useState(0);
   const [activeIncomeIdx, setActiveIncomeIdx] = useState(0);
+  const [budgetView, setBudgetView] = useState(() => localStorage.getItem('dashboard_budget_view') || 'monthly');
 
   useEffect(() => { localStorage.setItem('dashboard_period', period); }, [period]);
   useEffect(() => { localStorage.setItem('dashboard_year', String(selectedYear)); }, [selectedYear]);
   useEffect(() => { localStorage.setItem('dashboard_filter_mode', filterMode); }, [filterMode]);
+  useEffect(() => { localStorage.setItem('dashboard_budget_view', budgetView); }, [budgetView]);
 
   // Helper: format a Date to 'YYYY-MM-DD' for the API
   const toISODate = (d) => d ? d.toISOString().slice(0, 10) : null;
@@ -516,32 +518,124 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* ── Budget vs Actual ── */}
+      {/* ── Budget vs Actual (with Monthly / Category toggle) ── */}
       <div className="bg-white dark:bg-slate-900 rounded-2xl border border-[var(--border)] shadow-sm p-5">
-        <h3 className="text-base font-semibold mb-1">Budget vs Actual</h3>
-        <p className="text-xs text-gray-400 mb-4">{period === 'all' ? 'Select a specific month to compare against budget.' : 'Expense tracking vs. your monthly budget.'}</p>
-        {period === 'all' ? null : summary?.budgetAmount == null ? (
-          <p className="text-sm text-gray-400">No budget set for this month.</p>
-        ) : (
-          <div className="space-y-3">
-            <div className="flex justify-between text-sm">
-              <span className="text-gray-500 dark:text-gray-400">Budget <span className="font-semibold text-gray-800 dark:text-white">${budgetProgress.budget.toFixed(2)}</span></span>
-              <span className="text-gray-500 dark:text-gray-400">Spent <span className="font-semibold text-rose-600">${budgetProgress.actual.toFixed(2)}</span></span>
-              <span className="text-gray-500 dark:text-gray-400">
-                Remaining <span className={`font-semibold ${budgetProgress.remaining < 0 ? 'text-rose-600' : 'text-emerald-600'}`}>${budgetProgress.remaining.toFixed(2)}</span>
-              </span>
-            </div>
-            <div className="w-full h-3 bg-gray-100 dark:bg-slate-800 rounded-full overflow-hidden">
-              <div
-                className={`h-3 ${barColorClass} rounded-full transition-all duration-700`}
-                style={{ width: `${Math.min(budgetProgress.consumedPercent, 100)}%` }}
-              />
-            </div>
+        {/* Header + toggle */}
+        <div className="flex items-center justify-between mb-4 gap-3 flex-wrap">
+          <div>
+            <h3 className="text-base font-semibold">Budget Tracking</h3>
             <p className="text-xs text-gray-400">
-              {budgetProgress.consumedPercent}% consumed{budgetProgress.consumedPercent > 100 ? ' — over budget!' : ''}
+              {budgetView === 'monthly' ? 'Expense tracking vs. your monthly budget.' : 'Fixed per-category spending limits.'}
             </p>
           </div>
+          <div className="flex rounded-lg border border-[var(--border)] overflow-hidden text-xs font-medium">
+            <button
+              id="budget-view-monthly"
+              onClick={() => setBudgetView('monthly')}
+              className={`px-3 py-1.5 transition-colors ${
+                budgetView === 'monthly'
+                  ? 'bg-indigo-600 text-white'
+                  : 'bg-white dark:bg-slate-800 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-slate-700'
+              }`}
+            >
+              Monthly Budget
+            </button>
+            <button
+              id="budget-view-category"
+              onClick={() => setBudgetView('category')}
+              className={`px-3 py-1.5 transition-colors border-l border-[var(--border)] ${
+                budgetView === 'category'
+                  ? 'bg-indigo-600 text-white'
+                  : 'bg-white dark:bg-slate-800 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-slate-700'
+              }`}
+            >
+              Category Budgets
+            </button>
+          </div>
+        </div>
+
+        {/* ── Monthly Budget view (existing) ── */}
+        {budgetView === 'monthly' && (
+          <>
+            {period === 'all' ? (
+              <p className="text-sm text-gray-400">Select a specific month to compare against budget.</p>
+            ) : summary?.budgetAmount == null ? (
+              <p className="text-sm text-gray-400">No budget set for this month.</p>
+            ) : (
+              <div className="space-y-3">
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-500 dark:text-gray-400">Budget <span className="font-semibold text-gray-800 dark:text-white">${budgetProgress.budget.toFixed(2)}</span></span>
+                  <span className="text-gray-500 dark:text-gray-400">Spent <span className="font-semibold text-rose-600">${budgetProgress.actual.toFixed(2)}</span></span>
+                  <span className="text-gray-500 dark:text-gray-400">
+                    Remaining <span className={`font-semibold ${budgetProgress.remaining < 0 ? 'text-rose-600' : 'text-emerald-600'}`}>${budgetProgress.remaining.toFixed(2)}</span>
+                  </span>
+                </div>
+                <div className="w-full h-3 bg-gray-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                  <div
+                    className={`h-3 ${barColorClass} rounded-full transition-all duration-700`}
+                    style={{ width: `${Math.min(budgetProgress.consumedPercent, 100)}%` }}
+                  />
+                </div>
+                <p className="text-xs text-gray-400">
+                  {budgetProgress.consumedPercent}% consumed{budgetProgress.consumedPercent > 100 ? ' — over budget!' : ''}
+                </p>
+              </div>
+            )}
+          </>
         )}
+
+        {/* ── Category Budgets view (new) ── */}
+        {budgetView === 'category' && (() => {
+          const catsWithBudget = (summary?.categories || []).filter(c => c.monthlyBudget != null);
+          if (loading) return <p className="text-sm text-gray-400 animate-pulse">Loading…</p>;
+          if (catsWithBudget.length === 0) return (
+            <div className="flex flex-col items-center justify-center py-8 gap-2 text-center">
+              <span className="text-3xl opacity-30">📊</span>
+              <p className="text-sm text-gray-400">No categories have a budget set.</p>
+              <p className="text-xs text-gray-400">Go to <strong>Settings → Categories</strong> and add a monthly budget to a category.</p>
+            </div>
+          );
+          return (
+            <div className="space-y-4">
+              {catsWithBudget.map(cat => {
+                const budget = Number(cat.monthlyBudget);
+                const spent = Number(cat.amount || 0);
+                const remaining = budget - spent;
+                const pct = budget > 0 ? Math.round((spent / budget) * 100) : 0;
+                const isOver = remaining < 0;
+                const remainingPct = 100 - pct;
+                const barColor = isOver ? '#f43f5e' : remainingPct <= 10 ? '#f43f5e' : remainingPct <= 30 ? '#f59e0b' : cat.color;
+                return (
+                  <div key={cat.name} className="space-y-1.5">
+                    <div className="flex items-center justify-between text-sm">
+                      <div className="flex items-center gap-2">
+                        <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ background: cat.color }} />
+                        <span className="font-medium text-gray-800 dark:text-gray-100">{cat.name}</span>
+                      </div>
+                      <div className="flex items-center gap-3 text-right">
+                        <span className="text-gray-500 dark:text-gray-400 tabular-nums">
+                          ${spent.toFixed(2)} <span className="text-gray-300 dark:text-gray-600">/</span> ${budget.toFixed(2)}
+                        </span>
+                        <span className={`text-xs font-semibold tabular-nums ${
+                          isOver ? 'text-rose-600' : 'text-emerald-600'
+                        }`}>
+                          {isOver ? `+$${Math.abs(remaining).toFixed(2)} over` : `$${remaining.toFixed(2)} left`}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="w-full h-2.5 bg-gray-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                      <div
+                        className="h-2.5 rounded-full transition-all duration-700"
+                        style={{ width: `${Math.min(pct, 100)}%`, background: barColor }}
+                      />
+                    </div>
+                    <p className="text-[11px] text-gray-400">{Math.min(pct, 100)}% consumed{isOver ? ' — over budget!' : ''}</p>
+                  </div>
+                );
+              })}
+            </div>
+          );
+        })()}
       </div>
 
       {/* ── Saldo + Payment Methods + Card Usage ── */}
