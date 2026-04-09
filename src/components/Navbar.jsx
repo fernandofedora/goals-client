@@ -1,28 +1,147 @@
 import { useEffect, useRef, useState } from 'react';
 import { NavLink, useNavigate, useLocation } from 'react-router-dom';
-import Button from './ui/button';
 import { cn } from '../lib/utils';
 
+// ─── Chevron icon ─────────────────────────────────────────────────────────────
+const ChevronDown = ({ open }) => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg" width="14" height="14"
+    viewBox="0 0 24 24" fill="none" stroke="currentColor"
+    strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
+    style={{ transition: 'transform 0.2s', transform: open ? 'rotate(180deg)' : 'rotate(0deg)' }}
+  >
+    <path d="M6 9l6 6 6-6" />
+  </svg>
+);
+
+// ─── Shield icon (Super Admin) ────────────────────────────────────────────────
+const ShieldIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24"
+    fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+  </svg>
+);
+
+// ─── Avatar initials ──────────────────────────────────────────────────────────
+function Avatar({ name = '', size = 30 }) {
+  const colors = ['#6366f1', '#8b5cf6', '#ec4899', '#f59e0b', '#10b981', '#3b82f6'];
+  let h = 0;
+  for (let i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) % colors.length;
+  const initials = name.split(' ').map(p => p[0]).join('').slice(0, 2).toUpperCase();
+  return (
+    <div style={{
+      width: size, height: size, borderRadius: '50%', background: colors[h],
+      display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+    }}>
+      <span style={{ color: '#fff', fontSize: size * 0.38, fontWeight: 700, lineHeight: 1 }}>
+        {initials}
+      </span>
+    </div>
+  );
+}
+
+// ─── Dropdown menu ────────────────────────────────────────────────────────────
+function Dropdown({ label, isActive, isOpen, onToggle, children, mobile }) {
+  return (
+    <div className={cn('relative', mobile && 'w-full')}>
+      <button
+        type="button"
+        onClick={onToggle}
+        aria-haspopup="menu"
+        aria-expanded={isOpen}
+        className={cn(
+          'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-150',
+          mobile && 'w-full justify-between',
+          isActive
+            ? 'bg-[var(--muted)] text-[var(--foreground)] shadow-sm'
+            : 'text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:bg-[var(--muted)]'
+        )}
+      >
+        {label}
+        <ChevronDown open={isOpen} />
+      </button>
+
+      {/* Desktop dropdown panel */}
+      {!mobile && isOpen && (
+        <div className="absolute top-full left-0 mt-2 w-48 rounded-xl border border-[var(--border)] bg-[var(--card)] shadow-xl z-50 overflow-hidden animate-in fade-in slide-in-from-top-1 duration-150">
+          <div className="py-1.5">{children}</div>
+        </div>
+      )}
+
+      {/* Mobile inline items */}
+      {mobile && (
+        <div className="mt-1 ml-3 border-l-2 border-[var(--border)] pl-3 space-y-0.5">
+          {children}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Dropdown item ────────────────────────────────────────────────────────────
+function DropdownItem({ to, onClick, children, mobile }) {
+  return (
+    <NavLink
+      to={to}
+      onClick={onClick}
+      className={({ isActive }) =>
+        cn(
+          'block px-4 py-2 text-sm transition-colors duration-100 rounded-md mx-1',
+          mobile && 'px-3 py-1.5',
+          isActive
+            ? 'bg-[var(--muted)] text-[var(--foreground)] font-semibold'
+            : 'text-[var(--muted-foreground)] hover:bg-[var(--muted)] hover:text-[var(--foreground)]'
+        )
+      }
+    >
+      {children}
+    </NavLink>
+  );
+}
+
+// ─── Main Navbar ──────────────────────────────────────────────────────────────
 export default function Navbar({ theme, onToggleTheme }) {
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [isPlansOpen, setIsPlansOpen] = useState(false);
-  const [isTransactionsOpen, setIsTransactionsOpen] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [plansOpen, setPlansOpen] = useState(false);
+  const [txOpen, setTxOpen] = useState(false);
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
   const navRef = useRef(null);
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Close both submenus when clicking outside the navbar
+  const user = (() => {
+    try { return JSON.parse(localStorage.getItem('user') || 'null'); } catch { return null; }
+  })();
+  const isSuperAdmin = user?.isSuperAdmin === true;
+
+  // Close all menus when clicking outside
   useEffect(() => {
     const handler = (e) => {
       if (navRef.current && !navRef.current.contains(e.target)) {
-        setIsPlansOpen(false);
-        setIsTransactionsOpen(false);
+        setPlansOpen(false);
+        setTxOpen(false);
+        setUserMenuOpen(false);
       }
     };
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
   }, []);
-  const user = JSON.parse(localStorage.getItem('user') || 'null');
+
+  // Close submenus on route change
+  useEffect(() => {
+    setPlansOpen(false);
+    setTxOpen(false);
+    setUserMenuOpen(false);
+    setMenuOpen(false);
+  }, [location.pathname]);
+
+  const closeAll = () => {
+    setPlansOpen(false);
+    setTxOpen(false);
+    setUserMenuOpen(false);
+    setMenuOpen(false);
+  };
+
   const onLogout = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
@@ -32,331 +151,274 @@ export default function Navbar({ theme, onToggleTheme }) {
     navigate('/login');
   };
 
-  const NavLinks = ({ mobile = false, onItemClick }) => {
-    // Enhanced click handler that also closes desktop submenus
-    const handleLinkClick = () => {
-      setIsPlansOpen(false);
-      setIsTransactionsOpen(false);
-      if (onItemClick) onItemClick();
-    };
-
-    return (
-      <>
-        <NavLink
-          to="/"
-          onClick={handleLinkClick}
-          className={({ isActive }) =>
-            cn(
-              'inline-flex items-center gap-2 px-3 py-1 rounded-lg transition-colors',
-              mobile ? 'w-full justify-start' : '',
-              isActive
-                ? 'bg-[var(--muted)] text-[var(--foreground)] font-semibold shadow-sm'
-                : 'text-[var(--muted-foreground)] hover:bg-[var(--muted)] hover:text-[var(--foreground)]'
-            )
-          }
-          end
-        >
-          Dashboard
-        </NavLink>
-        {/* Transactions submenu */}
-        <div className={cn('relative', mobile ? 'w-full' : '')}>
-          <button
-            type="button"
-            onClick={() => { setIsTransactionsOpen(v => !v); setIsPlansOpen(false); }}
-            className={cn(
-              'inline-flex items-center gap-2 px-3 py-1 rounded-lg transition-colors',
-              mobile ? 'w-full justify-start' : '',
-              location.pathname.startsWith('/transactions')
-                ? 'bg-[var(--muted)] text-[var(--foreground)] font-semibold shadow-sm'
-                : 'text-[var(--muted-foreground)] hover:bg-[var(--muted)] hover:text-[var(--foreground)]'
-            )}
-            aria-haspopup="menu"
-            aria-expanded={isTransactionsOpen}
-          >
-            Transactions
-            <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M6 9l6 6 6-6"/></svg>
-          </button>
-          {/* Desktop dropdown */}
-          {!mobile && isTransactionsOpen && (
-            <div className="absolute mt-2 w-48 rounded-lg border border-[var(--border)] bg-[var(--card)] shadow-lg z-50">
-              <nav className="py-2">
-                <NavLink
-                  to="/transactions/budget"
-                  onClick={handleLinkClick}
-                  className={({ isActive }) =>
-                    cn(
-                      'block px-3 py-1.5 rounded-md transition-colors',
-                      isActive
-                        ? 'bg-[var(--muted)] text-[var(--foreground)] font-semibold'
-                        : 'text-[var(--muted-foreground)] hover:bg-[var(--muted)] hover:text-[var(--foreground)]'
-                    )
-                  }
-                >
-                  Budget
-                </NavLink>
-                <NavLink
-                  to="/transactions/add"
-                  onClick={handleLinkClick}
-                  className={({ isActive }) =>
-                    cn(
-                      'block px-3 py-1.5 rounded-md transition-colors',
-                      isActive
-                        ? 'bg-[var(--muted)] text-[var(--foreground)] font-semibold'
-                        : 'text-[var(--muted-foreground)] hover:bg-[var(--muted)] hover:text-[var(--foreground)]'
-                    )
-                  }
-                >
-                  Add Transaction
-                </NavLink>
-              </nav>
-            </div>
-          )}
-          {/* Mobile submenu inline */}
-          {mobile && (
-            <div className="mt-2 space-y-1">
-              <NavLink
-                to="/transactions/budget"
-                onClick={handleLinkClick}
-                className={({ isActive }) =>
-                  cn(
-                    'inline-flex items-center gap-2 px-3 py-1 rounded-lg transition-colors w-full justify-start',
-                    isActive
-                      ? 'bg-[var(--muted)] text-[var(--foreground)] font-semibold shadow-sm'
-                      : 'text-[var(--muted-foreground)] hover:bg-[var(--muted)] hover:text-[var(--foreground)]'
-                  )
-                }
-              >
-                Budget
-              </NavLink>
-              <NavLink
-                to="/transactions/add"
-                onClick={handleLinkClick}
-                className={({ isActive }) =>
-                  cn(
-                    'inline-flex items-center gap-2 px-3 py-1 rounded-lg transition-colors w-full justify-start',
-                    isActive
-                      ? 'bg-[var(--muted)] text-[var(--foreground)] font-semibold shadow-sm'
-                      : 'text-[var(--muted-foreground)] hover:bg-[var(--muted)] hover:text-[var(--foreground)]'
-                  )
-                }
-              >
-                Add Transaction
-              </NavLink>
-            </div>
-          )}
-        </div>
-        {/* Plans submenu */}
-        <div className={cn('relative', mobile ? 'w-full' : '')}>
-          <button
-            type="button"
-            onClick={() => { setIsPlansOpen(v => !v); setIsTransactionsOpen(false); }}
-            className={cn(
-              'inline-flex items-center gap-2 px-3 py-1 rounded-lg transition-colors',
-              mobile ? 'w-full justify-start' : '',
-              location.pathname.startsWith('/plans') || location.pathname === '/saving-plan'
-                ? 'bg-[var(--muted)] text-[var(--foreground)] font-semibold shadow-sm'
-                : 'text-[var(--muted-foreground)] hover:bg-[var(--muted)] hover:text-[var(--foreground)]'
-            )}
-            aria-haspopup="menu"
-            aria-expanded={isPlansOpen}
-          >
-            Plans
-            <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M6 9l6 6 6-6"/></svg>
-          </button>
-          {/* Desktop dropdown */}
-          {!mobile && isPlansOpen && (
-            <div className="absolute mt-2 w-48 rounded-lg border border-[var(--border)] bg-[var(--card)] shadow-lg z-50">
-              <nav className="py-2">
-                <NavLink
-                  to="/plans/savings"
-                  onClick={handleLinkClick}
-                  className={({ isActive }) =>
-                    cn(
-                      'block px-3 py-1.5 rounded-md transition-colors',
-                      isActive
-                        ? 'bg-[var(--muted)] text-[var(--foreground)] font-semibold'
-                        : 'text-[var(--muted-foreground)] hover:bg-[var(--muted)] hover:text-[var(--foreground)]'
-                    )
-                  }
-                >
-                  Savings Plans
-                </NavLink>
-                <NavLink
-                  to="/plans/accounts"
-                  onClick={handleLinkClick}
-                  className={({ isActive }) =>
-                    cn(
-                      'block px-3 py-1.5 rounded-md transition-colors',
-                      isActive
-                        ? 'bg-[var(--muted)] text-[var(--foreground)] font-semibold'
-                        : 'text-[var(--muted-foreground)] hover:bg-[var(--muted)] hover:text-[var(--foreground)]'
-                    )
-                  }
-                >
-                  Accounts
-                </NavLink>
-                <NavLink
-                  to="/plans/scheduled-payments"
-                  onClick={handleLinkClick}
-                  className={({ isActive }) =>
-                    cn(
-                      'block px-3 py-1.5 rounded-md transition-colors',
-                      isActive
-                        ? 'bg-[var(--muted)] text-[var(--foreground)] font-semibold'
-                        : 'text-[var(--muted-foreground)] hover:bg-[var(--muted)] hover:text-[var(--foreground)]'
-                    )
-                  }
-                >
-                  Scheduled Payments
-                </NavLink>
-              </nav>
-            </div>
-          )}
-          {/* Mobile submenu inline */}
-          {mobile && (
-            <div className="mt-2 space-y-1">
-              <NavLink
-                to="/plans/savings"
-                onClick={handleLinkClick}
-                className={({ isActive }) =>
-                  cn(
-                    'inline-flex items-center gap-2 px-3 py-1 rounded-lg transition-colors w-full justify-start',
-                    isActive
-                      ? 'bg-[var(--muted)] text-[var(--foreground)] font-semibold shadow-sm'
-                      : 'text-[var(--muted-foreground)] hover:bg-[var(--muted)] hover:text-[var(--foreground)]'
-                  )
-                }
-              >
-                Savings Plans
-              </NavLink>
-              <NavLink
-                to="/plans/accounts"
-                onClick={handleLinkClick}
-                className={({ isActive }) =>
-                  cn(
-                    'inline-flex items-center gap-2 px-3 py-1 rounded-lg transition-colors w-full justify-start',
-                    isActive
-                      ? 'bg-[var(--muted)] text-[var(--foreground)] font-semibold shadow-sm'
-                      : 'text-[var(--muted-foreground)] hover:bg-[var(--muted)] hover:text-[var(--foreground)]'
-                  )
-                }
-              >
-                Accounts
-              </NavLink>
-              <NavLink
-                to="/plans/scheduled-payments"
-                onClick={handleLinkClick}
-                className={({ isActive }) =>
-                  cn(
-                    'inline-flex items-center gap-2 px-3 py-1 rounded-lg transition-colors w-full justify-start',
-                    isActive
-                      ? 'bg-[var(--muted)] text-[var(--foreground)] font-semibold shadow-sm'
-                      : 'text-[var(--muted-foreground)] hover:bg-[var(--muted)] hover:text-[var(--foreground)]'
-                  )
-                }
-              >
-                Scheduled Payments
-              </NavLink>
-            </div>
-          )}
-        </div>
-        <NavLink
-          to="/profile"
-          onClick={handleLinkClick}
-          className={({ isActive }) =>
-            cn(
-              'inline-flex items-center gap-2 px-3 py-1 rounded-lg transition-colors',
-              mobile ? 'w-full justify-start' : '',
-              isActive
-                ? 'bg-[var(--muted)] text-[var(--foreground)] font-semibold shadow-sm'
-                : 'text-[var(--muted-foreground)] hover:bg-[var(--muted)] hover:text-[var(--foreground)]'
-            )
-          }
-        >
-          Profile
-        </NavLink>
-        <NavLink
-          to="/settings"
-          onClick={handleLinkClick}
-          className={({ isActive }) =>
-            cn(
-              'inline-flex items-center gap-2 px-3 py-1 rounded-lg transition-colors',
-              mobile ? 'w-full justify-start' : '',
-              isActive
-                ? 'bg-[var(--muted)] text-[var(--foreground)] font-semibold shadow-sm'
-                : 'text-[var(--muted-foreground)] hover:bg-[var(--muted)] hover:text-[var(--foreground)]'
-            )
-          }
-        >
-          Settings
-        </NavLink>
-      </>
+  const navLinkClass = ({ isActive }) =>
+    cn(
+      'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-150',
+      isActive
+        ? 'bg-[var(--muted)] text-[var(--foreground)] shadow-sm'
+        : 'text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:bg-[var(--muted)]'
     );
-  };
+
+  const mobileNavLinkClass = ({ isActive }) =>
+    cn(
+      'flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-150 w-full',
+      isActive
+        ? 'bg-[var(--muted)] text-[var(--foreground)] font-semibold'
+        : 'text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:bg-[var(--muted)]'
+    );
 
   return (
-    <nav ref={navRef} className="bg-[var(--card)] backdrop-blur border-b border-[var(--border)] sticky top-0 z-50">
-      <div className="max-w-6xl mx-auto px-4 py-3 flex justify-between items-center">
-        <div className="flex items-center gap-4">
-          {/* Mobile Menu Button */}
-          <button
-            className="md:hidden p-2 -ml-2 text-[var(--foreground)]"
-            onClick={() => setIsMenuOpen(!isMenuOpen)}
-            aria-label="Toggle menu"
-          >
-            {isMenuOpen ? (
-              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
-            ) : (
-              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="18" y2="18"/></svg>
-            )}
-          </button>
-          
-          <span className="text-xl font-semibold text-[var(--foreground)]">Expense Control</span>
-          
-          {/* Desktop Links */}
-          <div className="hidden md:flex items-center gap-6 ml-4">
-            <NavLinks />
-          </div>
-        </div>
+    <nav
+      ref={navRef}
+      className="sticky top-0 z-50 border-b border-[var(--border)]"
+      style={{
+        background: 'color-mix(in srgb, var(--card) 85%, transparent)',
+        backdropFilter: 'blur(12px)',
+        WebkitBackdropFilter: 'blur(12px)',
+      }}
+    >
+      <div className="max-w-6xl mx-auto px-4">
+        <div className="flex items-center justify-between h-14 gap-4">
 
-        {/* Desktop User Actions */}
-        <div className="hidden md:flex items-center gap-3">
-          {user?.name && (
-            <span className="text-sm text-[var(--muted-foreground)]">
-              Welcome, {user.name}
+          {/* ── Left: Brand ──────────────────────────────── */}
+          <div className="flex items-center gap-5 shrink-0">
+            {/* Mobile hamburger */}
+            <button
+              className="md:hidden p-1.5 -ml-1 rounded-lg text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:bg-[var(--muted)] transition-colors"
+              onClick={() => setMenuOpen(!menuOpen)}
+              aria-label="Toggle menu"
+            >
+              {menuOpen ? (
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
+                  fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M18 6 6 18" /><path d="m6 6 12 12" />
+                </svg>
+              ) : (
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
+                  fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="4" x2="20" y1="6" y2="6" /><line x1="4" x2="20" y1="12" y2="12" /><line x1="4" x2="20" y1="18" y2="18" />
+                </svg>
+              )}
+            </button>
+
+            <span className="font-bold text-base text-[var(--foreground)] tracking-tight leading-tight">
+              Expense<br className="hidden sm:block" /><span className="sm:hidden"> </span>Control
             </span>
-          )}
-          <Button variant="outline" onClick={onToggleTheme} aria-label="Toggle theme">
-            {theme === 'dark' ? '🌙' : '☀️'}
-          </Button>
-          <Button variant="secondary" onClick={onLogout}>Logout</Button>
-        </div>
+          </div>
 
-        {/* Mobile Theme Toggle (optional, keeping minimal for now, maybe just show in menu) */}
-        <div className="md:hidden">
-            {/* Placeholder to balance flex if needed, or maybe show user avatar? */}
+          {/* ── Center: Desktop Navigation ────────────────── */}
+          <div className="hidden md:flex items-center gap-1">
+            <NavLink to="/" end className={navLinkClass} onClick={closeAll}>
+              Dashboard
+            </NavLink>
+
+            <Dropdown
+              label="Transactions"
+              isActive={location.pathname.startsWith('/transactions')}
+              isOpen={txOpen}
+              onToggle={() => { setTxOpen(v => !v); setPlansOpen(false); setUserMenuOpen(false); }}
+            >
+              <DropdownItem to="/transactions/budget" onClick={closeAll}>Budget</DropdownItem>
+              <DropdownItem to="/transactions/add" onClick={closeAll}>Add Transaction</DropdownItem>
+            </Dropdown>
+
+            <Dropdown
+              label="Plans"
+              isActive={location.pathname.startsWith('/plans') || location.pathname === '/saving-plan'}
+              isOpen={plansOpen}
+              onToggle={() => { setPlansOpen(v => !v); setTxOpen(false); setUserMenuOpen(false); }}
+            >
+              <DropdownItem to="/plans/savings" onClick={closeAll}>Savings Plans</DropdownItem>
+              <DropdownItem to="/plans/accounts" onClick={closeAll}>Accounts</DropdownItem>
+              <DropdownItem to="/plans/scheduled-payments" onClick={closeAll}>Scheduled Payments</DropdownItem>
+            </Dropdown>
+
+            <NavLink to="/settings" className={navLinkClass} onClick={closeAll}>
+              Settings
+            </NavLink>
+
+            {/* Super Admin badge */}
+            {isSuperAdmin && (
+              <NavLink
+                to="/admin/users"
+                onClick={closeAll}
+                className={({ isActive }) =>
+                  cn(
+                    'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-semibold transition-all duration-150',
+                    isActive
+                      ? 'bg-amber-500/20 text-amber-500 shadow-sm shadow-amber-500/10'
+                      : 'text-amber-500/80 hover:text-amber-500 hover:bg-amber-500/10'
+                  )
+                }
+              >
+                <ShieldIcon />
+                Users
+              </NavLink>
+            )}
+          </div>
+
+          {/* ── Right: User area ──────────────────────────── */}
+          <div className="hidden md:flex items-center gap-2 shrink-0">
+            {/* Theme toggle */}
+            <button
+              onClick={onToggleTheme}
+              aria-label="Toggle theme"
+              className="w-8 h-8 flex items-center justify-center rounded-lg text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:bg-[var(--muted)] transition-colors text-base"
+            >
+              {theme === 'dark' ? '🌙' : '☀️'}
+            </button>
+
+            {/* Divider */}
+            <div className="w-px h-5 bg-[var(--border)]" />
+
+            {/* User dropdown */}
+            {user && (
+              <div className="relative">
+                <button
+                  onClick={() => { setUserMenuOpen(v => !v); setPlansOpen(false); setTxOpen(false); }}
+                  className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-[var(--muted)] transition-colors group"
+                >
+                  <Avatar name={user.name} size={28} />
+                  <span className="text-sm font-medium text-[var(--foreground)] max-w-[90px] truncate">
+                    {user.name}
+                  </span>
+                  <ChevronDown open={userMenuOpen} />
+                </button>
+
+                {userMenuOpen && (
+                  <div className="absolute top-full right-0 mt-2 w-52 rounded-xl border border-[var(--border)] bg-[var(--card)] shadow-xl z-50 overflow-hidden">
+                    {/* User info header */}
+                    <div className="px-4 py-3 border-b border-[var(--border)]">
+                      <p className="text-xs font-semibold text-[var(--foreground)] truncate">{user.name}</p>
+                      <p className="text-xs text-[var(--muted-foreground)] truncate mt-0.5">{user.email}</p>
+                      {isSuperAdmin && (
+                        <span className="inline-flex items-center gap-1 mt-1.5 text-amber-500 text-xs font-semibold">
+                          <ShieldIcon /> Super Admin
+                        </span>
+                      )}
+                    </div>
+                    <div className="py-1.5">
+                      <NavLink
+                        to="/profile"
+                        onClick={closeAll}
+                        className={() =>
+                          'flex items-center gap-2.5 px-4 py-2 text-sm text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:bg-[var(--muted)] transition-colors mx-1 rounded-md'
+                        }
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="8" r="4"/><path d="M6 20v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"/></svg>
+                        Profile
+                      </NavLink>
+                      {isSuperAdmin && (
+                        <NavLink
+                          to="/admin/users"
+                          onClick={closeAll}
+                          className={() =>
+                            'flex items-center gap-2.5 px-4 py-2 text-sm text-amber-500 hover:bg-amber-500/10 transition-colors mx-1 rounded-md font-medium'
+                          }
+                        >
+                          <ShieldIcon /> User Manager
+                        </NavLink>
+                      )}
+                    </div>
+                    <div className="py-1.5 border-t border-[var(--border)]">
+                      <button
+                        onClick={() => { closeAll(); onLogout(); }}
+                        className="flex items-center gap-2.5 px-4 py-2 text-sm text-[var(--muted-foreground)] hover:text-red-500 hover:bg-red-500/5 transition-colors w-full text-left mx-1 rounded-md"
+                        style={{ width: 'calc(100% - 8px)' }}
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" x2="9" y1="12" y2="12"/></svg>
+                        Logout
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Mobile right: theme + avatar */}
+          <div className="md:hidden flex items-center gap-2">
+            <button
+              onClick={onToggleTheme}
+              className="w-8 h-8 flex items-center justify-center rounded-lg text-[var(--muted-foreground)] hover:bg-[var(--muted)] transition-colors text-base"
+            >
+              {theme === 'dark' ? '🌙' : '☀️'}
+            </button>
+            {user && <Avatar name={user.name} size={30} />}
+          </div>
         </div>
       </div>
 
-      {/* Mobile Menu Dropdown */}
-      {isMenuOpen && (
-        <div className="md:hidden border-t border-[var(--border)] bg-[var(--card)] p-4 space-y-4 absolute w-full shadow-lg">
-          <div className="flex flex-col space-y-2">
-            <NavLinks mobile onItemClick={() => setIsMenuOpen(false)} />
-          </div>
-          <div className="pt-4 border-t border-[var(--border)] space-y-3">
-             {user?.name && (
-              <div className="text-sm text-[var(--muted-foreground)] px-3">
-                Welcome, {user.name}
-              </div>
+      {/* ── Mobile Menu ───────────────────────────────────── */}
+      {menuOpen && (
+        <div className="md:hidden border-t border-[var(--border)] bg-[var(--card)] shadow-lg">
+          <div className="max-w-6xl mx-auto px-4 py-3 space-y-1">
+            <NavLink to="/" end className={mobileNavLinkClass} onClick={closeAll}>
+              Dashboard
+            </NavLink>
+
+            {/* Transactions mobile */}
+            <Dropdown
+              label="Transactions"
+              isActive={location.pathname.startsWith('/transactions')}
+              isOpen={txOpen}
+              onToggle={() => setTxOpen(v => !v)}
+              mobile
+            >
+              <DropdownItem to="/transactions/budget" onClick={closeAll} mobile>Budget</DropdownItem>
+              <DropdownItem to="/transactions/add" onClick={closeAll} mobile>Add Transaction</DropdownItem>
+            </Dropdown>
+
+            {/* Plans mobile */}
+            <Dropdown
+              label="Plans"
+              isActive={location.pathname.startsWith('/plans')}
+              isOpen={plansOpen}
+              onToggle={() => setPlansOpen(v => !v)}
+              mobile
+            >
+              <DropdownItem to="/plans/savings" onClick={closeAll} mobile>Savings Plans</DropdownItem>
+              <DropdownItem to="/plans/accounts" onClick={closeAll} mobile>Accounts</DropdownItem>
+              <DropdownItem to="/plans/scheduled-payments" onClick={closeAll} mobile>Scheduled Payments</DropdownItem>
+            </Dropdown>
+
+            <NavLink to="/settings" className={mobileNavLinkClass} onClick={closeAll}>Settings</NavLink>
+            <NavLink to="/profile" className={mobileNavLinkClass} onClick={closeAll}>Profile</NavLink>
+
+            {isSuperAdmin && (
+              <NavLink
+                to="/admin/users"
+                onClick={closeAll}
+                className={({ isActive }) =>
+                  cn(
+                    'flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-semibold w-full transition-all duration-150',
+                    isActive
+                      ? 'bg-amber-500/15 text-amber-500'
+                      : 'text-amber-500/80 hover:bg-amber-500/10 hover:text-amber-500'
+                  )
+                }
+              >
+                <ShieldIcon /> User Manager
+              </NavLink>
             )}
-            <div className="flex gap-2">
-              <Button variant="outline" onClick={onToggleTheme} className="flex-1 justify-center">
-                {theme === 'dark' ? '🌙 Dark' : '☀️ Light'}
-              </Button>
-              <Button variant="secondary" onClick={() => { setIsMenuOpen(false); onLogout(); }} className="flex-1 justify-center">
+
+            <div className="pt-2 pb-1 border-t border-[var(--border)] mt-2">
+              {user && (
+                <div className="flex items-center gap-2.5 px-3 py-2 mb-1">
+                  <Avatar name={user.name} size={32} />
+                  <div>
+                    <p className="text-sm font-semibold text-[var(--foreground)]">{user.name}</p>
+                    <p className="text-xs text-[var(--muted-foreground)]">{user.email}</p>
+                  </div>
+                </div>
+              )}
+              <button
+                onClick={() => { closeAll(); onLogout(); }}
+                className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-red-500 hover:bg-red-500/5 w-full text-left transition-colors"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" x2="9" y1="12" y2="12"/></svg>
                 Logout
-              </Button>
+              </button>
             </div>
           </div>
         </div>

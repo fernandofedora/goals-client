@@ -13,12 +13,25 @@ import Profile from './pages/Profile';
 import ScheduledPayments from './pages/ScheduledPayments';
 import Budget from './pages/Budget';
 import AddTransaction from './pages/AddTransaction';
+import UserManager from './pages/UserManager';
 import useTheme from './hooks/useTheme';
 import { Toaster } from './components/ui/sonner';
 
 function ProtectedRoute({ children }) {
   const token = localStorage.getItem('token');
   if (!token) return <Navigate to="/login" replace />;
+  return children;
+}
+
+function SuperAdminRoute({ children }) {
+  const token = localStorage.getItem('token');
+  if (!token) return <Navigate to="/login" replace />;
+  try {
+    const user = JSON.parse(localStorage.getItem('user') || 'null');
+    if (!user?.isSuperAdmin) return <Navigate to="/" replace />;
+  } catch {
+    return <Navigate to="/" replace />;
+  }
   return children;
 }
 
@@ -52,6 +65,7 @@ export default function App() {
               <Route path="/plans/scheduled-payments" element={<ProtectedRoute><ScheduledPayments /></ProtectedRoute>} />
               <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
               <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+              <Route path="/admin/users" element={<SuperAdminRoute><UserManager /></SuperAdminRoute>} />
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
           </ErrorBoundary>
