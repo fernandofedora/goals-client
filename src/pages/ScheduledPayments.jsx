@@ -3,6 +3,7 @@ import api from '../api';
 import Button from '../components/ui/button';
 import Input from '../components/ui/input';
 import Select from '../components/ui/select';
+import { toast } from 'sonner';
 import { cn } from '../lib/utils';
 
 // ── Period labels ─────────────────────────────────────────────────────────────
@@ -122,8 +123,6 @@ export default function ScheduledPayments() {
   const [editingId, setEditingId] = useState(null);
   const [formState, setFormState] = useState(EMPTY_FORM);
   const [methodError, setMethodError] = useState(false);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
   const [deleteTargetId, setDeleteTargetId] = useState(null);
 
   // ── Data loading (parallel) ───────────────────────────────────────────────
@@ -142,15 +141,13 @@ export default function ScheduledPayments() {
       setAccounts(accRes.data);
     } catch (err) {
       console.error(err);
-      setError('Failed to load data');
+      toast.error('Failed to load data');
     } finally {
       setLoading(false);
     }
   }, []);
 
   useEffect(() => { load(true); }, [load]);
-  useEffect(() => { if (!success) return; const t = setTimeout(() => setSuccess(''), 4000); return () => clearTimeout(t); }, [success]);
-  useEffect(() => { if (!error) return; const t = setTimeout(() => setError(''), 6000); return () => clearTimeout(t); }, [error]);
 
   // ── Form ──────────────────────────────────────────────────────────────────
   const handleInputChange = (e) => {
@@ -207,17 +204,17 @@ export default function ScheduledPayments() {
       };
       if (editingId) {
         await api.put(`/scheduled-payments/${editingId}`, payload);
-        setSuccess('Payment updated');
+        toast.success('Payment updated');
       } else {
         await api.post('/scheduled-payments', payload);
-        setSuccess('Payment created');
+        toast.success('Payment created');
       }
       setIsFormOpen(false);
       setEditingId(null);
       load();
     } catch (err) {
       console.error(err);
-      setError('Failed to save payment');
+      toast.error('Failed to save payment');
     }
   };
 
@@ -225,11 +222,11 @@ export default function ScheduledPayments() {
     try {
       const newStatus = payment.status === 'active' ? 'paused' : 'active';
       await api.put(`/scheduled-payments/${payment.id}`, { status: newStatus });
-      setSuccess(`Payment ${newStatus === 'active' ? 'resumed' : 'paused'}`);
+      toast.success(`Payment ${newStatus === 'active' ? 'resumed' : 'paused'}`);
       load();
     } catch (err) {
       console.error(err);
-      setError('Failed to update status');
+      toast.error('Failed to update status');
     }
   };
 
@@ -238,11 +235,11 @@ export default function ScheduledPayments() {
     try {
       await api.delete(`/scheduled-payments/${deleteTargetId}`);
       setDeleteTargetId(null);
-      setSuccess('Payment deleted');
+      toast.success('Payment deleted');
       load();
     } catch (err) {
       console.error(err);
-      setError('Failed to delete payment');
+      toast.error('Failed to delete payment');
     }
   };
 
@@ -273,20 +270,6 @@ export default function ScheduledPayments() {
   // ── Render ────────────────────────────────────────────────────────────────
   return (
     <div className="max-w-6xl mx-auto p-4 space-y-5">
-      {/* Toasts */}
-      {error && (
-        <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-800 text-rose-700 dark:text-rose-400 text-sm">
-          <span>⚠️</span> {error}
-          <button onClick={() => setError('')} className="ml-auto text-rose-400 hover:text-rose-600">✕</button>
-        </div>
-      )}
-      {success && (
-        <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-400 text-sm">
-          <span>✓</span> {success}
-          <button onClick={() => setSuccess('')} className="ml-auto text-emerald-400 hover:text-emerald-600">✕</button>
-        </div>
-      )}
-
       {/* Delete confirm */}
       {deleteTargetId && (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
@@ -566,8 +549,8 @@ export default function ScheduledPayments() {
           {/* Sub-field: Card (only when 'card' selected) */}
           {formState.paymentMethod === 'card' && (
             <div className="sm:col-span-2">
-              <Field label="Credit Card">
-                <Select name="CardId" value={formState.CardId} onChange={handleInputChange}>
+              <Field label="Credit Card" required>
+                <Select name="CardId" value={formState.CardId} onChange={handleInputChange} required>
                   <option value="">Select a card</option>
                   {cards.map(card => <option key={card.id} value={card.id}>{card.name}</option>)}
                 </Select>
@@ -578,8 +561,8 @@ export default function ScheduledPayments() {
           {/* Sub-field: Account (only when 'account' selected) */}
           {formState.paymentMethod === 'account' && (
             <div className="sm:col-span-2">
-              <Field label="Bank Account">
-                <Select name="AccountId" value={formState.AccountId} onChange={handleInputChange}>
+              <Field label="Bank Account" required>
+                <Select name="AccountId" value={formState.AccountId} onChange={handleInputChange} required>
                   <option value="">Select an account</option>
                   {accounts.map(acc => <option key={acc.id} value={acc.id}>{acc.name}</option>)}
                 </Select>

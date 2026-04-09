@@ -108,13 +108,14 @@ export default function AddTransaction() {
       const expPayload = {
         ...expense,
         type: 'expense',
-        paymentMethod: expense.method === 'account' ? 'cash' : expense.method,
+        paymentMethod: expense.method,
         amount: parseFloat(expense.amount || 0),
         accountId: expense.method === 'account' ? expense.accountId || null : null,
         cardId: expense.method === 'card' ? expense.cardId || null : null,
       };
       await api.post('/transactions', expPayload);
       setExpense({ description: '', categoryId: '', amount: '', date: '', method: 'cash', cardId: '', accountId: '' });
+      e.target.reset(); // Clear native browser validation state (removes :user-invalid)
       toast.success('Expense added'); load();
     } catch { toast.error('Failed to add expense'); }
   };
@@ -122,10 +123,12 @@ export default function AddTransaction() {
   const addIncome = async (e) => {
     e.preventDefault();
     try {
-      const payload = { ...income, type: 'income', amount: parseFloat(income.amount || 0), paymentMethod: 'cash' };
+      const paymentMethod = income.incomeMethod === 'account' ? 'account' : 'cash';
+      const payload = { ...income, type: 'income', amount: parseFloat(income.amount || 0), paymentMethod };
       if (income.incomeMethod === 'cash') payload.accountId = null;
       await api.post('/transactions', payload);
       setIncome({ description: '', categoryId: '', amount: '', date: '', incomeMethod: 'cash', accountId: '' });
+      e.target.reset(); // Clear native browser validation state (removes :user-invalid)
       toast.success('Income added'); load();
     } catch { toast.error('Failed to add income'); }
   };
@@ -154,11 +157,13 @@ export default function AddTransaction() {
       if (!data.description.trim()) { setEditError('Description is required'); return; }
       if (!(amt > 0)) { setEditError('Amount must be greater than 0'); return; }
       const payload = { ...data, amount: amt };
-      if (payload.type === 'income') { payload.paymentMethod = 'cash'; payload.cardId = null; }
+      if (payload.type === 'income') {
+        payload.paymentMethod = payload.paymentMethod === 'account' ? 'account' : 'cash';
+        payload.cardId = null;
+      }
       if (payload.type === 'expense') {
         if (payload.paymentMethod === 'account') {
           if (!payload.accountId) { setEditError('Please select an account'); return; }
-          payload.paymentMethod = 'cash';
           payload.cardId = null;
         } else if (payload.paymentMethod === 'card') {
           if (!payload.cardId) { setEditError('Please select a card for card payments'); return; }
@@ -246,7 +251,26 @@ export default function AddTransaction() {
                     : 'text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200'
                 )}
               >
-                {mode === 'expense' ? '↑ Expense' : '↓ Income'}
+                {mode === 'expense' ? (
+                  <span className="inline-flex items-center gap-1.5">
+                    {/* Minus circle icon */}
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <circle cx="12" cy="12" r="10" />
+                      <line x1="8" y1="12" x2="16" y2="12" />
+                    </svg>
+                    Expense
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-1.5">
+                    {/* Plus circle icon */}
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <circle cx="12" cy="12" r="10" />
+                      <line x1="12" y1="8" x2="12" y2="16" />
+                      <line x1="8" y1="12" x2="16" y2="12" />
+                    </svg>
+                    Income
+                  </span>
+                )}
               </button>
             ))}
           </div>
@@ -409,10 +433,16 @@ export default function AddTransaction() {
             {/* Summary mini-pills */}
             <div className="flex gap-2 flex-wrap text-xs font-semibold">
               <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400">
-                ↑ ${summaryTotals.income.toFixed(2)}
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="16" /><line x1="8" y1="12" x2="16" y2="12" />
+                </svg>
+                ${summaryTotals.income.toFixed(2)}
               </span>
               <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400">
-                ↓ ${summaryTotals.expense.toFixed(2)}
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="12" cy="12" r="10" /><line x1="8" y1="12" x2="16" y2="12" />
+                </svg>
+                ${summaryTotals.expense.toFixed(2)}
               </span>
               <span className={cn(
                 'inline-flex items-center gap-1 px-2.5 py-1 rounded-lg font-bold',
@@ -440,6 +470,7 @@ export default function AddTransaction() {
               <option value="all">All methods</option>
               <option value="cash">Cash</option>
               <option value="card">Card</option>
+              <option value="account">Account</option>
             </Select>
           </Field>
           <Field label="Category">
