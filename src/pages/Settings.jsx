@@ -79,6 +79,58 @@ function EmptyState({ message }) {
   );
 }
 
+// ── Category list row (must be defined OUTSIDE Settings to avoid focus loss) ───
+function CatRow({ cat, editingCatId, editCatForm, setEditCatForm, saveEditCat, cancelEditCat, startEditCat, setDeleteCatId }) {
+  return (
+    <li className="px-5 py-3 flex items-center justify-between gap-3">
+      {editingCatId === cat.id ? (
+        <div className="flex-1 flex flex-wrap items-end gap-3">
+          <Field label="Name">
+            <Input className="w-44" value={editCatForm.name} onChange={e => setEditCatForm(v => ({ ...v, name: e.target.value }))} />
+          </Field>
+          <Field label="Type">
+            <Select value={editCatForm.type} onChange={e => setEditCatForm(v => ({ ...v, type: e.target.value }))}>
+              <option value="expense">Expense</option>
+              <option value="income">Income</option>
+            </Select>
+          </Field>
+          <Field label="Color">
+            <input className="w-9 h-9 rounded-lg border border-[var(--border)] cursor-pointer bg-transparent [appearance:auto]" type="color" value={editCatForm.color} onChange={e => setEditCatForm(v => ({ ...v, color: e.target.value }))} />
+          </Field>
+          <Field label="Monthly Budget ($)">
+            <Input
+              type="number" step="0.01" min="0" placeholder="No limit"
+              className="w-32"
+              value={editCatForm.monthlyBudget}
+              onChange={e => setEditCatForm(v => ({ ...v, monthlyBudget: e.target.value }))}
+            />
+          </Field>
+          <div className="flex gap-1.5 pb-0.5">
+            <button type="button" onClick={() => saveEditCat(cat.id)} className="px-3 py-1.5 text-xs rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 font-medium">Save</button>
+            <button type="button" onClick={cancelEditCat} className="px-3 py-1.5 text-xs rounded-lg border border-[var(--border)] text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-800 font-medium">Cancel</button>
+          </div>
+        </div>
+      ) : (
+        <>
+          <div className="flex items-center gap-3 min-w-0">
+            <span className="w-3 h-3 rounded-full flex-shrink-0" style={{ background: cat.color }} />
+            <span className="text-sm font-medium text-gray-800 dark:text-gray-100">{cat.name}</span>
+            {cat.monthlyBudget != null && (
+              <span className="text-[11px] font-semibold px-1.5 py-0.5 rounded bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 border border-indigo-100 dark:border-indigo-800">
+                ${Number(cat.monthlyBudget).toFixed(0)}/mo
+              </span>
+            )}
+          </div>
+          <div className="flex gap-1">
+            <IconButton onClick={() => startEditCat(cat)} title="Edit category"><EditIcon /></IconButton>
+            <IconButton onClick={() => setDeleteCatId(cat.id)} title="Delete category" danger><TrashIcon /></IconButton>
+          </div>
+        </>
+      )}
+    </li>
+  );
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 export default function Settings() {
   const [categories, setCategories] = useState([]);
@@ -96,7 +148,7 @@ export default function Settings() {
 
   // ── Category edit ──────────────────────────────────────────────────────────
   const [editingCatId, setEditingCatId] = useState(null);
-  const [editCatForm, setEditCatForm] = useState({ name: '', type: 'expense', color: '#3b82f6' });
+  const [editCatForm, setEditCatForm] = useState({ name: '', type: 'expense', color: '#3b82f6', monthlyBudget: '' });
 
   // ── Card edit ──────────────────────────────────────────────────────────────
   const [editingCardId, setEditingCardId] = useState(null);
@@ -138,11 +190,12 @@ export default function Settings() {
     } catch { toast.error('Failed to add category'); }
   };
 
-  const startEditCat = (cat) => { setEditingCatId(cat.id); setEditCatForm({ name: cat.name, type: cat.type, color: cat.color }); };
+  const startEditCat = (cat) => { setEditingCatId(cat.id); setEditCatForm({ name: cat.name, type: cat.type, color: cat.color, monthlyBudget: cat.monthlyBudget != null ? String(cat.monthlyBudget) : '' }); };
   const cancelEditCat = () => setEditingCatId(null);
   const saveEditCat = async (id) => {
     try {
-      await api.put(`/categories/${id}`, editCatForm);
+      const payload = { ...editCatForm, monthlyBudget: editCatForm.monthlyBudget !== '' ? Number(editCatForm.monthlyBudget) : null };
+      await api.put(`/categories/${id}`, payload);
       setEditingCatId(null); toast.success('Category updated'); load();
     } catch { toast.error('Failed to update category'); }
   };
@@ -217,43 +270,6 @@ export default function Settings() {
   // ── Derived ───────────────────────────────────────────────────────────────
   const expenseCats = useMemo(() => categories.filter(c => c.type === 'expense'), [categories]);
   const incomeCats = useMemo(() => categories.filter(c => c.type === 'income'), [categories]);
-
-  // ── Category list row ─────────────────────────────────────────────────────
-  const CatRow = ({ cat }) => (
-    <li className="px-5 py-3 flex items-center justify-between gap-3">
-      {editingCatId === cat.id ? (
-        <div className="flex-1 flex flex-wrap items-end gap-3">
-          <Field label="Name">
-            <Input className="w-44" value={editCatForm.name} onChange={e => setEditCatForm(v => ({ ...v, name: e.target.value }))} />
-          </Field>
-          <Field label="Type">
-            <Select value={editCatForm.type} onChange={e => setEditCatForm(v => ({ ...v, type: e.target.value }))}>
-              <option value="expense">Expense</option>
-              <option value="income">Income</option>
-            </Select>
-          </Field>
-          <Field label="Color">
-            <input className="w-9 h-9 rounded-lg border border-[var(--border)] cursor-pointer bg-transparent [appearance:auto]" type="color" value={editCatForm.color} onChange={e => setEditCatForm(v => ({ ...v, color: e.target.value }))} />
-          </Field>
-          <div className="flex gap-1.5 pb-0.5">
-            <button type="button" onClick={() => saveEditCat(cat.id)} className="px-3 py-1.5 text-xs rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 font-medium">Save</button>
-            <button type="button" onClick={cancelEditCat} className="px-3 py-1.5 text-xs rounded-lg border border-[var(--border)] text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-800 font-medium">Cancel</button>
-          </div>
-        </div>
-      ) : (
-        <>
-          <div className="flex items-center gap-3">
-            <span className="w-3 h-3 rounded-full flex-shrink-0" style={{ background: cat.color }} />
-            <span className="text-sm font-medium text-gray-800 dark:text-gray-100">{cat.name}</span>
-          </div>
-          <div className="flex gap-1">
-            <IconButton onClick={() => startEditCat(cat)} title="Edit category"><EditIcon /></IconButton>
-            <IconButton onClick={() => setDeleteCatId(cat.id)} title="Delete category" danger><TrashIcon /></IconButton>
-          </div>
-        </>
-      )}
-    </li>
-  );
 
   return (
     <div className="max-w-4xl mx-auto p-4 space-y-5">
@@ -427,6 +443,14 @@ export default function Settings() {
               <Field label="Color">
                 <input className="w-9 h-9 rounded-lg border border-[var(--border)] cursor-pointer bg-transparent [appearance:auto]" type="color" value={catForm.color} onChange={e => setCatForm(v => ({ ...v, color: e.target.value }))} />
               </Field>
+              <Field label="Monthly Budget ($)">
+                <Input
+                  type="number" step="0.01" min="0" placeholder="No limit"
+                  className="w-32"
+                  value={catForm.monthlyBudget || ''}
+                  onChange={e => setCatForm(v => ({ ...v, monthlyBudget: e.target.value }))}
+                />
+              </Field>
               <div className="pb-0.5 flex gap-1.5">
                 <Button type="submit" variant="primary">Save</Button>
                 <button type="button" onClick={() => setShowCatForm(false)} className="px-3 py-1.5 text-xs rounded-lg border border-[var(--border)] text-gray-600 dark:text-gray-300 font-medium">Cancel</button>
@@ -438,7 +462,19 @@ export default function Settings() {
             <EmptyState message="No expense categories yet." />
           ) : (
             <ul className="divide-y divide-[var(--border)]">
-              {expenseCats.map(cat => <CatRow key={cat.id} cat={cat} />)}
+              {expenseCats.map(cat => (
+                <CatRow
+                  key={cat.id}
+                  cat={cat}
+                  editingCatId={editingCatId}
+                  editCatForm={editCatForm}
+                  setEditCatForm={setEditCatForm}
+                  saveEditCat={saveEditCat}
+                  cancelEditCat={cancelEditCat}
+                  startEditCat={startEditCat}
+                  setDeleteCatId={setDeleteCatId}
+                />
+              ))}
             </ul>
           )}
         </div>
@@ -467,6 +503,14 @@ export default function Settings() {
               <Field label="Color">
                 <input className="w-9 h-9 rounded-lg border border-[var(--border)] cursor-pointer bg-transparent [appearance:auto]" type="color" value={catForm.color} onChange={e => setCatForm(v => ({ ...v, color: e.target.value }))} />
               </Field>
+              <Field label="Monthly Budget ($)">
+                <Input
+                  type="number" step="0.01" min="0" placeholder="No limit"
+                  className="w-32"
+                  value={catForm.monthlyBudget || ''}
+                  onChange={e => setCatForm(v => ({ ...v, monthlyBudget: e.target.value }))}
+                />
+              </Field>
               <div className="pb-0.5 flex gap-1.5">
                 <Button type="submit" variant="primary">Save</Button>
                 <button type="button" onClick={() => setShowCatForm(false)} className="px-3 py-1.5 text-xs rounded-lg border border-[var(--border)] text-gray-600 dark:text-gray-300 font-medium">Cancel</button>
@@ -478,7 +522,19 @@ export default function Settings() {
             <EmptyState message="No income categories yet." />
           ) : (
             <ul className="divide-y divide-[var(--border)]">
-              {incomeCats.map(cat => <CatRow key={cat.id} cat={cat} />)}
+              {incomeCats.map(cat => (
+                <CatRow
+                  key={cat.id}
+                  cat={cat}
+                  editingCatId={editingCatId}
+                  editCatForm={editCatForm}
+                  setEditCatForm={setEditCatForm}
+                  saveEditCat={saveEditCat}
+                  cancelEditCat={cancelEditCat}
+                  startEditCat={startEditCat}
+                  setDeleteCatId={setDeleteCatId}
+                />
+              ))}
             </ul>
           )}
         </div>
