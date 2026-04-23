@@ -1,10 +1,13 @@
-import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import api from '../api';
 
 export default function ResetPassword() {
   const navigate = useNavigate();
-  const [step, setStep] = useState(1);
+  const [searchParams] = useSearchParams();
+  const token = searchParams.get('token');
+  
+  const [step, setStep] = useState(token ? 2 : 1);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
@@ -15,14 +18,9 @@ export default function ResetPassword() {
     e.preventDefault(); setError(''); setMessage('');
     try {
       const { data } = await api.post('/auth/reset-start', { email });
-      if (data.exists) {
-        setMessage('Cuenta encontrada. Crea una nueva contraseña.');
-        setStep(2);
-      } else {
-        setError('No encontramos una cuenta con ese correo. Verifica tus datos.');
-      }
+      setMessage(data.message);
     } catch (err) {
-      setError(err.response?.data?.message || 'No se pudo verificar el correo');
+      setError(err.response?.data?.message || 'No se pudo enviar el correo de recuperación');
     }
   };
 
@@ -31,9 +29,9 @@ export default function ResetPassword() {
     if (password.length < 8) { setError('La contraseña debe tener al menos 8 caracteres'); return; }
     if (password !== confirm) { setError('Las contraseñas no coinciden'); return; }
     try {
-      await api.post('/auth/reset', { email, password });
+      await api.post('/auth/reset-password', { token, password });
       setMessage('Contraseña actualizada correctamente. Puedes iniciar sesión.');
-      setTimeout(() => navigate('/login'), 1200);
+      setTimeout(() => navigate('/login'), 1500);
     } catch (err) {
       setError(err.response?.data?.message || 'No se pudo actualizar la contraseña');
     }

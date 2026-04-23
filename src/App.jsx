@@ -14,6 +14,7 @@ import ScheduledPayments from './pages/ScheduledPayments';
 import Budget from './pages/Budget';
 import AddTransaction from './pages/AddTransaction';
 import UserManager from './pages/UserManager';
+import VerifyEmail from './pages/VerifyEmail';
 import useTheme from './hooks/useTheme';
 import { Toaster } from './components/ui/sonner';
 
@@ -37,7 +38,7 @@ function SuperAdminRoute({ children }) {
 
 export default function App() {
   const location = useLocation();
-  const hideNavbar = ['/login', '/register', '/reset-password'].includes(location.pathname);
+  const hideNavbar = ['/login', '/register', '/reset-password', '/verify-email'].some(path => location.pathname.startsWith(path));
   const { theme, toggleTheme } = useTheme();
 
   useEffect(() => {
@@ -54,6 +55,7 @@ export default function App() {
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
               <Route path="/reset-password" element={<ResetPassword />} />
+              <Route path="/verify-email/:token" element={<VerifyEmail />} />
               <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
               <Route path="/transactions" element={<Navigate to="/transactions/add" replace />} />
               <Route path="/transactions/budget" element={<ProtectedRoute><Budget /></ProtectedRoute>} />
