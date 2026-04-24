@@ -9,16 +9,35 @@ export default function Register() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
 
+  const [success, setSuccess] = useState(false);
+
   const onSubmit = async (e) => {
     e.preventDefault();
     setError('');
     try {
       await api.post('/auth/register', { name, email, password });
-      navigate('/login');
+      setSuccess(true);
     } catch (err) {
       setError(err.response?.data?.message || 'Registration failed');
     }
   };
+
+  if (success) {
+    return (
+      <div className="max-w-md mx-auto mt-12 bg-white dark:bg-slate-800 shadow-lg rounded-xl p-8 text-center border border-transparent dark:border-slate-700">
+        <div className="flex items-center justify-center w-16 h-16 bg-blue-100 dark:bg-blue-900/30 rounded-full mx-auto mb-4">
+          <svg className="w-8 h-8 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+          </svg>
+        </div>
+        <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">¡Revisa tu correo!</h2>
+        <p className="text-gray-600 dark:text-gray-300 mb-6">Hemos enviado un enlace de verificación a <strong>{email}</strong>. Por favor verifica tu cuenta para poder iniciar sesión.</p>
+        <Link to="/login" className="inline-block w-full px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-colors">
+          Volver al Login
+        </Link>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-md mx-auto mt-12 bg-white dark:bg-slate-800 shadow-lg rounded-xl p-6 border border-transparent dark:border-slate-700">
