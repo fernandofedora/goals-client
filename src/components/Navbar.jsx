@@ -319,6 +319,16 @@ export default function Navbar({ theme, onToggleTheme }) {
                           <ShieldIcon /> User Manager
                         </NavLink>
                       )}
+                      <a
+                        href="https://github.com/fernandofedora/goals-client/issues/new?labels=bug,user-reported&title=%5BBUG%5D+Brief+description+of+the+error&body=%23%23+Problem+Description%0A%0A%3C!--+Describe+what+happened+--%3E%0A%0A%23%23+Steps+to+Reproduce%0A%0A1.+%0A2.+%0A3.+%0A%0A%23%23+Expected+Behavior%0A%0A%3C!--+What+did+you+expect+to+happen%3F+--%3E%0A"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={closeAll}
+                        className="flex items-center gap-2.5 px-4 py-2 text-sm text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:bg-[var(--muted)] transition-colors mx-1 rounded-md mt-1"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+                        Report Issue
+                      </a>
                     </div>
                     <div className="py-1.5 border-t border-[var(--border)]">
                       <button
@@ -412,6 +422,16 @@ export default function Navbar({ theme, onToggleTheme }) {
                   </div>
                 </div>
               )}
+              <a
+                href="https://github.com/fernandofedora/goals-client/issues/new?labels=bug,user-reported&title=%5BBUG%5D+Brief+description+of+the+error&body=%23%23+Problem+Description%0A%0A%3C!--+Describe+what+happened+--%3E%0A%0A%23%23+Steps+to+Reproduce%0A%0A1.+%0A2.+%0A3.+%0A%0A%23%23+Expected+Behavior%0A%0A%3C!--+What+did+you+expect+to+happen%3F+--%3E%0A"
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={closeAll}
+                className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:bg-[var(--muted)] w-full text-left transition-colors mb-1"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+                Report Issue
+              </a>
               <button
                 onClick={() => { closeAll(); onLogout(); }}
                 className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-red-500 hover:bg-red-500/5 w-full text-left transition-colors"
