@@ -7,6 +7,7 @@ import DateInput from '../components/DateInput';
 import Alert from '../components/ui/alert';
 import EditTransactionDialog from '../components/ui/edit-transaction-dialog';
 import { cn } from '../lib/utils';
+import { useCurrency } from '../context/CurrencyContext';
 
 // ── Tiny helpers ──────────────────────────────────────────────────────────────
 function IconButton({ onClick, title, danger, children }) {
@@ -50,6 +51,7 @@ export default function Accounts() {
   const [cards, setCards] = useState([]);
   const [bankAccounts, setBankAccounts] = useState([]);
   const [categories, setCategories] = useState([]);
+  const { symbol: cs } = useCurrency();
 
   // ── Hidden cards & bank accounts (persisted locally) ──────────────────────
   const [hiddenCardIds, setHiddenCardIds] = useState(() => {
@@ -538,7 +540,7 @@ export default function Accounts() {
                             <p className="text-[11px] text-gray-400 tracking-widest">
                               {item.kind === ACCOUNT_CARD
                                 ? `•••• ${item.last4}`
-                                : item.initialBalance > 0 ? `Opens $${Number(item.initialBalance).toFixed(2)}` : 'Bank account'}
+                                : item.initialBalance > 0 ? `Opens ${cs}${Number(item.initialBalance).toFixed(2)}` : 'Bank account'}
                             </p>
                           </div>
                         </div>
@@ -588,7 +590,7 @@ export default function Accounts() {
                 ].map(({ label, value, color, bold, border }) => (
                   <div key={label} className={cn('flex items-center justify-between', border && 'border-t border-[var(--border)] pt-2 mt-2')}>
                     <span className="text-gray-500 dark:text-gray-400">{label}</span>
-                    <span className={cn('tabular-nums', bold && 'font-bold', color)}>${value.toFixed(2)}</span>
+                    <span className={cn('tabular-nums', bold && 'font-bold', color)}>{cs}{value.toFixed(2)}</span>
                   </div>
                 ))}
               </div>
@@ -684,7 +686,7 @@ export default function Accounts() {
                         'px-4 py-3 font-semibold tabular-nums whitespace-nowrap',
                         t.type === 'expense' ? 'text-rose-600 dark:text-rose-400' : 'text-emerald-600 dark:text-emerald-400'
                       )}>
-                        {t.type === 'expense' ? '−' : '+'}${Number(t.amount).toFixed(2)}
+                        {t.type === 'expense' ? '−' : '+'}{cs}{Number(t.amount).toFixed(2)}
                       </td>
                       <td className="px-4 py-3 text-right">
                         <div className="flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">

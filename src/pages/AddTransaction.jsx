@@ -9,6 +9,7 @@ import EditTransactionDialog from '../components/ui/edit-transaction-dialog';
 import ConfirmDialog from '../components/ui/confirm-dialog';
 import { toast } from 'sonner';
 import { cn } from '../lib/utils';
+import { useCurrency } from '../context/CurrencyContext';
 
 // ── Inline Field wrapper ──────────────────────────────────────────────────────
 function Field({ label, labelRight, children }) {
@@ -66,6 +67,7 @@ export default function AddTransaction() {
   const [txMode, setTxMode] = useState('expense');
   const [paymentFilter, setPaymentFilter] = useState('all');
   const [categoryFilter, setCategoryFilter] = useState('');
+  const { symbol: cs } = useCurrency();
 
   const now = new Date();
   const [monthFilter, setMonthFilter] = useState(String(now.getMonth() + 1).padStart(2, '0'));
@@ -297,7 +299,7 @@ export default function AddTransaction() {
           </div>
 
           {/* Amount */}
-          <Field label="Amount ($)">
+          <Field label={`Amount (${cs})`}>
             <Input
               type="number" step="0.01" placeholder="0.00"
               value={txMode === 'expense' ? expense.amount : income.amount}
@@ -436,13 +438,13 @@ export default function AddTransaction() {
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                   <circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="16" /><line x1="8" y1="12" x2="16" y2="12" />
                 </svg>
-                ${summaryTotals.income.toFixed(2)}
+                {cs}{summaryTotals.income.toFixed(2)}
               </span>
               <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400">
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                   <circle cx="12" cy="12" r="10" /><line x1="8" y1="12" x2="16" y2="12" />
                 </svg>
-                ${summaryTotals.expense.toFixed(2)}
+                {cs}{summaryTotals.expense.toFixed(2)}
               </span>
               <span className={cn(
                 'inline-flex items-center gap-1 px-2.5 py-1 rounded-lg font-bold',
@@ -450,7 +452,7 @@ export default function AddTransaction() {
                   ? 'bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-400'
                   : 'bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400'
               )}>
-                = ${summaryTotals.net.toFixed(2)}
+                = {cs}{summaryTotals.net.toFixed(2)}
               </span>
             </div>
           </div>
@@ -552,7 +554,7 @@ export default function AddTransaction() {
                           'font-semibold tabular-nums',
                           t.type === 'expense' ? 'text-rose-600 dark:text-rose-400' : 'text-emerald-600 dark:text-emerald-400'
                         )}>
-                          {t.type === 'expense' ? '−' : '+'}${parseFloat(t.amount ?? 0).toFixed(2)}
+                          {t.type === 'expense' ? '−' : '+'}{cs}{parseFloat(t.amount ?? 0).toFixed(2)}
                         </span>
                         <span>{t.date}</span>
                         {methodPill}
@@ -617,7 +619,7 @@ export default function AddTransaction() {
                         'px-4 py-3 font-semibold tabular-nums whitespace-nowrap',
                         t.type === 'expense' ? 'text-rose-600 dark:text-rose-400' : 'text-emerald-600 dark:text-emerald-400'
                       )}>
-                        {t.type === 'expense' ? '−' : '+'}${parseFloat(t.amount ?? 0).toFixed(2)}
+                        {t.type === 'expense' ? '−' : '+'}{cs}{parseFloat(t.amount ?? 0).toFixed(2)}
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap text-gray-500 dark:text-gray-400 text-xs">{t.date}</td>
                       <td className="px-4 py-3 whitespace-nowrap">

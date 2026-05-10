@@ -8,6 +8,7 @@ import { toast } from 'sonner';
 import DateInput from '../components/DateInput';
 import { formatAmount } from '../utils/format';
 import { cn } from '../lib/utils';
+import { useCurrency } from '../context/CurrencyContext';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 function Field({ label, children }) {
@@ -95,6 +96,8 @@ const TrashIcon = () => (
 export default function SavingPlan() {
   const today = new Date();
   const isoToday = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+  const { symbol: cs } = useCurrency();
+  const fmt = (v) => formatAmount(v, { currencySymbol: cs });
 
   const [categories, setCategories] = useState([]);
   const [plans, setPlans] = useState([]);
@@ -324,7 +327,7 @@ export default function SavingPlan() {
               <Field label="Plan Name">
                 <Input name="name" value={planForm.name} onChange={onPlanField} placeholder="e.g. Emergency Fund" required />
               </Field>
-              <Field label="Target Amount ($)">
+              <Field label={`Target Amount (${cs})`}>
                 <Input name="targetAmount" type="number" step="0.01" min="0.01" value={planForm.targetAmount} onChange={onPlanField} placeholder="1000.00" required />
               </Field>
               <Field label="Linked Category (optional)">
@@ -421,8 +424,8 @@ export default function SavingPlan() {
                   {/* Progress bar */}
                   <div>
                     <div className="flex justify-between text-xs text-gray-400 mb-1.5">
-                      <span className="font-semibold text-gray-700 dark:text-gray-200">{formatAmount(totalSaved)}</span>
-                      <span>Goal: {formatAmount(currentPlan.targetAmount)}</span>
+                      <span className="font-semibold text-gray-700 dark:text-gray-200">{fmt(totalSaved)}</span>
+                      <span>Goal: {fmt(currentPlan.targetAmount)}</span>
                     </div>
                     <div className="h-2.5 bg-gray-100 dark:bg-slate-700 rounded-full overflow-hidden">
                       <div
@@ -431,7 +434,7 @@ export default function SavingPlan() {
                       />
                     </div>
                     <div className="flex justify-between mt-1.5 text-xs text-gray-400">
-                      <span>{formatAmount(summary?.remaining ?? 0)} remaining</span>
+                      <span>{fmt(summary?.remaining ?? 0)} remaining</span>
                       {progressPct >= 100 && <span className="text-emerald-600 font-bold">🎉 Goal reached!</span>}
                       {progressPct >= 90 && progressPct < 100 && <span className="text-amber-500 font-semibold">🔥 Almost there!</span>}
                     </div>
@@ -440,8 +443,8 @@ export default function SavingPlan() {
                   {/* Mini stats row */}
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                     {[
-                      { label: 'Manual', value: formatAmount(summary?.totalManual ?? 0), color: 'text-indigo-600 dark:text-indigo-400' },
-                      { label: 'Auto', value: formatAmount(summary?.totalAuto ?? 0), color: 'text-violet-600 dark:text-violet-400' },
+                      { label: 'Manual', value: fmt(summary?.totalManual ?? 0), color: 'text-indigo-600 dark:text-indigo-400' },
+                      { label: 'Auto', value: fmt(summary?.totalAuto ?? 0), color: 'text-violet-600 dark:text-violet-400' },
                       { label: 'Contributions', value: (summary?.contributions?.length ?? 0) + (summary?.autoTransactions?.length ?? 0), color: 'text-gray-700 dark:text-gray-200' },
                     ].map(s => (
                       <div key={s.label} className="bg-gray-50 dark:bg-slate-800/60 rounded-xl px-3 py-2">
@@ -464,7 +467,7 @@ export default function SavingPlan() {
                 <Field label="Plan Name">
                   <Input name="name" value={planForm.name} onChange={onPlanField} placeholder="Plan name" required />
                 </Field>
-                <Field label="Target Amount ($)">
+                <Field label={`Target Amount (${cs})`}>
                   <Input name="targetAmount" type="number" step="0.01" min="0.01" value={planForm.targetAmount} onChange={onPlanField} placeholder="0.00" required />
                 </Field>
                 <Field label="Linked Category (optional)">
@@ -499,7 +502,7 @@ export default function SavingPlan() {
               subtitle={editingContrId ? 'Modify the selected contribution' : 'Record a new savings deposit'}
             >
               <form onSubmit={editingContrId ? updateContribution : addContribution} className="space-y-4">
-                <Field label="Amount ($)">
+                <Field label={`Amount (${cs})`}>
                   <Input name="amount" type="number" step="0.01" min="0.01" value={contrForm.amount} onChange={onContrField} placeholder="0.00" required />
                 </Field>
                 <Field label="Date">
@@ -585,7 +588,7 @@ export default function SavingPlan() {
                             )}
                           </td>
                           <td className="px-4 py-3 whitespace-nowrap font-semibold tabular-nums text-emerald-600 dark:text-emerald-400">
-                            +{formatAmount(r.amount)}
+                            +{fmt(r.amount)}
                           </td>
                           <td className="px-4 py-3 text-right">
                             {r.type === 'manual' ? (
