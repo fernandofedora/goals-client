@@ -17,6 +17,7 @@ import UserManager from './pages/UserManager';
 import VerifyEmail from './pages/VerifyEmail';
 import useTheme from './hooks/useTheme';
 import { Toaster } from './components/ui/sonner';
+import { CurrencyProvider } from './context/CurrencyContext';
 
 function ProtectedRoute({ children }) {
   const token = localStorage.getItem('token');
@@ -47,6 +48,7 @@ export default function App() {
 
   return (
     <>
+      <CurrencyProvider>
       <div className="min-h-screen bg-[var(--background)] text-[var(--foreground)]">
         {!hideNavbar && <Navbar theme={theme} onToggleTheme={toggleTheme} />}
         <div className="max-w-6xl mx-auto px-4 py-6">
@@ -73,6 +75,7 @@ export default function App() {
           </ErrorBoundary>
         </div>
       </div>
+      </CurrencyProvider>
       <Toaster />
     </>
   );

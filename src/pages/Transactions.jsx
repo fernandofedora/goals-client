@@ -9,6 +9,7 @@ import EditTransactionDialog from '../components/ui/edit-transaction-dialog';
 import ConfirmDialog from '../components/ui/confirm-dialog';
 import { toast } from 'sonner';
 import { cn } from '../lib/utils';
+import { useCurrency } from '../context/CurrencyContext';
 
 // ── Inline Field wrapper for consistent label+input spacing ──────────────────
 function Field({ label, labelRight, children }) {
@@ -66,6 +67,7 @@ export default function Transactions() {
   const [txMode, setTxMode] = useState('expense');
   const [paymentFilter, setPaymentFilter] = useState('all');
   const [categoryFilter, setCategoryFilter] = useState('');
+  const { symbol: cs } = useCurrency();
 
   const now = new Date();
   const [monthFilter, setMonthFilter] = useState(String(now.getMonth() + 1).padStart(2, '0'));
@@ -311,7 +313,7 @@ export default function Transactions() {
           </div>
 
           {/* Amount */}
-          <Field label="Amount ($)">
+          <Field label={`Amount (${cs})`}>
             <Input
               type="number" step="0.01" placeholder="0.00"
               value={txMode === 'expense' ? expense.amount : income.amount}
@@ -455,7 +457,7 @@ export default function Transactions() {
           <Field label="Year">
             <Input type="number" placeholder="2026" value={budget.year} onChange={(e) => setBudget(v => ({ ...v, year: e.target.value }))} required />
           </Field>
-          <Field label="Limit ($)">
+          <Field label={`Limit (${cs})`}>
             <Input type="number" step="0.01" placeholder="0.00" value={budget.amount} onChange={(e) => setBudget(v => ({ ...v, amount: e.target.value }))} required />
           </Field>
           <div className="pb-0.5">
@@ -504,7 +506,7 @@ export default function Transactions() {
                         </div>
                       </div>
                       <div className="flex items-center gap-3">
-                        <span className="text-base font-semibold tabular-nums text-gray-800 dark:text-gray-100">${Number(b.amount).toFixed(2)}</span>
+                        <span className="text-base font-semibold tabular-nums text-gray-800 dark:text-gray-100">{cs}{Number(b.amount).toFixed(2)}</span>
                         <div className="flex gap-1">
                           <IconButton onClick={() => startEditBudget(b)} title="Edit budget">
                             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9" /><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L8 18l-4 1 1-4 11.5-11.5z" /></svg>
@@ -535,10 +537,10 @@ export default function Transactions() {
             {/* Summary mini-pills */}
             <div className="flex gap-2 flex-wrap text-xs font-semibold">
               <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400">
-                ↑ ${summaryTotals.income.toFixed(2)}
+                ↑ {cs}{summaryTotals.income.toFixed(2)}
               </span>
               <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400">
-                ↓ ${summaryTotals.expense.toFixed(2)}
+                ↓ {cs}{summaryTotals.expense.toFixed(2)}
               </span>
               <span className={cn(
                 'inline-flex items-center gap-1 px-2.5 py-1 rounded-lg font-bold',
@@ -546,7 +548,7 @@ export default function Transactions() {
                   ? 'bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-400'
                   : 'bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400'
               )}>
-                = ${summaryTotals.net.toFixed(2)}
+                = {cs}{summaryTotals.net.toFixed(2)}
               </span>
             </div>
           </div>
@@ -650,7 +652,7 @@ export default function Transactions() {
                           'font-semibold tabular-nums',
                           t.type === 'expense' ? 'text-rose-600 dark:text-rose-400' : 'text-emerald-600 dark:text-emerald-400'
                         )}>
-                          {t.type === 'expense' ? '−' : '+'}${parseFloat(t.amount ?? 0).toFixed(2)}
+                          {t.type === 'expense' ? '−' : '+'}{cs}{parseFloat(t.amount ?? 0).toFixed(2)}
                         </span>
                         <span>{t.date}</span>
                         {methodPill}
@@ -719,7 +721,7 @@ export default function Transactions() {
                         'px-4 py-3 font-semibold tabular-nums whitespace-nowrap',
                         t.type === 'expense' ? 'text-rose-600 dark:text-rose-400' : 'text-emerald-600 dark:text-emerald-400'
                       )}>
-                        {t.type === 'expense' ? '−' : '+'}${parseFloat(t.amount ?? 0).toFixed(2)}
+                        {t.type === 'expense' ? '−' : '+'}{cs}{parseFloat(t.amount ?? 0).toFixed(2)}
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap text-gray-500 dark:text-gray-400 text-xs">{t.date}</td>
                       <td className="px-4 py-3 whitespace-nowrap">

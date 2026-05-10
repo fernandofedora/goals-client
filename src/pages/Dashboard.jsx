@@ -9,6 +9,7 @@ import {
   PieChart, Pie, Cell, Sector, Tooltip, Legend, ResponsiveContainer
 } from 'recharts';
 import { ChartContainer, ChartTooltipContent, ChartLegendContent, ChartTooltip, ChartLegend } from '../components/ui/chart';
+import { useCurrency } from '../context/CurrencyContext';
 
 const monthOptions = [
   { label: 'All Time', value: 'all' },
@@ -22,27 +23,33 @@ const barChartConfig = {
 
 
 
-const currencyFormatter = (v) => `$${Number(v ?? 0).toFixed(2)}`;
+// currencyFormatter is now defined inside the component to use dynamic symbol
 
 // Custom active-sector Pie shape (shadcn donut style)
-const renderActiveShape = (props) => {
-  const { cx, cy, innerRadius, outerRadius, startAngle, endAngle, fill, payload, percent, value } = props;
-  return (
-    <g>
-      <text x={cx} y={cy - 10} textAnchor="middle" fill="currentColor" className="text-sm font-semibold" style={{ fill: fill }}>
-        {payload.name}
-      </text>
-      <text x={cx} y={cy + 14} textAnchor="middle" fill="#6b7280" style={{ fontSize: 12 }}>
-        {currencyFormatter(value)} · {(percent * 100).toFixed(1)}%
-      </text>
-      <Sector cx={cx} cy={cy} innerRadius={innerRadius} outerRadius={outerRadius + 6} startAngle={startAngle} endAngle={endAngle} fill={fill} />
-      <Sector cx={cx} cy={cy} innerRadius={outerRadius + 10} outerRadius={outerRadius + 14} startAngle={startAngle} endAngle={endAngle} fill={fill} opacity={0.4} />
-    </g>
-  );
-};
+// renderActiveShape is now defined inside the component to use dynamic symbol
 
 export default function Dashboard() {
   const navigate = useNavigate();
+  const { symbol: cs } = useCurrency();
+
+  const currencyFormatter = (v) => `${cs}${Number(v ?? 0).toFixed(2)}`;
+
+  const renderActiveShape = (props) => {
+    const { cx, cy, innerRadius, outerRadius, startAngle, endAngle, fill, payload, percent, value } = props;
+    return (
+      <g>
+        <text x={cx} y={cy - 10} textAnchor="middle" fill="currentColor" className="text-sm font-semibold" style={{ fill: fill }}>
+          {payload.name}
+        </text>
+        <text x={cx} y={cy + 14} textAnchor="middle" fill="#6b7280" style={{ fontSize: 12 }}>
+          {currencyFormatter(value)} · {(percent * 100).toFixed(1)}%
+        </text>
+        <Sector cx={cx} cy={cy} innerRadius={innerRadius} outerRadius={outerRadius + 6} startAngle={startAngle} endAngle={endAngle} fill={fill} />
+        <Sector cx={cx} cy={cy} innerRadius={outerRadius + 10} outerRadius={outerRadius + 14} startAngle={startAngle} endAngle={endAngle} fill={fill} opacity={0.4} />
+      </g>
+    );
+  };
+
   const [filterMode, setFilterMode] = useState(() => localStorage.getItem('dashboard_filter_mode') || 'period'); // 'period' | 'range'
   const [period, setPeriod] = useState(() => localStorage.getItem('dashboard_period') || 'all');
   const [dateRange, setDateRange] = useState({ from: undefined, to: undefined });
@@ -72,8 +79,8 @@ export default function Dashboard() {
   const toISODate = (d) => d ? d.toISOString().slice(0, 10) : null;
 
   const formatCurrency = (value) => {
-    try { return new Intl.NumberFormat('es', { style: 'currency', currency: 'USD' }).format(Number(value || 0)); }
-    catch { return `$${Number(value || 0).toFixed(2)}`; }
+    try { return `${cs}${Number(value || 0).toFixed(2)}`; }
+    catch { return `${cs}${Number(value || 0).toFixed(2)}`; }
   };
 
   const yearOptions = useMemo(() => {
@@ -311,7 +318,7 @@ export default function Dashboard() {
           <div key={label} className={`rounded-xl p-4 bg-${color}-50 dark:bg-slate-800 border border-${color}-100 dark:border-slate-700/60`}>
             <p className={`text-xs font-medium text-${color}-600 dark:text-${color}-400 uppercase tracking-widest mb-1`}>{label}</p>
             <p className={`text-2xl font-bold text-${color}-700 dark:text-slate-100 tabular-nums`}>
-              {isCount ? value : `$${Number(value).toFixed(2)}`}
+              {isCount ? value : `${cs}${Number(value).toFixed(2)}`}
             </p>
           </div>
         ))}
@@ -319,7 +326,7 @@ export default function Dashboard() {
           <div className="rounded-xl p-4 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700/60">
             <p className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-1">All-Time Balance</p>
             <p className="text-2xl font-bold text-slate-700 dark:text-slate-100 tabular-nums">
-              ${(allTimeSummary.totals.income - allTimeSummary.totals.expense).toFixed(2)}
+              {cs}{(allTimeSummary.totals.income - allTimeSummary.totals.expense).toFixed(2)}
             </p>
           </div>
         )}
@@ -404,10 +411,10 @@ export default function Dashboard() {
             <BarChart data={barData} barGap={3} barCategoryGap="30%">
               <CartesianGrid vertical={false} strokeDasharray="3 3" stroke="currentColor" className="text-gray-100 dark:text-slate-800" opacity={0.6} />
               <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#9ca3af' }} />
-              <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#9ca3af' }} tickFormatter={(v) => `$${v >= 1000 ? `${(v / 1000).toFixed(0)}k` : v}`} />
+              <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#9ca3af' }} tickFormatter={(v) => `${cs}${v >= 1000 ? `${(v / 1000).toFixed(0)}k` : v}`} />
               <ChartTooltip
                 cursor={{ fill: 'currentColor', className: 'text-gray-100 dark:text-slate-800', opacity: 0.5 }}
-                content={<ChartTooltipContent formatter={(v, name) => [`$${Number(v).toFixed(2)}`, name]} indicator="square" />}
+                content={<ChartTooltipContent formatter={(v, name) => [`${cs}${Number(v).toFixed(2)}`, name]} indicator="square" />}
               />
               <ChartLegend content={<ChartLegendContent />} />
               <Bar dataKey="expense" name="Expenses" fill={barChartConfig.expense.color} radius={[6, 6, 0, 0]} />
@@ -459,7 +466,7 @@ export default function Dashboard() {
                       </div>
                       <div className="flex items-center gap-3 text-right">
                         <span className="text-gray-400 text-xs">{pct}%</span>
-                        <span className="font-semibold text-gray-800 dark:text-gray-100 tabular-nums">${c.amount.toFixed(2)}</span>
+                        <span className="font-semibold text-gray-800 dark:text-gray-100 tabular-nums">{cs}{c.amount.toFixed(2)}</span>
                       </div>
                     </li>
                   );
@@ -507,7 +514,7 @@ export default function Dashboard() {
                       </div>
                       <div className="flex items-center gap-3 text-right">
                         <span className="text-gray-400 text-xs">{pct}%</span>
-                        <span className="font-semibold text-gray-800 dark:text-gray-100 tabular-nums">${c.amount.toFixed(2)}</span>
+                        <span className="font-semibold text-gray-800 dark:text-gray-100 tabular-nums">{cs}{c.amount.toFixed(2)}</span>
                       </div>
                     </li>
                   );
@@ -564,10 +571,10 @@ export default function Dashboard() {
             ) : (
               <div className="space-y-3">
                 <div className="flex justify-between text-sm">
-                  <span className="text-gray-500 dark:text-gray-400">Budget <span className="font-semibold text-gray-800 dark:text-white">${budgetProgress.budget.toFixed(2)}</span></span>
-                  <span className="text-gray-500 dark:text-gray-400">Spent <span className="font-semibold text-rose-600">${budgetProgress.actual.toFixed(2)}</span></span>
+                  <span className="text-gray-500 dark:text-gray-400">Budget <span className="font-semibold text-gray-800 dark:text-white">{cs}{budgetProgress.budget.toFixed(2)}</span></span>
+                  <span className="text-gray-500 dark:text-gray-400">Spent <span className="font-semibold text-rose-600">{cs}{budgetProgress.actual.toFixed(2)}</span></span>
                   <span className="text-gray-500 dark:text-gray-400">
-                    Remaining <span className={`font-semibold ${budgetProgress.remaining < 0 ? 'text-rose-600' : 'text-emerald-600'}`}>${budgetProgress.remaining.toFixed(2)}</span>
+                    Remaining <span className={`font-semibold ${budgetProgress.remaining < 0 ? 'text-rose-600' : 'text-emerald-600'}`}>{cs}{budgetProgress.remaining.toFixed(2)}</span>
                   </span>
                 </div>
                 <div className="w-full h-3 bg-gray-100 dark:bg-slate-800 rounded-full overflow-hidden">
@@ -614,12 +621,12 @@ export default function Dashboard() {
                       </div>
                       <div className="flex items-center gap-3 text-right">
                         <span className="text-gray-500 dark:text-gray-400 tabular-nums">
-                          ${spent.toFixed(2)} <span className="text-gray-300 dark:text-gray-600">/</span> ${budget.toFixed(2)}
+                          {cs}{spent.toFixed(2)} <span className="text-gray-300 dark:text-gray-600">/</span> {cs}{budget.toFixed(2)}
                         </span>
                         <span className={`text-xs font-semibold tabular-nums ${
                           isOver ? 'text-rose-600' : 'text-emerald-600'
                         }`}>
-                          {isOver ? `+$${Math.abs(remaining).toFixed(2)} over` : `$${remaining.toFixed(2)} left`}
+                          {isOver ? `+${cs}${Math.abs(remaining).toFixed(2)} over` : `${cs}${remaining.toFixed(2)} left`}
                         </span>
                       </div>
                     </div>
@@ -682,14 +689,14 @@ export default function Dashboard() {
                   <span className="text-xl">{icon}</span>
                   <div>
                     <p className="text-xs font-medium text-gray-500 dark:text-gray-400">{label}</p>
-                    <p className="text-lg font-bold tabular-nums" style={{ color }}>${amount.toFixed(2)}</p>
+                    <p className="text-lg font-bold tabular-nums" style={{ color }}>{cs}{amount.toFixed(2)}</p>
                   </div>
                 </div>
                 <span className="text-sm font-semibold" style={{ color }}>{pct}%</span>
               </div>
             ))}
             <div className="text-right text-xs text-gray-400 pt-1">
-              Total spent: <span className="font-semibold text-gray-700 dark:text-gray-200">${paymentTotals.total.toFixed(2)}</span>
+              Total spent: <span className="font-semibold text-gray-700 dark:text-gray-200">{cs}{paymentTotals.total.toFixed(2)}</span>
             </div>
           </div>
         </div>
@@ -711,7 +718,7 @@ export default function Dashboard() {
                       {c.last4 && <p className="text-xs text-gray-400">•••• {c.last4}</p>}
                     </div>
                   </div>
-                  <p className="text-lg font-bold tabular-nums" style={{ color: c.color }}>${c.amount.toFixed(2)}</p>
+                  <p className="text-lg font-bold tabular-nums" style={{ color: c.color }}>{cs}{c.amount.toFixed(2)}</p>
                 </div>
               ))}
             </div>
@@ -732,7 +739,7 @@ export default function Dashboard() {
                 <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Net Worth</span>
                 <span className={`text-xl font-bold tabular-nums ${bankNetWorth >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-500 dark:text-rose-400'
                   }`}>
-                  ${bankNetWorth.toFixed(2)}
+                  {cs}{bankNetWorth.toFixed(2)}
                 </span>
               </div>
             )}
@@ -761,16 +768,16 @@ export default function Dashboard() {
                         <div className="min-w-0">
                           <p className="text-sm font-semibold text-gray-800 dark:text-gray-100 truncate">{acc.name}</p>
                           <p className="text-[11px] text-gray-400">
-                            Opens ${Number(acc.initialBalance || 0).toFixed(2)}
-                            &ensp;·&ensp;+${acc.income.toFixed(2)} income
-                            &ensp;·&ensp;−${acc.expense.toFixed(2)} expenses
+                            Opens {cs}{Number(acc.initialBalance || 0).toFixed(2)}
+                            &ensp;·&ensp;+{cs}{acc.income.toFixed(2)} income
+                            &ensp;·&ensp;−{cs}{acc.expense.toFixed(2)} expenses
                           </p>
                         </div>
                       </div>
                       <div className="flex-shrink-0 text-right">
                         <span className={`text-base font-bold tabular-nums ${isNeg ? 'text-rose-500 dark:text-rose-400' : 'text-emerald-600 dark:text-emerald-400'
                           }`}>
-                          {isNeg ? '−' : '+'}${Math.abs(acc.current).toFixed(2)}
+                          {isNeg ? '−' : '+'}{cs}{Math.abs(acc.current).toFixed(2)}
                         </span>
                       </div>
                     </div>

@@ -6,6 +6,7 @@ import Select from '../components/ui/select';
 import ConfirmDialog from '../components/ui/confirm-dialog';
 import { toast } from 'sonner';
 import { cn } from '../lib/utils';
+import { useCurrency } from '../context/CurrencyContext';
 
 // ── Inline Field wrapper ──────────────────────────────────────────────────────
 function Field({ label, children }) {
@@ -45,6 +46,7 @@ export default function Budget() {
   const [editingBudgetId, setEditingBudgetId] = useState(null);
   const [editBudgetData, setEditBudgetData] = useState({ month: '', year: '', amount: '' });
   const [deleteBudgetId, setDeleteBudgetId] = useState(null);
+  const { symbol: cs } = useCurrency();
 
   const load = useCallback(async () => {
     try {
@@ -132,7 +134,7 @@ export default function Budget() {
               required
             />
           </Field>
-          <Field label="Limit ($)">
+          <Field label={`Limit (${cs})`}>
             <Input
               type="number"
               step="0.01"
@@ -207,7 +209,7 @@ export default function Budget() {
                       </div>
                       <div className="flex items-center gap-3">
                         <span className="text-base font-semibold tabular-nums text-gray-800 dark:text-gray-100">
-                          ${Number(b.amount).toFixed(2)}
+                          {cs}{Number(b.amount).toFixed(2)}
                         </span>
                         <div className="flex gap-1">
                           <IconButton onClick={() => startEditBudget(b)} title="Edit budget">
