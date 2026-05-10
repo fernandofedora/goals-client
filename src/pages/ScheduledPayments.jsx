@@ -5,6 +5,7 @@ import Input from '../components/ui/input';
 import Select from '../components/ui/select';
 import { toast } from 'sonner';
 import { cn } from '../lib/utils';
+import { useCurrency } from '../context/CurrencyContext';
 
 // ── Period labels ─────────────────────────────────────────────────────────────
 const PERIOD_LABELS = {
@@ -124,6 +125,7 @@ export default function ScheduledPayments() {
   const [formState, setFormState] = useState(EMPTY_FORM);
   const [methodError, setMethodError] = useState(false);
   const [deleteTargetId, setDeleteTargetId] = useState(null);
+  const { symbol: cs } = useCurrency();
 
   // ── Data loading (parallel) ───────────────────────────────────────────────
   const load = useCallback(async (showSpinner = false) => {
@@ -298,7 +300,7 @@ export default function ScheduledPayments() {
               {activeCount} active
             </span>
             <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400">
-              ≈ ${totalMonthly.toFixed(2)}/mo
+              ≈ {cs}{totalMonthly.toFixed(2)}/mo
             </span>
             <Button
               onClick={openNew}
@@ -389,7 +391,7 @@ export default function ScheduledPayments() {
                     'text-2xl font-bold tabular-nums',
                     isExpense ? 'text-rose-600 dark:text-rose-400' : 'text-emerald-600 dark:text-emerald-400'
                   )}>
-                    {isExpense ? '−' : '+'}${Number(payment.amount).toFixed(2)}
+                    {isExpense ? '−' : '+'}{cs}{Number(payment.amount).toFixed(2)}
                   </div>
 
                   {/* Next Due Date — always shown, prominent */}
@@ -489,7 +491,7 @@ export default function ScheduledPayments() {
           </Field>
 
           {/* Amount */}
-          <Field label="Amount ($)" required>
+          <Field label={`Amount (${cs})`} required>
             <Input name="amount" type="number" step="0.01" value={formState.amount} onChange={handleInputChange} placeholder="0.00" required />
           </Field>
 
