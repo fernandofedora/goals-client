@@ -1,6 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
+import { toast } from 'sonner';
 import api from '../api';
+import { consumeExpiredNotice } from '../utils/session';
 
 export default function Login() {
   const navigate = useNavigate();
@@ -8,6 +10,14 @@ export default function Login() {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
+
+  // Shown once after an automatic logout (expired/invalid session). The flag
+  // is set by forceLogout() right before the hard redirect lands here.
+  useEffect(() => {
+    if (consumeExpiredNotice()) {
+      toast.error('Your session expired. Please log in again.');
+    }
+  }, []);
 
   const onSubmit = async (e) => {
     e.preventDefault();

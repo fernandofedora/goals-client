@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { NavLink, useNavigate, useLocation } from 'react-router-dom';
+import { NavLink, Link, useNavigate, useLocation } from 'react-router-dom';
 import { cn } from '../lib/utils';
 
 // ─── Chevron icon ─────────────────────────────────────────────────────────────
@@ -69,7 +69,7 @@ function Dropdown({ label, isActive, isOpen, onToggle, children, mobile }) {
       )}
 
       {/* Mobile inline items */}
-      {mobile && (
+      {mobile && isOpen && (
         <div className="mt-1 ml-3 border-l-2 border-[var(--border)] pl-3 space-y-0.5">
           {children}
         </div>
@@ -201,9 +201,13 @@ export default function Navbar({ theme, onToggleTheme }) {
               )}
             </button>
 
-            <span className="font-bold text-base text-[var(--foreground)] tracking-tight leading-tight">
-              Expense<br className="hidden sm:block" /><span className="sm:hidden"> </span>Control
-            </span>
+            <Link
+              to="/"
+              aria-label="Goals - Ir al inicio"
+              className="font-bold text-base text-[var(--foreground)] tracking-tight leading-tight hover:opacity-80 transition-opacity"
+            >
+              Goals
+            </Link>
           </div>
 
           {/* ── Center: Desktop Navigation ────────────────── */}

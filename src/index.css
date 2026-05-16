@@ -2,6 +2,23 @@
 
 @custom-variant dark (&:where([data-theme=dark], [data-theme=dark] *));
 
+/* Action buttons in table rows: always visible on touch devices, hover-reveal on mouse */
+.tx-row-actions {
+  opacity: 1;
+  transition: opacity 150ms;
+}
+/* Only hide on devices that are strictly mouse-only (no touch capability at all).
+   iPads with Pencil/trackpad report `hover: hover` + `pointer: fine`, so we also
+   require no coarse pointer anywhere to exclude any device with touch. */
+@media (hover: hover) and (pointer: fine) and (not (any-pointer: coarse)) {
+  .tx-row-actions { opacity: 0; }
+  .group:hover .tx-row-actions { opacity: 1; }
+}
+/* Fallback: if the device exposes any touch capability, force buttons visible. */
+@media (any-pointer: coarse), (any-hover: none) {
+  .tx-row-actions { opacity: 1 !important; }
+}
+
 /* Baseline usando variables de tema para buen contraste */
 body {
   min-height: 100vh;
