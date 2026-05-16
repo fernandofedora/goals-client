@@ -18,16 +18,27 @@ import VerifyEmail from './pages/VerifyEmail';
 import useTheme from './hooks/useTheme';
 import { Toaster } from './components/ui/sonner';
 import { CurrencyProvider } from './context/CurrencyContext';
+import { isTokenExpired, clearSession } from './utils/session';
+
+// A locally-expired token is treated exactly like a missing one: drop the
+// stale session and route to login *before* rendering a screen that would
+// only fail its API calls. The server still re-validates every request.
+function hasValidSession() {
+  const token = localStorage.getItem('token');
+  if (isTokenExpired(token)) {
+    clearSession();
+    return false;
+  }
+  return true;
+}
 
 function ProtectedRoute({ children }) {
-  const token = localStorage.getItem('token');
-  if (!token) return <Navigate to="/login" replace />;
+  if (!hasValidSession()) return <Navigate to="/login" replace />;
   return children;
 }
 
 function SuperAdminRoute({ children }) {
-  const token = localStorage.getItem('token');
-  if (!token) return <Navigate to="/login" replace />;
+  if (!hasValidSession()) return <Navigate to="/login" replace />;
   try {
     const user = JSON.parse(localStorage.getItem('user') || 'null');
     if (!user?.isSuperAdmin) return <Navigate to="/" replace />;
