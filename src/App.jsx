@@ -13,6 +13,7 @@ import Profile from './pages/Profile';
 import ScheduledPayments from './pages/ScheduledPayments';
 import Budget from './pages/Budget';
 import AddTransaction from './pages/AddTransaction';
+import GraphicsByCategories from './pages/GraphicsByCategories';
 import UserManager from './pages/UserManager';
 import VerifyEmail from './pages/VerifyEmail';
 import useTheme from './hooks/useTheme';
@@ -78,6 +79,8 @@ export default function App() {
               <Route path="/plans/savings" element={<ProtectedRoute><SavingPlan /></ProtectedRoute>} />
               <Route path="/plans/accounts" element={<ProtectedRoute><Accounts /></ProtectedRoute>} />
               <Route path="/plans/scheduled-payments" element={<ProtectedRoute><ScheduledPayments /></ProtectedRoute>} />
+              <Route path="/graphics" element={<Navigate to="/graphics/categories" replace />} />
+              <Route path="/graphics/categories" element={<ProtectedRoute><GraphicsByCategories /></ProtectedRoute>} />
               <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
               <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
               <Route path="/admin/users" element={<SuperAdminRoute><UserManager /></SuperAdminRoute>} />
