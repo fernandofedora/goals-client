@@ -266,6 +266,9 @@ export default function Dashboard() {
     return { budget, actual, remaining, consumedPercent };
   }, [summary]);
 
+  // Budgets are monthly; only meaningful when a specific month/year is selected.
+  const isMonthSelected = filterMode === 'period' && period !== 'all' && period !== 'year';
+
   const barColorClass = useMemo(() => {
     const cp = budgetProgress.consumedPercent;
     if (budgetProgress.remaining < 0) return 'bg-rose-500';
@@ -579,7 +582,7 @@ export default function Dashboard() {
         {/* ── Monthly Budget view (existing) ── */}
         {budgetView === 'monthly' && (
           <>
-            {period === 'all' ? (
+            {!isMonthSelected ? (
               <p className="text-sm text-gray-400">Select a specific month to compare against budget.</p>
             ) : summary?.budgetAmount == null ? (
               <p className="text-sm text-gray-400">No budget set for this month.</p>
@@ -608,6 +611,9 @@ export default function Dashboard() {
 
         {/* ── Category Budgets view (new) ── */}
         {budgetView === 'category' && (() => {
+          if (!isMonthSelected) return (
+            <p className="text-sm text-gray-400">Select a specific month to compare against budget.</p>
+          );
           const catsWithBudget = (summary?.categories || []).filter(c => c.monthlyBudget != null);
           if (loading) return <p className="text-sm text-gray-400 animate-pulse">Loading…</p>;
           if (catsWithBudget.length === 0) return (
