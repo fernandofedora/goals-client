@@ -104,6 +104,7 @@ export default function Navbar({ theme, onToggleTheme }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [plansOpen, setPlansOpen] = useState(false);
   const [txOpen, setTxOpen] = useState(false);
+  const [graphicsOpen, setGraphicsOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const navRef = useRef(null);
   const navigate = useNavigate();
@@ -120,6 +121,7 @@ export default function Navbar({ theme, onToggleTheme }) {
       if (navRef.current && !navRef.current.contains(e.target)) {
         setPlansOpen(false);
         setTxOpen(false);
+        setGraphicsOpen(false);
         setUserMenuOpen(false);
       }
     };
@@ -131,6 +133,7 @@ export default function Navbar({ theme, onToggleTheme }) {
   useEffect(() => {
     setPlansOpen(false);
     setTxOpen(false);
+    setGraphicsOpen(false);
     setUserMenuOpen(false);
     setMenuOpen(false);
   }, [location.pathname]);
@@ -138,6 +141,7 @@ export default function Navbar({ theme, onToggleTheme }) {
   const closeAll = () => {
     setPlansOpen(false);
     setTxOpen(false);
+    setGraphicsOpen(false);
     setUserMenuOpen(false);
     setMenuOpen(false);
   };
@@ -220,7 +224,7 @@ export default function Navbar({ theme, onToggleTheme }) {
               label="Transactions"
               isActive={location.pathname.startsWith('/transactions')}
               isOpen={txOpen}
-              onToggle={() => { setTxOpen(v => !v); setPlansOpen(false); setUserMenuOpen(false); }}
+              onToggle={() => { setTxOpen(v => !v); setPlansOpen(false); setGraphicsOpen(false); setUserMenuOpen(false); }}
             >
               <DropdownItem to="/transactions/budget" onClick={closeAll}>Budget</DropdownItem>
               <DropdownItem to="/transactions/add" onClick={closeAll}>Add Transaction</DropdownItem>
@@ -230,11 +234,20 @@ export default function Navbar({ theme, onToggleTheme }) {
               label="Plans"
               isActive={location.pathname.startsWith('/plans') || location.pathname === '/saving-plan'}
               isOpen={plansOpen}
-              onToggle={() => { setPlansOpen(v => !v); setTxOpen(false); setUserMenuOpen(false); }}
+              onToggle={() => { setPlansOpen(v => !v); setTxOpen(false); setGraphicsOpen(false); setUserMenuOpen(false); }}
             >
               <DropdownItem to="/plans/savings" onClick={closeAll}>Savings Plans</DropdownItem>
               <DropdownItem to="/plans/accounts" onClick={closeAll}>Accounts</DropdownItem>
               <DropdownItem to="/plans/scheduled-payments" onClick={closeAll}>Scheduled Payments</DropdownItem>
+            </Dropdown>
+
+            <Dropdown
+              label="Graphics"
+              isActive={location.pathname.startsWith('/graphics')}
+              isOpen={graphicsOpen}
+              onToggle={() => { setGraphicsOpen(v => !v); setTxOpen(false); setPlansOpen(false); setUserMenuOpen(false); }}
+            >
+              <DropdownItem to="/graphics/categories" onClick={closeAll}>By Categories</DropdownItem>
             </Dropdown>
 
             <NavLink to="/settings" className={navLinkClass} onClick={closeAll}>
@@ -394,6 +407,17 @@ export default function Navbar({ theme, onToggleTheme }) {
               <DropdownItem to="/plans/savings" onClick={closeAll} mobile>Savings Plans</DropdownItem>
               <DropdownItem to="/plans/accounts" onClick={closeAll} mobile>Accounts</DropdownItem>
               <DropdownItem to="/plans/scheduled-payments" onClick={closeAll} mobile>Scheduled Payments</DropdownItem>
+            </Dropdown>
+
+            {/* Graphics mobile */}
+            <Dropdown
+              label="Graphics"
+              isActive={location.pathname.startsWith('/graphics')}
+              isOpen={graphicsOpen}
+              onToggle={() => setGraphicsOpen(v => !v)}
+              mobile
+            >
+              <DropdownItem to="/graphics/categories" onClick={closeAll} mobile>By Categories</DropdownItem>
             </Dropdown>
 
             <NavLink to="/settings" className={mobileNavLinkClass} onClick={closeAll}>Settings</NavLink>

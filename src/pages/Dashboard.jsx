@@ -11,8 +11,9 @@ import {
 import { ChartContainer, ChartTooltipContent, ChartLegendContent, ChartTooltip, ChartLegend } from '../components/ui/chart';
 import { useCurrency } from '../context/CurrencyContext';
 
-const monthOptions = [
+const periodOptions = [
   { label: 'All Time', value: 'all' },
+  { label: 'Full Year', value: 'year' },
   ...Array.from({ length: 12 }, (_, i) => ({ label: new Date(0, i).toLocaleString('en', { month: 'long' }), value: String(i + 1).padStart(2, '0') }))
 ];
 
@@ -100,11 +101,16 @@ export default function Dashboard() {
         // ── Build params based on active filter mode ──────────────────────
         let summaryParams;
         const isRangeMode = filterMode === 'range' && dateRange?.from && dateRange?.to;
+        const isMonthMode = !isRangeMode && period !== 'all' && period !== 'year';
 
         if (isRangeMode) {
           summaryParams = { from: toISODate(dateRange.from), to: toISODate(dateRange.to) };
+        } else if (period === 'all') {
+          summaryParams = { period: 'all' };
+        } else if (period === 'year') {
+          summaryParams = { period: String(selectedYear) };
         } else {
-          summaryParams = period === 'all' ? { period } : { period: `${selectedYear}-${period}` };
+          summaryParams = { period: `${selectedYear}-${period}` };
         }
 
         const requests = [
@@ -114,7 +120,7 @@ export default function Dashboard() {
         ];
 
         // async-parallel: Pre-emptively add allTime and prev month if needed to avoid waterfall
-        if (!isRangeMode && period !== 'all') {
+        if (isMonthMode) {
           requests.push(api.get('/stats/summary', { params: { period: 'all' } }));
           const curMonth = Number(period);
           const prevMonth = String(curMonth === 1 ? 12 : curMonth - 1).padStart(2, '0');
@@ -145,7 +151,7 @@ export default function Dashboard() {
           setBankBalances(balances);
         }
 
-        if (!isRangeMode && period !== 'all') {
+        if (isMonthMode) {
           setAllTimeSummary(allTimeRes.data);
           const curIncome = Number(summaryRes.data?.totals?.income || 0);
           const curExpense = Number(summaryRes.data?.totals?.expense || 0);
@@ -212,7 +218,10 @@ export default function Dashboard() {
       label: monthLabels[i]
     }));
 
-    const targetSummaryData = period === 'all' ? summary?.incomeVsExpense : allTimeSummary?.incomeVsExpense;
+    const targetSummaryData =
+      period === 'all'  ? summary?.incomeVsExpense :
+      period === 'year' ? summary?.incomeVsExpense :
+                          allTimeSummary?.incomeVsExpense;
 
     if (targetSummaryData) {
       const agg = targetSummaryData.reduce((acc, item) => {
@@ -257,6 +266,9 @@ export default function Dashboard() {
     return { budget, actual, remaining, consumedPercent };
   }, [summary]);
 
+  // Budgets are monthly; only meaningful when a specific month/year is selected.
+  const isMonthSelected = filterMode === 'period' && period !== 'all' && period !== 'year';
+
   const barColorClass = useMemo(() => {
     const cp = budgetProgress.consumedPercent;
     if (budgetProgress.remaining < 0) return 'bg-rose-500';
@@ -282,7 +294,9 @@ export default function Dashboard() {
       const isRangeMode = filterMode === 'range' && dateRange?.from && dateRange?.to;
       const params = isRangeMode
         ? { from: toISODate(dateRange.from), to: toISODate(dateRange.to) }
-        : period === 'all' ? { period } : { period: `${selectedYear}-${period}` };
+        : period === 'all'  ? { period: 'all' }
+        : period === 'year' ? { period: String(selectedYear) }
+        :                     { period: `${selectedYear}-${period}` };
       const res = await api.get('/stats/export', { params, responseType: 'blob' });
       const url = window.URL.createObjectURL(new Blob([res.data]));
       const a = document.createElement('a');
@@ -371,7 +385,7 @@ export default function Dashboard() {
             {filterMode === 'period' ? (
               <>
                 <Select value={period} onChange={(e) => setPeriod(e.target.value)}>
-                  {monthOptions.map(m => <option key={m.value} value={m.value}>{m.label}</option>)}
+                  {periodOptions.map(m => <option key={m.value} value={m.value}>{m.label}</option>)}
                 </Select>
                 <Select value={String(selectedYear)} onChange={(e) => setSelectedYear(Number(e.target.value))}>
                   {yearOptions.map(y => <option key={y} value={y}>{y}</option>)}
@@ -401,7 +415,11 @@ export default function Dashboard() {
             <p className="text-xs text-gray-400">
               {filterMode === 'range' && dateRange?.from && dateRange?.to
                 ? `${dateRange.from.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })} → ${dateRange.to.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`
-                : `Monthly breakdown for ${selectedYear}`}
+                : period === 'year'
+                  ? `Full year ${selectedYear}`
+                  : period === 'all'
+                    ? `All time · ${selectedYear} view`
+                    : `Monthly breakdown for ${selectedYear}`}
             </p>
           </div>
         </div>
@@ -564,7 +582,7 @@ export default function Dashboard() {
         {/* ── Monthly Budget view (existing) ── */}
         {budgetView === 'monthly' && (
           <>
-            {period === 'all' ? (
+            {!isMonthSelected ? (
               <p className="text-sm text-gray-400">Select a specific month to compare against budget.</p>
             ) : summary?.budgetAmount == null ? (
               <p className="text-sm text-gray-400">No budget set for this month.</p>
@@ -593,6 +611,9 @@ export default function Dashboard() {
 
         {/* ── Category Budgets view (new) ── */}
         {budgetView === 'category' && (() => {
+          if (!isMonthSelected) return (
+            <p className="text-sm text-gray-400">Select a specific month to compare against budget.</p>
+          );
           const catsWithBudget = (summary?.categories || []).filter(c => c.monthlyBudget != null);
           if (loading) return <p className="text-sm text-gray-400 animate-pulse">Loading…</p>;
           if (catsWithBudget.length === 0) return (
