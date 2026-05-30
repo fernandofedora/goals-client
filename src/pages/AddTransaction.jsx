@@ -11,6 +11,9 @@ import { toast } from 'sonner';
 import { cn } from '../lib/utils';
 import { useCurrency } from '../context/CurrencyContext';
 
+const PAGE_SIZE_OPTIONS = [10, 25, 50, 100];
+const DEFAULT_PAGE_SIZE = 25;
+
 // ── Inline Field wrapper ──────────────────────────────────────────────────────
 function Field({ label, labelRight, children }) {
   return (
@@ -218,6 +221,31 @@ export default function AddTransaction() {
     const expense = filtered.filter(t => t.type === 'expense').reduce((a, t) => a + Number(t.amount), 0);
     return { income, expense, net: income - expense };
   }, [filtered]);
+
+  // ── Pagination ────────────────────────────────────────────────────────────
+  const [pageSize, setPageSize] = useState(() => {
+    const saved = Number(localStorage.getItem('tx_page_size'));
+    return PAGE_SIZE_OPTIONS.includes(saved) ? saved : DEFAULT_PAGE_SIZE;
+  });
+  const [page, setPage] = useState(1);
+  // Reset page to 1 when filters/pageSize change — derived during render (no useEffect).
+  // https://react.dev/learn/you-might-not-need-an-effect#adjusting-some-state-when-a-prop-changes
+  const filterKey = `${typeFilter}|${paymentFilter}|${categoryFilter}|${monthFilter}|${yearFilter}|${showYearAll}|${pageSize}`;
+  const [prevFilterKey, setPrevFilterKey] = useState(filterKey);
+  if (prevFilterKey !== filterKey) {
+    setPrevFilterKey(filterKey);
+    setPage(1);
+  }
+  useEffect(() => { localStorage.setItem('tx_page_size', String(pageSize)); }, [pageSize]);
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+  const safePage = Math.min(page, totalPages);
+  const paginated = useMemo(
+    () => filtered.slice((safePage - 1) * pageSize, safePage * pageSize),
+    [filtered, safePage, pageSize]
+  );
+  const rangeStart = filtered.length === 0 ? 0 : (safePage - 1) * pageSize + 1;
+  const rangeEnd = Math.min(safePage * pageSize, filtered.length);
 
   // ── Render ────────────────────────────────────────────────────────────────
   return (
@@ -525,7 +553,7 @@ export default function AddTransaction() {
           <>
             {/* ── Mobile card list (< sm) ─────────────────────────────── */}
             <ul className="sm:hidden divide-y divide-[var(--border)]">
-              {filtered.map(t => {
+              {paginated.map(t => {
                 const methodPill = t.Account
                   ? <span className="inline-flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-sky-50 dark:bg-sky-950/40 text-sky-700 dark:text-sky-400">🏦 {t.Account.name}</span>
                   : t.paymentMethod === 'card'
@@ -597,8 +625,8 @@ export default function AddTransaction() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[var(--border)]">
-                  {filtered.map(t => (
-                    <tr key={t.id} className="group hover:bg-gray-50/60 dark:hover:bg-slate-800/30 transition-colors">
+                  {paginated.map(t => (
+                    <tr key={t.id} className="hover:bg-gray-50/60 dark:hover:bg-slate-800/30 transition-colors">
                       <td className="px-4 py-3"><Badge type={t.type} /></td>
                       <td className="px-4 py-3 max-w-[180px]">
                         <span className="truncate block font-medium text-gray-800 dark:text-gray-100" title={t.description}>
@@ -642,7 +670,7 @@ export default function AddTransaction() {
                         })()}
                       </td>
                       <td className="px-4 py-3 text-right">
-                        <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <div className="flex items-center justify-end gap-1">
                           <IconButton onClick={() => startEditTx(t)} title="Edit">
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                               <path d="M12 20h9" /><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L8 18l-4 1 1-4 11.5-11.5z" />
@@ -660,6 +688,58 @@ export default function AddTransaction() {
                   ))}
                 </tbody>
               </table>
+            </div>
+
+            {/* ── Pagination footer ───────────────────────────────────── */}
+            <div className="px-5 py-3 border-t border-[var(--border)] bg-gray-50/50 dark:bg-slate-800/30 flex flex-wrap items-center justify-between gap-3">
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                Showing{' '}
+                <span className="font-semibold text-gray-700 dark:text-gray-200 tabular-nums">{rangeStart}–{rangeEnd}</span>
+                {' '}of{' '}
+                <span className="font-semibold text-gray-700 dark:text-gray-200 tabular-nums">{filtered.length}</span>
+              </p>
+
+              <div className="flex items-center gap-3 flex-wrap">
+                <div className="flex items-center gap-2">
+                  <label htmlFor="pageSize" className="text-[11px] font-semibold uppercase tracking-widest text-gray-500 dark:text-gray-400">Rows</label>
+                  <Select
+                    id="pageSize"
+                    value={String(pageSize)}
+                    onChange={(e) => setPageSize(Number(e.target.value))}
+                    className="w-20"
+                  >
+                    {PAGE_SIZE_OPTIONS.map(n => <option key={n} value={n}>{n}</option>)}
+                  </Select>
+                </div>
+
+                <div className="flex items-center gap-1">
+                  <button
+                    type="button"
+                    onClick={() => setPage(p => Math.max(1, p - 1))}
+                    disabled={safePage === 1}
+                    aria-label="Previous page"
+                    className="inline-flex items-center justify-center w-8 h-8 rounded-lg border border-[var(--border)] bg-white dark:bg-slate-800 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                  >
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <polyline points="15 18 9 12 15 6" />
+                    </svg>
+                  </button>
+                  <span className="px-3 text-xs tabular-nums text-gray-600 dark:text-gray-300 select-none">
+                    Page <span className="font-semibold text-gray-800 dark:text-gray-100">{safePage}</span> of <span className="font-semibold text-gray-800 dark:text-gray-100">{totalPages}</span>
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                    disabled={safePage === totalPages}
+                    aria-label="Next page"
+                    className="inline-flex items-center justify-center w-8 h-8 rounded-lg border border-[var(--border)] bg-white dark:bg-slate-800 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                  >
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <polyline points="9 18 15 12 9 6" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
             </div>
           </>
         )}
