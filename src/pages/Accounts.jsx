@@ -3,6 +3,7 @@ import api from '../api';
 import Input from '../components/ui/input';
 import Button from '../components/ui/button';
 import Select from '../components/ui/select';
+import Switch from '../components/ui/switch';
 import DateInput from '../components/DateInput';
 import Alert from '../components/ui/alert';
 import EditTransactionDialog from '../components/ui/edit-transaction-dialog';
@@ -108,9 +109,9 @@ export default function Accounts() {
   const [editCardForm, setEditCardForm] = useState({ name: '', color: '#0ea5e9', last4: '' });
 
   // New bank account form
-  const [bankForm, setBankForm] = useState({ name: '', color: '#10b981', initialBalance: '' });
+  const [bankForm, setBankForm] = useState({ name: '', color: '#10b981', initialBalance: '', isExcludedFromTotals: false });
   const [editingBankId, setEditingBankId] = useState(null);
-  const [editBankForm, setEditBankForm] = useState({ name: '', color: '#10b981' });
+  const [editBankForm, setEditBankForm] = useState({ name: '', color: '#10b981', isExcludedFromTotals: false });
 
   // Link existing
   const [cardToLink, setCardToLink] = useState('');
@@ -231,8 +232,9 @@ export default function Accounts() {
       name: bankForm.name,
       color: bankForm.color,
       initialBalance: parseFloat(bankForm.initialBalance || '0'),
+      isExcludedFromTotals: bankForm.isExcludedFromTotals,
     });
-    setBankForm({ name: '', color: '#10b981', initialBalance: '' });
+    setBankForm({ name: '', color: '#10b981', initialBalance: '', isExcludedFromTotals: false });
     setShowAddPanel(false);
     await loadBase();
     setSelectedItem({ kind: ACCOUNT_BANK, id: res.data.id });
@@ -416,28 +418,40 @@ export default function Accounts() {
 
             {/* ── New Bank Account ── */}
             {addTab === 'newBank' && (
-              <form onSubmit={addBankAccount} className="grid grid-cols-1 sm:grid-cols-[1fr_auto_auto_auto] gap-3 items-end">
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-semibold text-gray-400 uppercase tracking-widest">Account Name</label>
-                  <Input placeholder="e.g. Chase Checking" value={bankForm.name} onChange={e => setBankForm(v => ({ ...v, name: e.target.value }))} required />
+              <form onSubmit={addBankAccount} className="space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto_auto_auto] gap-3 items-end">
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-xs font-semibold text-gray-400 uppercase tracking-widest">Account Name</label>
+                    <Input placeholder="e.g. Chase Checking" value={bankForm.name} onChange={e => setBankForm(v => ({ ...v, name: e.target.value }))} required />
+                  </div>
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-xs font-semibold text-gray-400 uppercase tracking-widest">Color</label>
+                    <input
+                      className="w-10 h-10 rounded-lg border border-[var(--border)] cursor-pointer p-0.5 bg-white dark:bg-slate-800"
+                      type="color" value={bankForm.color}
+                      onChange={e => setBankForm(v => ({ ...v, color: e.target.value }))}
+                    />
+                  </div>
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-xs font-semibold text-gray-400 uppercase tracking-widest">Starting Balance</label>
+                    <Input
+                      type="number" step="0.01" className="w-32" placeholder="0.00"
+                      value={bankForm.initialBalance}
+                      onChange={e => setBankForm(v => ({ ...v, initialBalance: e.target.value }))}
+                    />
+                  </div>
+                  <Button type="submit" className="bg-emerald-600 hover:bg-emerald-700 text-white">Add Account</Button>
                 </div>
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-semibold text-gray-400 uppercase tracking-widest">Color</label>
-                  <input
-                    className="w-10 h-10 rounded-lg border border-[var(--border)] cursor-pointer p-0.5 bg-white dark:bg-slate-800"
-                    type="color" value={bankForm.color}
-                    onChange={e => setBankForm(v => ({ ...v, color: e.target.value }))}
+                <label className="flex items-start gap-3 rounded-xl border border-[var(--border)] bg-[var(--muted)]/40 px-4 py-3 cursor-pointer">
+                  <Switch
+                    checked={bankForm.isExcludedFromTotals}
+                    onCheckedChange={val => setBankForm(v => ({ ...v, isExcludedFromTotals: val }))}
                   />
-                </div>
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-semibold text-gray-400 uppercase tracking-widest">Starting Balance</label>
-                  <Input
-                    type="number" step="0.01" className="w-32" placeholder="0.00"
-                    value={bankForm.initialBalance}
-                    onChange={e => setBankForm(v => ({ ...v, initialBalance: e.target.value }))}
-                  />
-                </div>
-                <Button type="submit" className="bg-emerald-600 hover:bg-emerald-700 text-white">Add Account</Button>
+                  <span className="min-w-0">
+                    <span className="block text-sm font-medium text-gray-700 dark:text-gray-200">No integrar</span>
+                    <span className="block text-xs text-gray-400 mt-0.5">Mantén esta cuenta separada de tus totales generales: sus datos no se mostrarán en el dashboard general ni en el historial de transacciones.</span>
+                  </span>
+                </label>
               </form>
             )}
 
@@ -514,6 +528,13 @@ export default function Accounts() {
                         <Input value={editBankForm.name} onChange={e => setEditBankForm(v => ({ ...v, name: e.target.value }))} placeholder="Name" />
                         <input className="w-8 h-8 rounded cursor-pointer border border-[var(--border)] p-0.5" type="color"
                           value={editBankForm.color} onChange={e => setEditBankForm(v => ({ ...v, color: e.target.value }))} />
+                        <label className="flex items-center justify-between gap-2 pt-1">
+                          <span className="text-xs font-medium text-gray-600 dark:text-gray-300">No integrar</span>
+                          <Switch
+                            checked={editBankForm.isExcludedFromTotals}
+                            onCheckedChange={val => setEditBankForm(v => ({ ...v, isExcludedFromTotals: val }))}
+                          />
+                        </label>
                         <div className="flex gap-2">
                           <Button className="text-xs px-3 py-1.5" onClick={() => saveEditBank(item.id)}>Save</Button>
                           <Button className="text-xs px-3 py-1.5" variant="outline" onClick={() => setEditingBankId(null)}>Cancel</Button>
@@ -536,7 +557,14 @@ export default function Accounts() {
                         <div className="flex items-center gap-3 min-w-0">
                           <span className="text-base leading-none flex-shrink-0">{item.emoji}</span>
                           <div className="min-w-0">
-                            <p className="text-sm font-medium text-gray-800 dark:text-gray-100 truncate">{item.name}</p>
+                            <div className="flex items-center gap-1.5 min-w-0">
+                              <p className="text-sm font-medium text-gray-800 dark:text-gray-100 truncate">{item.name}</p>
+                              {item.kind === ACCOUNT_BANK && item.isExcludedFromTotals && (
+                                <span className="flex-shrink-0 inline-flex items-center px-1.5 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider bg-amber-100 text-amber-700 dark:bg-amber-950/50 dark:text-amber-400">
+                                  Aislada
+                                </span>
+                              )}
+                            </div>
                             <p className="text-[11px] text-gray-400 tracking-widest">
                               {item.kind === ACCOUNT_CARD
                                 ? `•••• ${item.last4}`
@@ -550,7 +578,7 @@ export default function Accounts() {
                             onClick={e => {
                               e.stopPropagation();
                               if (item.kind === ACCOUNT_CARD) { setEditingCardId(item.id); setEditCardForm({ name: item.name, color: item.color, last4: item.last4 }); }
-                              else { setEditingBankId(item.id); setEditBankForm({ name: item.name, color: item.color }); }
+                              else { setEditingBankId(item.id); setEditBankForm({ name: item.name, color: item.color, isExcludedFromTotals: !!item.isExcludedFromTotals }); }
                             }}
                           >
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9" /><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L8 18l-4 1 1-4 11.5-11.5z" /></svg>
@@ -583,11 +611,17 @@ export default function Accounts() {
                 <h3 className="text-sm font-semibold text-gray-600 dark:text-gray-300 truncate">{selectedData.name}</h3>
               </div>
               <div className="space-y-2 text-sm">
-                {[
-                  { label: 'Income', value: summary.income, color: 'text-emerald-600' },
-                  { label: 'Expenses', value: summary.expense, color: 'text-rose-500' },
-                  { label: 'Balance', value: summary.income - summary.expense, color: null, bold: true, border: true },
-                ].map(({ label, value, color, bold, border }) => (
+                {(() => {
+                  const opening = selectedData.kind === ACCOUNT_BANK ? Number(selectedData.initialBalance || 0) : 0;
+                  return [
+                    ...(selectedData.kind === ACCOUNT_BANK
+                      ? [{ label: 'Apertura', value: opening, color: 'text-gray-500 dark:text-gray-400' }]
+                      : []),
+                    { label: 'Income', value: summary.income, color: 'text-emerald-600' },
+                    { label: 'Expenses', value: summary.expense, color: 'text-rose-500' },
+                    { label: 'Balance', value: opening + summary.income - summary.expense, color: null, bold: true, border: true },
+                  ];
+                })().map(({ label, value, color, bold, border }) => (
                   <div key={label} className={cn('flex items-center justify-between', border && 'border-t border-[var(--border)] pt-2 mt-2')}>
                     <span className="text-gray-500 dark:text-gray-400">{label}</span>
                     <span className={cn('tabular-nums', bold && 'font-bold', color)}>{cs}{value.toFixed(2)}</span>

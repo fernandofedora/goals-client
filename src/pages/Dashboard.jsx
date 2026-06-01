@@ -308,9 +308,54 @@ export default function Dashboard() {
     } catch { alert('Export failed'); }
   };
 
-  // rerender-derived-state-no-effect: derive net worth during render
-  const bankNetWorth = bankBalances.reduce((s, a) => s + a.current, 0);
-  const bankMaxBalance = bankBalances.reduce((m, a) => Math.max(m, Math.abs(a.current)), 0);
+  // rerender-derived-state-no-effect: derive net worth during render.
+  // Cuentas "no integrar" (aisladas) se separan de los totales generales.
+  const integratedBalances = bankBalances.filter(a => !a.isExcludedFromTotals);
+  const isolatedBalances = bankBalances.filter(a => a.isExcludedFromTotals);
+  const bankNetWorth = integratedBalances.reduce((s, a) => s + a.current, 0);
+  const bankMaxBalance = integratedBalances.reduce((m, a) => Math.max(m, Math.abs(a.current)), 0);
+  const isolatedNetWorth = isolatedBalances.reduce((s, a) => s + a.current, 0);
+  const isolatedMaxBalance = isolatedBalances.reduce((m, a) => Math.max(m, Math.abs(a.current)), 0);
+
+  const renderBankRow = (acc, maxBalance) => {
+    const pct = maxBalance > 0 ? Math.abs(acc.current) / maxBalance : 0;
+    const isNeg = acc.current < 0;
+    return (
+      <li key={acc.id} className="px-5 py-4 hover:bg-gray-50/60 dark:hover:bg-slate-800/30 transition-colors">
+        <div className="flex items-start justify-between gap-4">
+          <div className="flex items-center gap-3 min-w-0">
+            <div
+              className="flex-shrink-0 w-9 h-9 rounded-xl flex items-center justify-center text-white text-sm font-bold shadow-sm"
+              style={{ background: acc.color || '#10b981' }}
+            >
+              {acc.name.charAt(0).toUpperCase()}
+            </div>
+            <div className="min-w-0">
+              <p className="text-sm font-semibold text-gray-800 dark:text-gray-100 truncate">{acc.name}</p>
+              <p className="text-[11px] text-gray-400">
+                Opens {cs}{Number(acc.initialBalance || 0).toFixed(2)}
+                &ensp;·&ensp;+{cs}{acc.income.toFixed(2)} income
+                &ensp;·&ensp;−{cs}{acc.expense.toFixed(2)} expenses
+              </p>
+            </div>
+          </div>
+          <div className="flex-shrink-0 text-right">
+            <span className={`text-base font-bold tabular-nums ${isNeg ? 'text-rose-500 dark:text-rose-400' : 'text-emerald-600 dark:text-emerald-400'
+              }`}>
+              {isNeg ? '−' : '+'}{cs}{Math.abs(acc.current).toFixed(2)}
+            </span>
+          </div>
+        </div>
+        <div className="mt-2.5 h-1.5 rounded-full bg-gray-100 dark:bg-slate-800 overflow-hidden">
+          <div
+            className={`h-full rounded-full transition-all duration-500 ${isNeg ? 'bg-rose-400' : 'bg-emerald-500'
+              }`}
+            style={{ width: `${Math.round(pct * 100)}%` }}
+          />
+        </div>
+      </li>
+    );
+  };
 
   const catData = (summary?.categories || []).map((c, i) => ({
     ...c, color: c.color || categoryColors[i % categoryColors.length]
@@ -748,14 +793,14 @@ export default function Dashboard() {
       </div>
 
       {/* ── Bank Accounts overview ── */}
-      {(bankBalances.length > 0 || loading) && (
+      {(integratedBalances.length > 0 || loading) && (
         <div className="bg-white dark:bg-slate-900 rounded-2xl border border-[var(--border)] shadow-sm overflow-hidden">
           <div className="px-5 pt-5 pb-4 border-b border-[var(--border)] flex items-center justify-between">
             <div>
               <h2 className="text-base font-semibold tracking-tight">Bank Accounts</h2>
               <p className="text-xs text-gray-400 mt-0.5">Current balance across all accounts</p>
             </div>
-            {bankBalances.length > 0 && (
+            {integratedBalances.length > 0 && (
               <div className="flex flex-col items-end">
                 <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Net Worth</span>
                 <span className={`text-xl font-bold tabular-nums ${bankNetWorth >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-500 dark:text-rose-400'
@@ -773,47 +818,36 @@ export default function Dashboard() {
             </div>
           ) : (
             <ul className="divide-y divide-[var(--border)]">
-              {bankBalances.map((acc) => {
-                const pct = bankMaxBalance > 0 ? Math.abs(acc.current) / bankMaxBalance : 0;
-                const isNeg = acc.current < 0;
-                return (
-                  <li key={acc.id} className="px-5 py-4 hover:bg-gray-50/60 dark:hover:bg-slate-800/30 transition-colors">
-                    <div className="flex items-start justify-between gap-4">
-                      <div className="flex items-center gap-3 min-w-0">
-                        <div
-                          className="flex-shrink-0 w-9 h-9 rounded-xl flex items-center justify-center text-white text-sm font-bold shadow-sm"
-                          style={{ background: acc.color || '#10b981' }}
-                        >
-                          {acc.name.charAt(0).toUpperCase()}
-                        </div>
-                        <div className="min-w-0">
-                          <p className="text-sm font-semibold text-gray-800 dark:text-gray-100 truncate">{acc.name}</p>
-                          <p className="text-[11px] text-gray-400">
-                            Opens {cs}{Number(acc.initialBalance || 0).toFixed(2)}
-                            &ensp;·&ensp;+{cs}{acc.income.toFixed(2)} income
-                            &ensp;·&ensp;−{cs}{acc.expense.toFixed(2)} expenses
-                          </p>
-                        </div>
-                      </div>
-                      <div className="flex-shrink-0 text-right">
-                        <span className={`text-base font-bold tabular-nums ${isNeg ? 'text-rose-500 dark:text-rose-400' : 'text-emerald-600 dark:text-emerald-400'
-                          }`}>
-                          {isNeg ? '−' : '+'}{cs}{Math.abs(acc.current).toFixed(2)}
-                        </span>
-                      </div>
-                    </div>
-                    <div className="mt-2.5 h-1.5 rounded-full bg-gray-100 dark:bg-slate-800 overflow-hidden">
-                      <div
-                        className={`h-full rounded-full transition-all duration-500 ${isNeg ? 'bg-rose-400' : 'bg-emerald-500'
-                          }`}
-                        style={{ width: `${Math.round(pct * 100)}%` }}
-                      />
-                    </div>
-                  </li>
-                );
-              })}
+              {integratedBalances.map((acc) => renderBankRow(acc, bankMaxBalance))}
             </ul>
           )}
+        </div>
+      )}
+
+      {/* ── Cuentas aisladas (no integrar) ── */}
+      {!loading && isolatedBalances.length > 0 && (
+        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-dashed border-amber-300 dark:border-amber-900/60 shadow-sm overflow-hidden">
+          <div className="px-5 pt-5 pb-4 border-b border-[var(--border)] flex items-center justify-between">
+            <div>
+              <div className="flex items-center gap-2">
+                <h2 className="text-base font-semibold tracking-tight">Cuentas aisladas</h2>
+                <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider bg-amber-100 text-amber-700 dark:bg-amber-950/50 dark:text-amber-400">
+                  No integrar
+                </span>
+              </div>
+              <p className="text-xs text-gray-400 mt-0.5">No se incluyen en los totales generales ni en los gráficos</p>
+            </div>
+            <div className="flex flex-col items-end">
+              <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Subtotal</span>
+              <span className={`text-xl font-bold tabular-nums ${isolatedNetWorth >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-500 dark:text-rose-400'
+                }`}>
+                {cs}{isolatedNetWorth.toFixed(2)}
+              </span>
+            </div>
+          </div>
+          <ul className="divide-y divide-[var(--border)]">
+            {isolatedBalances.map((acc) => renderBankRow(acc, isolatedMaxBalance))}
+          </ul>
         </div>
       )}
     </div>
