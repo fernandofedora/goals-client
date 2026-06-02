@@ -9,6 +9,7 @@ import Alert from '../components/ui/alert';
 import EditTransactionDialog from '../components/ui/edit-transaction-dialog';
 import { cn } from '../lib/utils';
 import { useCurrency } from '../context/CurrencyContext';
+import { toast } from 'sonner';
 
 // ── Tiny helpers ──────────────────────────────────────────────────────────────
 function IconButton({ onClick, title, danger, children }) {
@@ -193,18 +194,24 @@ export default function Accounts() {
   // ── Card CRUD ─────────────────────────────────────────────────────────────
   const addCard = async (e) => {
     e.preventDefault();
-    await api.post('/cards', cardForm);
-    setCardForm({ name: '', color: '#0ea5e9', last4: '' });
-    setShowAddPanel(false);
-    await loadBase();
+    try {
+      await api.post('/cards', cardForm);
+      setCardForm({ name: '', color: '#0ea5e9', last4: '' });
+      setShowAddPanel(false);
+      await loadBase();
+      toast.success('Tarjeta agregada');
+    } catch { toast.error('No se pudo agregar la tarjeta'); }
   };
 
   const saveEditCard = async (id) => {
-    await api.put(`/cards/${id}`, editCardForm);
-    setEditingCardId(null);
-    loadBase();
-    loadTransactionsPage(selectedItem, txPage, txLimit);
-    loadSummary(selectedItem);
+    try {
+      await api.put(`/cards/${id}`, editCardForm);
+      setEditingCardId(null);
+      loadBase();
+      loadTransactionsPage(selectedItem, txPage, txLimit);
+      loadSummary(selectedItem);
+      toast.success('Tarjeta actualizada');
+    } catch { toast.error('No se pudo actualizar la tarjeta'); }
   };
 
   const hideCard = (id) => {
@@ -228,22 +235,28 @@ export default function Accounts() {
   // ── Bank Account CRUD ─────────────────────────────────────────────────────
   const addBankAccount = async (e) => {
     e.preventDefault();
-    const res = await api.post('/accounts', {
-      name: bankForm.name,
-      color: bankForm.color,
-      initialBalance: parseFloat(bankForm.initialBalance || '0'),
-      isExcludedFromTotals: bankForm.isExcludedFromTotals,
-    });
-    setBankForm({ name: '', color: '#10b981', initialBalance: '', isExcludedFromTotals: false });
-    setShowAddPanel(false);
-    await loadBase();
-    setSelectedItem({ kind: ACCOUNT_BANK, id: res.data.id });
+    try {
+      const res = await api.post('/accounts', {
+        name: bankForm.name,
+        color: bankForm.color,
+        initialBalance: parseFloat(bankForm.initialBalance || '0'),
+        isExcludedFromTotals: bankForm.isExcludedFromTotals,
+      });
+      setBankForm({ name: '', color: '#10b981', initialBalance: '', isExcludedFromTotals: false });
+      setShowAddPanel(false);
+      await loadBase();
+      setSelectedItem({ kind: ACCOUNT_BANK, id: res.data.id });
+      toast.success('Cuenta agregada');
+    } catch { toast.error('No se pudo agregar la cuenta'); }
   };
 
   const saveEditBank = async (id) => {
-    await api.put(`/accounts/${id}`, editBankForm);
-    setEditingBankId(null);
-    loadBase();
+    try {
+      await api.put(`/accounts/${id}`, editBankForm);
+      setEditingBankId(null);
+      loadBase();
+      toast.success('Cuenta actualizada');
+    } catch { toast.error('No se pudo actualizar la cuenta'); }
   };
 
   // Hide bank account (same pattern as cards — data preserved)
@@ -284,18 +297,24 @@ export default function Accounts() {
     if (selectedItem.kind === ACCOUNT_CARD) payload.cardId = selectedItem.id;
     else payload.accountId = selectedItem.id;
 
-    await api.post('/transactions', payload);
-    setTxForm({ description: '', amount: '', date: new Date().toISOString().slice(0, 10), categoryId: '', paymentMethod: 'cash' });
-    setAddError('');
-    loadTransactionsPage(selectedItem, 1, txLimit);
-    loadSummary(selectedItem);
-    setTxPage(1);
+    try {
+      await api.post('/transactions', payload);
+      setTxForm({ description: '', amount: '', date: new Date().toISOString().slice(0, 10), categoryId: '', paymentMethod: 'cash' });
+      setAddError('');
+      loadTransactionsPage(selectedItem, 1, txLimit);
+      loadSummary(selectedItem);
+      setTxPage(1);
+      toast.success(txMode === 'income' ? 'Ingreso agregado' : 'Gasto agregado');
+    } catch { toast.error(txMode === 'income' ? 'No se pudo agregar el ingreso' : 'No se pudo agregar el gasto'); }
   };
 
   const deleteTransaction = async (id) => {
-    await api.delete(`/transactions/${id}`);
-    loadTransactionsPage(selectedItem, txPage, txLimit);
-    loadSummary(selectedItem);
+    try {
+      await api.delete(`/transactions/${id}`);
+      loadTransactionsPage(selectedItem, txPage, txLimit);
+      loadSummary(selectedItem);
+      toast.success('Transacción eliminada');
+    } catch { toast.error('No se pudo eliminar la transacción'); }
   };
 
   const startEditTx = (t) => {
@@ -319,10 +338,14 @@ export default function Accounts() {
     if (!(amt > 0)) { setEditError('Amount must be > 0'); return; }
     const payload = { ...data, amount: amt, paymentMethod: data.type === 'income' ? 'cash' : data.paymentMethod };
     if (selectedItem?.kind === ACCOUNT_CARD) payload.cardId = selectedItem.id;
-    await api.put(`/transactions/${editingTxId}`, payload);
-    cancelEditTx();
-    loadTransactionsPage(selectedItem, txPage, txLimit);
-    loadSummary(selectedItem);
+    else if (selectedItem?.kind === ACCOUNT_BANK) payload.accountId = selectedItem.id;
+    try {
+      await api.put(`/transactions/${editingTxId}`, payload);
+      cancelEditTx();
+      loadTransactionsPage(selectedItem, txPage, txLimit);
+      loadSummary(selectedItem);
+      toast.success('Cambios guardados');
+    } catch { toast.error('No se pudo guardar la transacción'); }
   };
 
   // ── Unified account list for the left sidebar ─────────────────────────────
@@ -331,11 +354,12 @@ export default function Accounts() {
     ...visibleBankAccounts.map(a => ({ kind: ACCOUNT_BANK, ...a, emoji: '🏦' })),
   ];
 
-  const selectedData = selectedItem
+  const selectedRaw = selectedItem
     ? (selectedItem.kind === ACCOUNT_CARD
       ? visibleCards.find(c => c.id === selectedItem.id)
       : visibleBankAccounts.find(a => a.id === selectedItem.id))
     : null;
+  const selectedData = selectedRaw ? { ...selectedRaw, kind: selectedItem.kind } : null;
 
   const isSelected = (kind, id) => selectedItem?.kind === kind && selectedItem?.id === id;
 
@@ -723,7 +747,7 @@ export default function Accounts() {
                         {t.type === 'expense' ? '−' : '+'}{cs}{Number(t.amount).toFixed(2)}
                       </td>
                       <td className="px-4 py-3 text-right">
-                        <div className="flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <div className="flex justify-end gap-1">
                           <IconButton onClick={() => startEditTx(t)} title="Edit">
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9" /><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L8 18l-4 1 1-4 11.5-11.5z" /></svg>
                           </IconButton>
