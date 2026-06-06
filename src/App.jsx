@@ -20,6 +20,7 @@ import useTheme from './hooks/useTheme';
 import { Toaster } from './components/ui/sonner';
 import { CurrencyProvider } from './context/CurrencyContext';
 import { isTokenExpired, clearSession } from './utils/session';
+import { currentUserId } from './utils/userStorage';
 
 // A locally-expired token is treated exactly like a missing one: drop the
 // stale session and route to login *before* rendering a screen that would
@@ -54,13 +55,20 @@ export default function App() {
   const hideNavbar = ['/login', '/register', '/reset-password', '/verify-email'].some(path => location.pathname.startsWith(path));
   const { theme, toggleTheme } = useTheme();
 
+  // Re-key the CurrencyProvider by the authenticated identity. App re-renders on
+  // every navigation (useLocation), and login/logout always navigate, so when
+  // the user changes this key changes → React remounts the provider, resetting
+  // its state from the correct per-user cache and re-syncing from the server.
+  // Logged out → 'anon' → resets to the default currency (no cross-user leak).
+  const authUserId = currentUserId();
+
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, [location.pathname]);
 
   return (
     <>
-      <CurrencyProvider>
+      <CurrencyProvider key={authUserId}>
       <div className="min-h-screen bg-[var(--background)] text-[var(--foreground)]">
         {!hideNavbar && <Navbar theme={theme} onToggleTheme={toggleTheme} />}
         <div className="max-w-6xl mx-auto px-4 py-6">
