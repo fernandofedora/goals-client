@@ -588,7 +588,7 @@ export default function Accounts() {
                             </p>
                           </div>
                         </div>
-                        <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
+                        <div className="flex gap-1 flex-shrink-0">
                           <IconButton
                             title="Edit"
                             onClick={e => {
