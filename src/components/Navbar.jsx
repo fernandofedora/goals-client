@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { NavLink, Link, useNavigate, useLocation } from 'react-router-dom';
 import { cn } from '../lib/utils';
+import { clearSession } from '../utils/session';
 
 // ─── Chevron icon ─────────────────────────────────────────────────────────────
 const ChevronDown = ({ open }) => (
@@ -147,11 +148,10 @@ export default function Navbar({ theme, onToggleTheme }) {
   };
 
   const onLogout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    localStorage.removeItem('dashboard_period');
-    localStorage.removeItem('dashboard_year');
-    localStorage.removeItem('accounts.selectedAccountId');
+    // Clears the identity (token + user). UI preferences are namespaced per user
+    // (see utils/userStorage.js), so they no longer need wiping on logout and
+    // stay isolated per account on a shared browser.
+    clearSession();
     navigate('/login');
   };
 

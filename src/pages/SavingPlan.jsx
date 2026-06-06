@@ -9,6 +9,7 @@ import DateInput from '../components/DateInput';
 import { formatAmount } from '../utils/format';
 import { cn } from '../lib/utils';
 import { useCurrency } from '../context/CurrencyContext';
+import { getPref, setPref } from '../utils/userStorage';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 function Field({ label, children }) {
@@ -129,7 +130,7 @@ export default function SavingPlan() {
         const p = plansRes.data || [];
         setPlans(p);
         if (p.length > 0) {
-          const savedId = localStorage.getItem('savingPlan.selectedPlanId');
+          const savedId = getPref('savingPlan.selectedPlanId');
           const chosen = p.find(x => String(x.id) === String(savedId)) || p[0];
           setSelectedPlanId(String(chosen.id));
           setPlanForm({ name: chosen.name || '', targetAmount: String(chosen.targetAmount || ''), linkedCategoryId: String(chosen.linkedCategoryId || '') });
@@ -149,7 +150,7 @@ export default function SavingPlan() {
   }, [selectedPlanId]);
 
   useEffect(() => {
-    if (selectedPlanId) localStorage.setItem('savingPlan.selectedPlanId', String(selectedPlanId));
+    if (selectedPlanId) setPref('savingPlan.selectedPlanId', String(selectedPlanId));
   }, [selectedPlanId]);
 
   // sync planForm when switching plans
@@ -305,7 +306,7 @@ export default function SavingPlan() {
           onClick={() => {
             if (showNewPlan) {
               setShowNewPlan(false);
-              const savedId = localStorage.getItem('savingPlan.selectedPlanId');
+              const savedId = getPref('savingPlan.selectedPlanId');
               const chosen = plans.find(x => String(x.id) === String(savedId)) || plans[0];
               if (chosen) setSelectedPlanId(String(chosen.id));
             } else {

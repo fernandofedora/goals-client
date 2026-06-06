@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useCallback, useMemo, useEffect } from 'react';
 import api from '../api';
+import { getPref, setPref } from '../utils/userStorage';
 
 /**
  * Comprehensive world currencies list – display-only, no exchange rates.
@@ -172,11 +173,12 @@ export const POPULAR_CURRENCIES = POPULAR_CODES.map(c => ALL_CURRENCIES.find(x =
 // Build a Map for O(1) lookups (js-set-map-lookups)
 const currencyMap = new Map(ALL_CURRENCIES.map(c => [c.code, c]));
 
-const STORAGE_KEY = 'currency';
+const PREF_KEY = 'currency';
 const DEFAULT_CODE = 'USD';
 
 function getInitialCurrency() {
-  const saved = localStorage.getItem(STORAGE_KEY);
+  // Per-user preference (scoped by the active account); falls back to USD.
+  const saved = getPref(PREF_KEY);
   return currencyMap.get(saved) || currencyMap.get(DEFAULT_CODE);
 }
 
@@ -191,7 +193,7 @@ export function CurrencyProvider({ children }) {
     const match = currencyMap.get(code);
     if (!match) return;
     setCurrencyState(match);
-    localStorage.setItem(STORAGE_KEY, code);
+    setPref(PREF_KEY, code);
 
     // Fire-and-forget server persistence; don't block the UI
     try {
@@ -201,8 +203,11 @@ export function CurrencyProvider({ children }) {
     }
   }, []);
 
-  // Sync from server on mount (once) — overwrites localStorage only if the
-  // server has a different value, preserving "instant load" from localStorage
+  // Sync from server on mount — the server is the source of truth per user.
+  // The provider is remounted whenever the authenticated identity changes
+  // (App.jsx keys it by user id), so this re-runs for each logged-in user and
+  // never carries another account's choice over. Overwrites the cached value
+  // only when the server differs, preserving the "instant load" from cache.
   useEffect(() => {
     const token = localStorage.getItem('token');
     if (!token) return; // not logged in yet
@@ -213,11 +218,11 @@ export function CurrencyProvider({ children }) {
           const match = currencyMap.get(serverCode);
           if (match) {
             setCurrencyState(match);
-            localStorage.setItem(STORAGE_KEY, serverCode);
+            setPref(PREF_KEY, serverCode);
           }
         }
       })
-      .catch(() => { /* ignore — fall back to localStorage */ });
+      .catch(() => { /* ignore — fall back to the cached preference */ });
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Stable context value to avoid unnecessary re-renders (rerender-memo)
