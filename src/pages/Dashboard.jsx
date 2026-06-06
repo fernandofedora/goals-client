@@ -10,6 +10,7 @@ import {
 } from 'recharts';
 import { ChartContainer, ChartTooltipContent, ChartLegendContent, ChartTooltip, ChartLegend } from '../components/ui/chart';
 import { useCurrency } from '../context/CurrencyContext';
+import { getPref, setPref } from '../utils/userStorage';
 
 const periodOptions = [
   { label: 'All Time', value: 'all' },
@@ -51,8 +52,8 @@ export default function Dashboard() {
     );
   };
 
-  const [filterMode, setFilterMode] = useState(() => localStorage.getItem('dashboard_filter_mode') || 'period'); // 'period' | 'range'
-  const [period, setPeriod] = useState(() => localStorage.getItem('dashboard_period') || 'all');
+  const [filterMode, setFilterMode] = useState(() => getPref('dashboard_filter_mode', 'period')); // 'period' | 'range'
+  const [period, setPeriod] = useState(() => getPref('dashboard_period', 'all'));
   const [dateRange, setDateRange] = useState({ from: undefined, to: undefined });
   const [summary, setSummary] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -64,17 +65,17 @@ export default function Dashboard() {
   const [finalBalance, setFinalBalance] = useState(null);
   const [allTimeSummary, setAllTimeSummary] = useState(null);
   const [selectedYear, setSelectedYear] = useState(() => {
-    const saved = localStorage.getItem('dashboard_year');
+    const saved = getPref('dashboard_year');
     return saved ? Number(saved) : new Date().getFullYear();
   });
   const [activeCatIdx, setActiveCatIdx] = useState(0);
   const [activeIncomeIdx, setActiveIncomeIdx] = useState(0);
-  const [budgetView, setBudgetView] = useState(() => localStorage.getItem('dashboard_budget_view') || 'monthly');
+  const [budgetView, setBudgetView] = useState(() => getPref('dashboard_budget_view', 'monthly'));
 
-  useEffect(() => { localStorage.setItem('dashboard_period', period); }, [period]);
-  useEffect(() => { localStorage.setItem('dashboard_year', String(selectedYear)); }, [selectedYear]);
-  useEffect(() => { localStorage.setItem('dashboard_filter_mode', filterMode); }, [filterMode]);
-  useEffect(() => { localStorage.setItem('dashboard_budget_view', budgetView); }, [budgetView]);
+  useEffect(() => { setPref('dashboard_period', period); }, [period]);
+  useEffect(() => { setPref('dashboard_year', String(selectedYear)); }, [selectedYear]);
+  useEffect(() => { setPref('dashboard_filter_mode', filterMode); }, [filterMode]);
+  useEffect(() => { setPref('dashboard_budget_view', budgetView); }, [budgetView]);
 
   // Helper: format a Date to 'YYYY-MM-DD' for the API
   const toISODate = (d) => d ? d.toISOString().slice(0, 10) : null;

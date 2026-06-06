@@ -11,6 +11,7 @@ import {
   ChartLegend, ChartLegendContent,
 } from '../components/ui/chart';
 import { useCurrency } from '../context/CurrencyContext';
+import { getPref, setPref, getPrefJSON, setPrefJSON } from '../utils/userStorage';
 
 const PERIOD_OPTIONS = [
   { label: 'All Time', value: 'all' },
@@ -34,26 +35,22 @@ function formatTick(value, granularity) {
 }
 
 function readJSONArray(key) {
-  try {
-    const raw = localStorage.getItem(key);
-    if (!raw) return null;
-    const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed : null;
-  } catch { return null; }
+  const parsed = getPrefJSON(key, null);
+  return Array.isArray(parsed) ? parsed : null;
 }
 
 export default function GraphicsByCategories() {
   const { symbol: cs } = useCurrency();
 
   // ── Period state (mirrors Dashboard pattern, independent localStorage keys) ──
-  const [filterMode, setFilterMode] = useState(() => localStorage.getItem('graphics_filter_mode') || 'period');
-  const [period, setPeriod] = useState(() => localStorage.getItem('graphics_period') || 'year');
+  const [filterMode, setFilterMode] = useState(() => getPref('graphics_filter_mode', 'period'));
+  const [period, setPeriod] = useState(() => getPref('graphics_period', 'year'));
   const [selectedYear, setSelectedYear] = useState(() => {
-    const saved = localStorage.getItem('graphics_year');
+    const saved = getPref('graphics_year');
     return saved ? Number(saved) : new Date().getFullYear();
   });
   const [dateRange, setDateRange] = useState({ from: undefined, to: undefined });
-  const [txType, setTxType] = useState(() => localStorage.getItem('graphics_tx_type') || 'expense');
+  const [txType, setTxType] = useState(() => getPref('graphics_tx_type', 'expense'));
 
   // ── Selected category IDs ──
   const [selectedIds, setSelectedIds] = useState(() => readJSONArray('graphics_selected_cats') || []);
@@ -66,12 +63,12 @@ export default function GraphicsByCategories() {
   const [error, setError] = useState('');
 
   // ── Persist filters ──
-  useEffect(() => { localStorage.setItem('graphics_filter_mode', filterMode); }, [filterMode]);
-  useEffect(() => { localStorage.setItem('graphics_period', period); }, [period]);
-  useEffect(() => { localStorage.setItem('graphics_year', String(selectedYear)); }, [selectedYear]);
-  useEffect(() => { localStorage.setItem('graphics_tx_type', txType); }, [txType]);
+  useEffect(() => { setPref('graphics_filter_mode', filterMode); }, [filterMode]);
+  useEffect(() => { setPref('graphics_period', period); }, [period]);
+  useEffect(() => { setPref('graphics_year', String(selectedYear)); }, [selectedYear]);
+  useEffect(() => { setPref('graphics_tx_type', txType); }, [txType]);
   useEffect(() => {
-    localStorage.setItem('graphics_selected_cats', JSON.stringify(selectedIds));
+    setPrefJSON('graphics_selected_cats', selectedIds);
   }, [selectedIds]);
 
   // ── Load all categories once (for the multi-select dropdown options) ──

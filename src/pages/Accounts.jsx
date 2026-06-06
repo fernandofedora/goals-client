@@ -9,6 +9,7 @@ import Alert from '../components/ui/alert';
 import EditTransactionDialog from '../components/ui/edit-transaction-dialog';
 import { cn } from '../lib/utils';
 import { useCurrency } from '../context/CurrencyContext';
+import { getPrefJSON, setPrefJSON } from '../utils/userStorage';
 import { toast } from 'sonner';
 
 // ── Tiny helpers ──────────────────────────────────────────────────────────────
@@ -56,20 +57,11 @@ export default function Accounts() {
   const { symbol: cs } = useCurrency();
 
   // ── Hidden cards & bank accounts (persisted locally) ──────────────────────
-  const [hiddenCardIds, setHiddenCardIds] = useState(() => {
-    try { return JSON.parse(localStorage.getItem('accounts.hiddenCardIds') || '[]'); }
-    catch { return []; }
-  });
-  const [hiddenBankIds, setHiddenBankIds] = useState(() => {
-    try { return JSON.parse(localStorage.getItem('accounts.hiddenBankIds') || '[]'); }
-    catch { return []; }
-  });
+  const [hiddenCardIds, setHiddenCardIds] = useState(() => getPrefJSON('accounts.hiddenCardIds', []));
+  const [hiddenBankIds, setHiddenBankIds] = useState(() => getPrefJSON('accounts.hiddenBankIds', []));
 
   // ── Selected account (unified: {kind, id}) ────────────────────────────────
-  const [selectedItem, setSelectedItem] = useState(() => {
-    try { return JSON.parse(localStorage.getItem('accounts.selectedItem') || 'null'); }
-    catch { return null; }
-  });
+  const [selectedItem, setSelectedItem] = useState(() => getPrefJSON('accounts.selectedItem', null));
 
   const visibleCards = useMemo(() => cards.filter(c => !hiddenCardIds.includes(c.id)), [cards, hiddenCardIds]);
   const hiddenCards = useMemo(() => cards.filter(c => hiddenCardIds.includes(c.id)), [cards, hiddenCardIds]);
@@ -77,14 +69,14 @@ export default function Accounts() {
   const hiddenBankAccounts = useMemo(() => bankAccounts.filter(a => hiddenBankIds.includes(a.id)), [bankAccounts, hiddenBankIds]);
 
   useEffect(() => {
-    localStorage.setItem('accounts.hiddenCardIds', JSON.stringify(hiddenCardIds));
+    setPrefJSON('accounts.hiddenCardIds', hiddenCardIds);
   }, [hiddenCardIds]);
   useEffect(() => {
-    localStorage.setItem('accounts.hiddenBankIds', JSON.stringify(hiddenBankIds));
+    setPrefJSON('accounts.hiddenBankIds', hiddenBankIds);
   }, [hiddenBankIds]);
 
   useEffect(() => {
-    localStorage.setItem('accounts.selectedItem', JSON.stringify(selectedItem));
+    setPrefJSON('accounts.selectedItem', selectedItem);
   }, [selectedItem]);
 
   // ── Transactions ──────────────────────────────────────────────────────────
@@ -137,11 +129,11 @@ export default function Accounts() {
     setBankAccounts(accRes.data);
 
     // Auto-select first visible item if nothing selected
-    const currentHidden = JSON.parse(localStorage.getItem('accounts.hiddenCardIds') || '[]');
-    const currentHiddenBanks = JSON.parse(localStorage.getItem('accounts.hiddenBankIds') || '[]');
+    const currentHidden = getPrefJSON('accounts.hiddenCardIds', []);
+    const currentHiddenBanks = getPrefJSON('accounts.hiddenBankIds', []);
     const visible = cardsRes.data.filter(c => !currentHidden.includes(c.id));
     const visibleBanks = accRes.data.filter(a => !currentHiddenBanks.includes(a.id));
-    const current = JSON.parse(localStorage.getItem('accounts.selectedItem') || 'null');
+    const current = getPrefJSON('accounts.selectedItem', null);
 
     if (!current) {
       if (visible.length > 0) {

@@ -10,6 +10,7 @@ import ConfirmDialog from '../components/ui/confirm-dialog';
 import { toast } from 'sonner';
 import { cn } from '../lib/utils';
 import { useCurrency } from '../context/CurrencyContext';
+import { getPref, setPref } from '../utils/userStorage';
 
 const PAGE_SIZE_OPTIONS = [10, 25, 50, 100];
 const DEFAULT_PAGE_SIZE = 25;
@@ -224,7 +225,7 @@ export default function AddTransaction() {
 
   // ── Pagination ────────────────────────────────────────────────────────────
   const [pageSize, setPageSize] = useState(() => {
-    const saved = Number(localStorage.getItem('tx_page_size'));
+    const saved = Number(getPref('tx_page_size'));
     return PAGE_SIZE_OPTIONS.includes(saved) ? saved : DEFAULT_PAGE_SIZE;
   });
   const [page, setPage] = useState(1);
@@ -236,7 +237,7 @@ export default function AddTransaction() {
     setPrevFilterKey(filterKey);
     setPage(1);
   }
-  useEffect(() => { localStorage.setItem('tx_page_size', String(pageSize)); }, [pageSize]);
+  useEffect(() => { setPref('tx_page_size', String(pageSize)); }, [pageSize]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
   const safePage = Math.min(page, totalPages);
