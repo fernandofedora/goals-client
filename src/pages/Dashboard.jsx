@@ -1,29 +1,34 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation, Trans } from 'react-i18next';
 import Button from '../components/ui/button';
 import api from '../api';
 import Select from '../components/ui/select';
 import DateRangePicker from '../components/ui/date-range-picker';
 import {
-  BarChart, Bar, XAxis, YAxis, CartesianGrid,
-  PieChart, Pie, Cell, Sector, Tooltip, Legend, ResponsiveContainer
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  PieChart,
+  Pie,
+  Cell,
+  Sector,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
 } from 'recharts';
-import { ChartContainer, ChartTooltipContent, ChartLegendContent, ChartTooltip, ChartLegend } from '../components/ui/chart';
+import {
+  ChartContainer,
+  ChartTooltipContent,
+  ChartLegendContent,
+  ChartTooltip,
+  ChartLegend,
+} from '../components/ui/chart';
 import { useCurrency } from '../context/CurrencyContext';
 import { getPref, setPref } from '../utils/userStorage';
-
-const periodOptions = [
-  { label: 'All Time', value: 'all' },
-  { label: 'Full Year', value: 'year' },
-  ...Array.from({ length: 12 }, (_, i) => ({ label: new Date(0, i).toLocaleString('en', { month: 'long' }), value: String(i + 1).padStart(2, '0') }))
-];
-
-const barChartConfig = {
-  income: { label: 'Income', color: '#10b981' },
-  expense: { label: 'Expenses', color: '#f43f5e' },
-};
-
-
+import { intlLocale } from '../utils/dateLocale';
 
 // currencyFormatter is now defined inside the component to use dynamic symbol
 
@@ -32,29 +37,98 @@ const barChartConfig = {
 
 export default function Dashboard() {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const { symbol: cs } = useCurrency();
+
+  const periodOptions = useMemo(
+    () => [
+      { label: t('dashboard.allTime'), value: 'all' },
+      { label: t('dashboard.fullYear'), value: 'year' },
+      ...Array.from({ length: 12 }, (_, i) => ({
+        label: new Date(0, i).toLocaleString(intlLocale(), { month: 'long' }),
+        value: String(i + 1).padStart(2, '0'),
+      })),
+    ],
+    [t],
+  );
+
+  const barChartConfig = useMemo(
+    () => ({
+      income: { label: t('dashboard.barIncome'), color: '#10b981' },
+      expense: { label: t('dashboard.barExpenses'), color: '#f43f5e' },
+    }),
+    [t],
+  );
 
   const currencyFormatter = (v) => `${cs}${Number(v ?? 0).toFixed(2)}`;
 
   const renderActiveShape = (props) => {
-    const { cx, cy, innerRadius, outerRadius, startAngle, endAngle, fill, payload, percent, value } = props;
+    const {
+      cx,
+      cy,
+      innerRadius,
+      outerRadius,
+      startAngle,
+      endAngle,
+      fill,
+      payload,
+      percent,
+      value,
+    } = props;
     return (
       <g>
-        <text x={cx} y={cy - 10} textAnchor="middle" fill="currentColor" className="text-sm font-semibold" style={{ fill: fill }}>
+        <text
+          x={cx}
+          y={cy - 10}
+          textAnchor="middle"
+          fill="currentColor"
+          className="text-sm font-semibold"
+          style={{ fill: fill }}
+        >
           {payload.name}
         </text>
-        <text x={cx} y={cy + 14} textAnchor="middle" fill="#6b7280" style={{ fontSize: 12 }}>
+        <text
+          x={cx}
+          y={cy + 14}
+          textAnchor="middle"
+          fill="#6b7280"
+          style={{ fontSize: 12 }}
+        >
           {currencyFormatter(value)} · {(percent * 100).toFixed(1)}%
         </text>
-        <Sector cx={cx} cy={cy} innerRadius={innerRadius} outerRadius={outerRadius + 6} startAngle={startAngle} endAngle={endAngle} fill={fill} />
-        <Sector cx={cx} cy={cy} innerRadius={outerRadius + 10} outerRadius={outerRadius + 14} startAngle={startAngle} endAngle={endAngle} fill={fill} opacity={0.4} />
+        <Sector
+          cx={cx}
+          cy={cy}
+          innerRadius={innerRadius}
+          outerRadius={outerRadius + 6}
+          startAngle={startAngle}
+          endAngle={endAngle}
+          fill={fill}
+        />
+        <Sector
+          cx={cx}
+          cy={cy}
+          innerRadius={outerRadius + 10}
+          outerRadius={outerRadius + 14}
+          startAngle={startAngle}
+          endAngle={endAngle}
+          fill={fill}
+          opacity={0.4}
+        />
       </g>
     );
   };
 
-  const [filterMode, setFilterMode] = useState(() => getPref('dashboard_filter_mode', 'period')); // 'period' | 'range'
-  const [period, setPeriod] = useState(() => getPref('dashboard_period', 'all'));
-  const [dateRange, setDateRange] = useState({ from: undefined, to: undefined });
+  const [filterMode, setFilterMode] = useState(() =>
+    getPref('dashboard_filter_mode', 'period'),
+  ); // 'period' | 'range'
+  const [period, setPeriod] = useState(() =>
+    getPref('dashboard_period', 'all'),
+  );
+  const [dateRange, setDateRange] = useState({
+    from: undefined,
+    to: undefined,
+  });
   const [summary, setSummary] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -70,26 +144,49 @@ export default function Dashboard() {
   });
   const [activeCatIdx, setActiveCatIdx] = useState(0);
   const [activeIncomeIdx, setActiveIncomeIdx] = useState(0);
-  const [budgetView, setBudgetView] = useState(() => getPref('dashboard_budget_view', 'monthly'));
+  const [budgetView, setBudgetView] = useState(() =>
+    getPref('dashboard_budget_view', 'monthly'),
+  );
 
-  useEffect(() => { setPref('dashboard_period', period); }, [period]);
-  useEffect(() => { setPref('dashboard_year', String(selectedYear)); }, [selectedYear]);
-  useEffect(() => { setPref('dashboard_filter_mode', filterMode); }, [filterMode]);
-  useEffect(() => { setPref('dashboard_budget_view', budgetView); }, [budgetView]);
+  useEffect(() => {
+    setPref('dashboard_period', period);
+  }, [period]);
+  useEffect(() => {
+    setPref('dashboard_year', String(selectedYear));
+  }, [selectedYear]);
+  useEffect(() => {
+    setPref('dashboard_filter_mode', filterMode);
+  }, [filterMode]);
+  useEffect(() => {
+    setPref('dashboard_budget_view', budgetView);
+  }, [budgetView]);
 
   // Helper: format a Date to 'YYYY-MM-DD' for the API
-  const toISODate = (d) => d ? d.toISOString().slice(0, 10) : null;
+  const toISODate = (d) => (d ? d.toISOString().slice(0, 10) : null);
 
   const formatCurrency = (value) => {
-    try { return `${cs}${Number(value || 0).toFixed(2)}`; }
-    catch { return `${cs}${Number(value || 0).toFixed(2)}`; }
+    try {
+      return `${cs}${Number(value || 0).toFixed(2)}`;
+    } catch {
+      return `${cs}${Number(value || 0).toFixed(2)}`;
+    }
   };
 
   const yearOptions = useMemo(() => {
     const currentYear = new Date().getFullYear();
     if (period === 'all' && summary?.incomeVsExpense?.length) {
-      const years = Array.from(new Set(summary.incomeVsExpense.map(i => Number(String(i.date).slice(0, 4))))).filter(Boolean).sort((a, b) => b - a);
-      return years.length ? years : Array.from({ length: 7 }, (_, i) => currentYear - i);
+      const years = Array.from(
+        new Set(
+          summary.incomeVsExpense.map((i) =>
+            Number(String(i.date).slice(0, 4)),
+          ),
+        ),
+      )
+        .filter(Boolean)
+        .sort((a, b) => b - a);
+      return years.length
+        ? years
+        : Array.from({ length: 7 }, (_, i) => currentYear - i);
     }
     return Array.from({ length: 7 }, (_, i) => currentYear - i);
   }, [summary, period]);
@@ -101,11 +198,16 @@ export default function Dashboard() {
       try {
         // ── Build params based on active filter mode ──────────────────────
         let summaryParams;
-        const isRangeMode = filterMode === 'range' && dateRange?.from && dateRange?.to;
-        const isMonthMode = !isRangeMode && period !== 'all' && period !== 'year';
+        const isRangeMode =
+          filterMode === 'range' && dateRange?.from && dateRange?.to;
+        const isMonthMode =
+          !isRangeMode && period !== 'all' && period !== 'year';
 
         if (isRangeMode) {
-          summaryParams = { from: toISODate(dateRange.from), to: toISODate(dateRange.to) };
+          summaryParams = {
+            from: toISODate(dateRange.from),
+            to: toISODate(dateRange.to),
+          };
         } else if (period === 'all') {
           summaryParams = { period: 'all' };
         } else if (period === 'year') {
@@ -117,35 +219,52 @@ export default function Dashboard() {
         const requests = [
           api.get('/stats/summary', { params: summaryParams }),
           api.get('/cards'),
-          api.get('/accounts')
+          api.get('/accounts'),
         ];
 
         // async-parallel: Pre-emptively add allTime and prev month if needed to avoid waterfall
         if (isMonthMode) {
-          requests.push(api.get('/stats/summary', { params: { period: 'all' } }));
+          requests.push(
+            api.get('/stats/summary', { params: { period: 'all' } }),
+          );
           const curMonth = Number(period);
-          const prevMonth = String(curMonth === 1 ? 12 : curMonth - 1).padStart(2, '0');
+          const prevMonth = String(curMonth === 1 ? 12 : curMonth - 1).padStart(
+            2,
+            '0',
+          );
           const prevYear = curMonth === 1 ? selectedYear - 1 : selectedYear;
           requests.push(
-            api.get('/stats/summary', { params: { period: `${prevYear}-${prevMonth}` } })
-              .catch(() => ({ data: null })) // catch to handle graceful fallback directly
+            api
+              .get('/stats/summary', {
+                params: { period: `${prevYear}-${prevMonth}` },
+              })
+              .catch(() => ({ data: null })), // catch to handle graceful fallback directly
           );
         }
 
         const responses = await Promise.all(requests);
-        const [summaryRes, cardsRes, accountsRes, allTimeRes, prevRes] = responses;
+        const [summaryRes, cardsRes, accountsRes, allTimeRes, prevRes] =
+          responses;
 
         setSummary(summaryRes.data);
         setCards(cardsRes.data || []);
 
         if (accountsRes.data.length > 0) {
           const txResults = await Promise.all(
-            accountsRes.data.map(acc => api.get('/transactions', { params: { accountId: acc.id } }))
+            accountsRes.data.map((acc) =>
+              api.get('/transactions', { params: { accountId: acc.id } }),
+            ),
           );
           const balances = accountsRes.data.map((acc, i) => {
-            const txList = Array.isArray(txResults[i].data) ? txResults[i].data : (txResults[i].data.items || []);
-            const income = txList.filter(t => t.type === 'income').reduce((s, t) => s + Number(t.amount), 0);
-            const expense = txList.filter(t => t.type === 'expense').reduce((s, t) => s + Number(t.amount), 0);
+            const txList = Array.isArray(txResults[i].data)
+              ? txResults[i].data
+              : txResults[i].data.items || [];
+            const income = txList
+              .filter((t) => t.type === 'income')
+              .reduce((s, t) => s + Number(t.amount), 0);
+            const expense = txList
+              .filter((t) => t.type === 'expense')
+              .reduce((s, t) => s + Number(t.amount), 0);
             const current = Number(acc.initialBalance || 0) + income - expense;
             return { ...acc, income, expense, current };
           });
@@ -157,14 +276,18 @@ export default function Dashboard() {
           const curIncome = Number(summaryRes.data?.totals?.income || 0);
           const curExpense = Number(summaryRes.data?.totals?.expense || 0);
           const monthNet = curIncome - curExpense;
-          const prevBalance = Number(prevRes?.data?.totals?.income || 0) - Number(prevRes?.data?.totals?.expense || 0);
+          const prevBalance =
+            Number(prevRes?.data?.totals?.income || 0) -
+            Number(prevRes?.data?.totals?.expense || 0);
           setInitialBalance(prevBalance);
           setFinalBalance(prevBalance + monthNet);
         } else {
-          setInitialBalance(null); setFinalBalance(null); setAllTimeSummary(null);
+          setInitialBalance(null);
+          setFinalBalance(null);
+          setAllTimeSummary(null);
         }
       } catch (err) {
-        setError(err.response?.data?.message || 'Failed to load data');
+        setError(err.response?.data?.message || t('dashboard.loadFailed'));
       } finally {
         setLoading(false);
       }
@@ -174,8 +297,11 @@ export default function Dashboard() {
   }, [period, selectedYear, filterMode, dateRange]);
 
   const barData = useMemo(() => {
-    const monthLabels = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    const isRangeMode = filterMode === 'range' && dateRange?.from && dateRange?.to;
+    const monthLabels = Array.from({ length: 12 }, (_, i) =>
+      new Date(0, i).toLocaleString(intlLocale(), { month: 'short' }),
+    );
+    const isRangeMode =
+      filterMode === 'range' && dateRange?.from && dateRange?.to;
 
     if (isRangeMode) {
       // In range mode: aggregate summary.incomeVsExpense by YYYY-MM across the selected range
@@ -189,7 +315,9 @@ export default function Dashboard() {
       let cur = new Date(from.getFullYear(), from.getMonth(), 1);
       const end = new Date(to.getFullYear(), to.getMonth(), 1);
       while (cur <= end) {
-        keys.push(`${cur.getFullYear()}-${String(cur.getMonth() + 1).padStart(2, '0')}`);
+        keys.push(
+          `${cur.getFullYear()}-${String(cur.getMonth() + 1).padStart(2, '0')}`,
+        );
         cur = new Date(cur.getFullYear(), cur.getMonth() + 1, 1);
       }
 
@@ -202,27 +330,33 @@ export default function Dashboard() {
         return acc;
       }, {});
 
-      return keys.map(key => {
+      return keys.map((key) => {
         const [yr, mo] = key.split('-');
         // Label: "Jan 2026" if spans multiple years, otherwise just "Jan"
         const spanYears = from.getFullYear() !== to.getFullYear();
         const label = spanYears
           ? `${monthLabels[Number(mo) - 1]} ${yr}`
           : monthLabels[Number(mo) - 1];
-        return { month: label, income: agg[key]?.income || 0, expense: agg[key]?.expense || 0 };
+        return {
+          month: label,
+          income: agg[key]?.income || 0,
+          expense: agg[key]?.expense || 0,
+        };
       });
     }
 
     // ── Period mode (original logic) ──────────────────────────────────
     const months = Array.from({ length: 12 }, (_, i) => ({
       key: `${selectedYear}-${String(i + 1).padStart(2, '0')}`,
-      label: monthLabels[i]
+      label: monthLabels[i],
     }));
 
     const targetSummaryData =
-      period === 'all'  ? summary?.incomeVsExpense :
-      period === 'year' ? summary?.incomeVsExpense :
-                          allTimeSummary?.incomeVsExpense;
+      period === 'all'
+        ? summary?.incomeVsExpense
+        : period === 'year'
+          ? summary?.incomeVsExpense
+          : allTimeSummary?.incomeVsExpense;
 
     if (targetSummaryData) {
       const agg = targetSummaryData.reduce((acc, item) => {
@@ -234,12 +368,15 @@ export default function Dashboard() {
         acc[key].expense += Number(item.expense || 0);
         return acc;
       }, {});
-      return months.map(m => ({ month: m.label, income: agg[m.key]?.income || 0, expense: agg[m.key]?.expense || 0 }));
+      return months.map((m) => ({
+        month: m.label,
+        income: agg[m.key]?.income || 0,
+        expense: agg[m.key]?.expense || 0,
+      }));
     }
 
-    return months.map(m => ({ month: m.label, income: 0, expense: 0 }));
-  }, [selectedYear, period, summary, allTimeSummary, filterMode, dateRange]);
-
+    return months.map((m) => ({ month: m.label, income: 0, expense: 0 }));
+  }, [selectedYear, period, summary, allTimeSummary, filterMode, dateRange, t]);
 
   const paymentTotals = useMemo(() => {
     const cash = Number(summary?.paymentMethods?.cash || 0);
@@ -247,28 +384,44 @@ export default function Dashboard() {
     const account = Number(summary?.paymentMethods?.account || 0);
     const total = cash + card + account;
     const pct = (v) => (total > 0 ? Math.round((v / total) * 1000) / 10 : 0);
-    return { cash, card, account, total, cashPct: pct(cash), cardPct: pct(card), accountPct: pct(account) };
+    return {
+      cash,
+      card,
+      account,
+      total,
+      cashPct: pct(cash),
+      cardPct: pct(card),
+      accountPct: pct(account),
+    };
   }, [summary]);
 
   const perCardUsage = useMemo(() => {
     const map = summary?.perCard || {};
     return Object.keys(map).map((name) => {
       const info = cards.find((c) => c.name === name) || {};
-      return { name, amount: Number(map[name] || 0), color: info.color || '#0ea5e9', last4: info.last4 || '' };
+      return {
+        name,
+        amount: Number(map[name] || 0),
+        color: info.color || '#0ea5e9',
+        last4: info.last4 || '',
+      };
     });
   }, [summary, cards]);
 
   const budgetProgress = useMemo(() => {
-    if (!summary) return { budget: 0, actual: 0, remaining: 0, consumedPercent: 0 };
+    if (!summary)
+      return { budget: 0, actual: 0, remaining: 0, consumedPercent: 0 };
     const budget = Number(summary.budgetAmount || 0);
     const actual = Number(summary.totals?.expense || 0);
     const remaining = budget - actual;
-    const consumedPercent = budget > 0 ? Math.round((actual / budget) * 100) : 0;
+    const consumedPercent =
+      budget > 0 ? Math.round((actual / budget) * 100) : 0;
     return { budget, actual, remaining, consumedPercent };
   }, [summary]);
 
   // Budgets are monthly; only meaningful when a specific month/year is selected.
-  const isMonthSelected = filterMode === 'period' && period !== 'all' && period !== 'year';
+  const isMonthSelected =
+    filterMode === 'period' && period !== 'all' && period !== 'year';
 
   const barColorClass = useMemo(() => {
     const cp = budgetProgress.consumedPercent;
@@ -281,48 +434,84 @@ export default function Dashboard() {
     return 'bg-emerald-500';
   }, [budgetProgress]);
 
-  const incomeCatData = useMemo(() =>
-    (summary?.incomeCategories || []).map((c, i) => ({
-      ...c, color: c.color || categoryColors[i % categoryColors.length]
-    })).sort((a, b) => b.amount - a.amount),
-    [summary]
+  const incomeCatData = useMemo(
+    () =>
+      (summary?.incomeCategories || [])
+        .map((c, i) => ({
+          ...c,
+          color: c.color || categoryColors[i % categoryColors.length],
+        }))
+        .sort((a, b) => b.amount - a.amount),
+    [summary],
   );
 
-  const categoryColors = ['#6366f1', '#f43f5e', '#f59e0b', '#10b981', '#3b82f6', '#8b5cf6', '#ec4899', '#14b8a6', '#f97316', '#84cc16'];
+  const categoryColors = [
+    '#6366f1',
+    '#f43f5e',
+    '#f59e0b',
+    '#10b981',
+    '#3b82f6',
+    '#8b5cf6',
+    '#ec4899',
+    '#14b8a6',
+    '#f97316',
+    '#84cc16',
+  ];
 
   const onExport = async () => {
     try {
-      const isRangeMode = filterMode === 'range' && dateRange?.from && dateRange?.to;
+      const isRangeMode =
+        filterMode === 'range' && dateRange?.from && dateRange?.to;
       const params = isRangeMode
         ? { from: toISODate(dateRange.from), to: toISODate(dateRange.to) }
-        : period === 'all'  ? { period: 'all' }
-        : period === 'year' ? { period: String(selectedYear) }
-        :                     { period: `${selectedYear}-${period}` };
-      const res = await api.get('/stats/export', { params, responseType: 'blob' });
+        : period === 'all'
+          ? { period: 'all' }
+          : period === 'year'
+            ? { period: String(selectedYear) }
+            : { period: `${selectedYear}-${period}` };
+      const res = await api.get('/stats/export', {
+        params,
+        responseType: 'blob',
+      });
       const url = window.URL.createObjectURL(new Blob([res.data]));
       const a = document.createElement('a');
       const name = isRangeMode
         ? `transactions_${toISODate(dateRange.from)}_to_${toISODate(dateRange.to)}.xlsx`
         : `transactions_${params.period || 'all'}.xlsx`;
-      a.href = url; a.download = name;
-      a.click(); window.URL.revokeObjectURL(url);
-    } catch { alert('Export failed'); }
+      a.href = url;
+      a.download = name;
+      a.click();
+      window.URL.revokeObjectURL(url);
+    } catch {
+      alert(t('dashboard.exportFailed'));
+    }
   };
 
   // rerender-derived-state-no-effect: derive net worth during render.
   // Cuentas "no integrar" (aisladas) se separan de los totales generales.
-  const integratedBalances = bankBalances.filter(a => !a.isExcludedFromTotals);
-  const isolatedBalances = bankBalances.filter(a => a.isExcludedFromTotals);
+  const integratedBalances = bankBalances.filter(
+    (a) => !a.isExcludedFromTotals,
+  );
+  const isolatedBalances = bankBalances.filter((a) => a.isExcludedFromTotals);
   const bankNetWorth = integratedBalances.reduce((s, a) => s + a.current, 0);
-  const bankMaxBalance = integratedBalances.reduce((m, a) => Math.max(m, Math.abs(a.current)), 0);
+  const bankMaxBalance = integratedBalances.reduce(
+    (m, a) => Math.max(m, Math.abs(a.current)),
+    0,
+  );
   const isolatedNetWorth = isolatedBalances.reduce((s, a) => s + a.current, 0);
-  const isolatedMaxBalance = isolatedBalances.reduce((m, a) => Math.max(m, Math.abs(a.current)), 0);
+  const isolatedMaxBalance = isolatedBalances.reduce(
+    (m, a) => Math.max(m, Math.abs(a.current)),
+    0,
+  );
 
   const renderBankRow = (acc, maxBalance) => {
     const pct = maxBalance > 0 ? Math.abs(acc.current) / maxBalance : 0;
     const isNeg = acc.current < 0;
     return (
-      <li key={acc.id} className="px-5 py-4 hover:bg-gray-50/60 dark:hover:bg-slate-800/30 transition-colors">
+      <li
+        key={acc.id}
+        className="px-5 py-4 hover:bg-gray-50/60 dark:hover:bg-slate-800/30 transition-colors"
+      >
         <div className="flex items-start justify-between gap-4">
           <div className="flex items-center gap-3 min-w-0">
             <div
@@ -332,25 +521,43 @@ export default function Dashboard() {
               {acc.name.charAt(0).toUpperCase()}
             </div>
             <div className="min-w-0">
-              <p className="text-sm font-semibold text-gray-800 dark:text-gray-100 truncate">{acc.name}</p>
+              <p className="text-sm font-semibold text-gray-800 dark:text-gray-100 truncate">
+                {acc.name}
+              </p>
               <p className="text-[11px] text-gray-400">
-                Opens {cs}{Number(acc.initialBalance || 0).toFixed(2)}
-                &ensp;·&ensp;+{cs}{acc.income.toFixed(2)} income
-                &ensp;·&ensp;−{cs}{acc.expense.toFixed(2)} expenses
+                {t('dashboard.bankOpens', {
+                  amount: `${cs}${Number(acc.initialBalance || 0).toFixed(2)}`,
+                })}
+                &ensp;·&ensp;
+                {t('dashboard.bankIncome', {
+                  amount: `${cs}${acc.income.toFixed(2)}`,
+                })}
+                &ensp;·&ensp;
+                {t('dashboard.bankExpenses', {
+                  amount: `${cs}${acc.expense.toFixed(2)}`,
+                })}
               </p>
             </div>
           </div>
           <div className="flex-shrink-0 text-right">
-            <span className={`text-base font-bold tabular-nums ${isNeg ? 'text-rose-500 dark:text-rose-400' : 'text-emerald-600 dark:text-emerald-400'
-              }`}>
-              {isNeg ? '−' : '+'}{cs}{Math.abs(acc.current).toFixed(2)}
+            <span
+              className={`text-base font-bold tabular-nums ${
+                isNeg
+                  ? 'text-rose-500 dark:text-rose-400'
+                  : 'text-emerald-600 dark:text-emerald-400'
+              }`}
+            >
+              {isNeg ? '−' : '+'}
+              {cs}
+              {Math.abs(acc.current).toFixed(2)}
             </span>
           </div>
         </div>
         <div className="mt-2.5 h-1.5 rounded-full bg-gray-100 dark:bg-slate-800 overflow-hidden">
           <div
-            className={`h-full rounded-full transition-all duration-500 ${isNeg ? 'bg-rose-400' : 'bg-emerald-500'
-              }`}
+            className={`h-full rounded-full transition-all duration-500 ${
+              isNeg ? 'bg-rose-400' : 'bg-emerald-500'
+            }`}
             style={{ width: `${Math.round(pct * 100)}%` }}
           />
         </div>
@@ -358,35 +565,79 @@ export default function Dashboard() {
     );
   };
 
-  const catData = (summary?.categories || []).map((c, i) => ({
-    ...c, color: c.color || categoryColors[i % categoryColors.length]
-  })).sort((a, b) => b.amount - a.amount);
+  const catData = (summary?.categories || [])
+    .map((c, i) => ({
+      ...c,
+      color: c.color || categoryColors[i % categoryColors.length],
+    }))
+    .sort((a, b) => b.amount - a.amount);
 
   const renderSummary = () => {
-    if (loading) return <p className="text-sm text-gray-400 animate-pulse">Loading…</p>;
-    if (error) return <div className="px-3 py-2 rounded-lg bg-rose-50 dark:bg-rose-900/20 text-rose-600 dark:text-rose-400 text-sm">{error}</div>;
+    if (loading)
+      return (
+        <p className="text-sm text-gray-400 animate-pulse">
+          {t('dashboard.loading')}
+        </p>
+      );
+    if (error)
+      return (
+        <div className="px-3 py-2 rounded-lg bg-rose-50 dark:bg-rose-900/20 text-rose-600 dark:text-rose-400 text-sm">
+          {error}
+        </div>
+      );
     if (!summary) return null;
 
     return (
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         {[
-          { label: 'Income', value: summary.totals.income, color: 'emerald' },
-          { label: 'Expenses', value: summary.totals.expense, color: 'rose' },
-          { label: 'Balance', value: summary.totals.income - summary.totals.expense, color: 'indigo' },
-          { label: 'Transactions', value: summary.totals.transactions, color: 'amber', isCount: true },
+          {
+            label: t('dashboard.income'),
+            value: summary.totals.income,
+            color: 'emerald',
+          },
+          {
+            label: t('dashboard.expenses'),
+            value: summary.totals.expense,
+            color: 'rose',
+          },
+          {
+            label: t('dashboard.balance'),
+            value: summary.totals.income - summary.totals.expense,
+            color: 'indigo',
+          },
+          {
+            label: t('dashboard.transactions'),
+            value: summary.totals.transactions,
+            color: 'amber',
+            isCount: true,
+          },
         ].map(({ label, value, color, isCount }) => (
-          <div key={label} className={`rounded-xl p-4 bg-${color}-50 dark:bg-slate-800 border border-${color}-100 dark:border-slate-700/60`}>
-            <p className={`text-xs font-medium text-${color}-600 dark:text-${color}-400 uppercase tracking-widest mb-1`}>{label}</p>
-            <p className={`text-2xl font-bold text-${color}-700 dark:text-slate-100 tabular-nums`}>
+          <div
+            key={label}
+            className={`rounded-xl p-4 bg-${color}-50 dark:bg-slate-800 border border-${color}-100 dark:border-slate-700/60`}
+          >
+            <p
+              className={`text-xs font-medium text-${color}-600 dark:text-${color}-400 uppercase tracking-widest mb-1`}
+            >
+              {label}
+            </p>
+            <p
+              className={`text-2xl font-bold text-${color}-700 dark:text-slate-100 tabular-nums`}
+            >
               {isCount ? value : `${cs}${Number(value).toFixed(2)}`}
             </p>
           </div>
         ))}
         {period !== 'all' && allTimeSummary && (
           <div className="rounded-xl p-4 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700/60">
-            <p className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-1">All-Time Balance</p>
+            <p className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-1">
+              {t('dashboard.allTimeBalance')}
+            </p>
             <p className="text-2xl font-bold text-slate-700 dark:text-slate-100 tabular-nums">
-              {cs}{(allTimeSummary.totals.income - allTimeSummary.totals.expense).toFixed(2)}
+              {cs}
+              {(
+                allTimeSummary.totals.income - allTimeSummary.totals.expense
+              ).toFixed(2)}
             </p>
           </div>
         )}
@@ -396,13 +647,19 @@ export default function Dashboard() {
 
   return (
     <div className="max-w-6xl mx-auto p-4 space-y-5">
-
       {/* ── Header / Overview ── */}
       <div className="bg-white dark:bg-slate-900 rounded-2xl border border-[var(--border)] shadow-sm p-5">
         <div className="flex justify-between items-center mb-4 gap-3 flex-wrap">
-          <h2 className="text-xl font-bold tracking-tight">Overview</h2>
+          <h2 className="text-xl font-bold tracking-tight">
+            {t('dashboard.overview')}
+          </h2>
           <div className="flex items-center gap-2 flex-wrap">
-            <Button onClick={() => navigate('/transactions/add')} variant="primary">+ New Transaction</Button>
+            <Button
+              onClick={() => navigate('/transactions/add')}
+              variant="primary"
+            >
+              {t('dashboard.newTransaction')}
+            </Button>
 
             {/* ── Filter mode toggle ── */}
             <div className="flex rounded-lg border border-[var(--border)] overflow-hidden text-sm font-medium">
@@ -414,7 +671,7 @@ export default function Dashboard() {
                     : 'bg-white dark:bg-slate-800 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-slate-700'
                 }`}
               >
-                Month
+                {t('dashboard.month')}
               </button>
               <button
                 onClick={() => setFilterMode('range')}
@@ -424,17 +681,31 @@ export default function Dashboard() {
                     : 'bg-white dark:bg-slate-800 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-slate-700'
                 }`}
               >
-                Range
+                {t('dashboard.range')}
               </button>
             </div>
 
             {filterMode === 'period' ? (
               <>
-                <Select value={period} onChange={(e) => setPeriod(e.target.value)}>
-                  {periodOptions.map(m => <option key={m.value} value={m.value}>{m.label}</option>)}
+                <Select
+                  value={period}
+                  onChange={(e) => setPeriod(e.target.value)}
+                >
+                  {periodOptions.map((m) => (
+                    <option key={m.value} value={m.value}>
+                      {m.label}
+                    </option>
+                  ))}
                 </Select>
-                <Select value={String(selectedYear)} onChange={(e) => setSelectedYear(Number(e.target.value))}>
-                  {yearOptions.map(y => <option key={y} value={y}>{y}</option>)}
+                <Select
+                  value={String(selectedYear)}
+                  onChange={(e) => setSelectedYear(Number(e.target.value))}
+                >
+                  {yearOptions.map((y) => (
+                    <option key={y} value={y}>
+                      {y}
+                    </option>
+                  ))}
                 </Select>
               </>
             ) : (
@@ -445,44 +716,89 @@ export default function Dashboard() {
               onClick={onExport}
               className="px-3 py-2 text-sm rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 font-medium transition-colors"
             >
-              Export XLSX
+              {t('dashboard.exportXlsx')}
             </button>
           </div>
         </div>
         {renderSummary()}
       </div>
 
-
       {/* ── Income vs Expenses Bar Chart ── */}
       <div className="bg-white dark:bg-slate-900 rounded-2xl border border-[var(--border)] shadow-sm p-5">
         <div className="flex justify-between items-center mb-4">
           <div>
-            <h3 className="text-base font-semibold">Income vs Expenses</h3>
+            <h3 className="text-base font-semibold">
+              {t('dashboard.incomeVsExpenses')}
+            </h3>
             <p className="text-xs text-gray-400">
               {filterMode === 'range' && dateRange?.from && dateRange?.to
-                ? `${dateRange.from.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })} → ${dateRange.to.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`
+                ? `${dateRange.from.toLocaleDateString(intlLocale(), { month: 'short', day: 'numeric', year: 'numeric' })} → ${dateRange.to.toLocaleDateString(intlLocale(), { month: 'short', day: 'numeric', year: 'numeric' })}`
                 : period === 'year'
-                  ? `Full year ${selectedYear}`
+                  ? t('dashboard.fullYearN', { year: selectedYear })
                   : period === 'all'
-                    ? `All time · ${selectedYear} view`
-                    : `Monthly breakdown for ${selectedYear}`}
+                    ? t('dashboard.allTimeView', { year: selectedYear })
+                    : t('dashboard.monthlyBreakdown', { year: selectedYear })}
             </p>
           </div>
         </div>
-        {loading && <div className="h-[280px] flex items-center justify-center text-sm text-gray-400 animate-pulse">Loading chart…</div>}
+        {loading && (
+          <div className="h-[280px] flex items-center justify-center text-sm text-gray-400 animate-pulse">
+            {t('dashboard.loadingChart')}
+          </div>
+        )}
         {!loading && (
           <ChartContainer config={barChartConfig} style={{ height: 280 }}>
             <BarChart data={barData} barGap={3} barCategoryGap="30%">
-              <CartesianGrid vertical={false} strokeDasharray="3 3" stroke="currentColor" className="text-gray-100 dark:text-slate-800" opacity={0.6} />
-              <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#9ca3af' }} />
-              <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#9ca3af' }} tickFormatter={(v) => `${cs}${v >= 1000 ? `${(v / 1000).toFixed(0)}k` : v}`} />
+              <CartesianGrid
+                vertical={false}
+                strokeDasharray="3 3"
+                stroke="currentColor"
+                className="text-gray-100 dark:text-slate-800"
+                opacity={0.6}
+              />
+              <XAxis
+                dataKey="month"
+                axisLine={false}
+                tickLine={false}
+                tick={{ fontSize: 11, fill: '#9ca3af' }}
+              />
+              <YAxis
+                axisLine={false}
+                tickLine={false}
+                tick={{ fontSize: 11, fill: '#9ca3af' }}
+                tickFormatter={(v) =>
+                  `${cs}${v >= 1000 ? `${(v / 1000).toFixed(0)}k` : v}`
+                }
+              />
               <ChartTooltip
-                cursor={{ fill: 'currentColor', className: 'text-gray-100 dark:text-slate-800', opacity: 0.5 }}
-                content={<ChartTooltipContent formatter={(v, name) => [`${cs}${Number(v).toFixed(2)}`, name]} indicator="square" />}
+                cursor={{
+                  fill: 'currentColor',
+                  className: 'text-gray-100 dark:text-slate-800',
+                  opacity: 0.5,
+                }}
+                content={
+                  <ChartTooltipContent
+                    formatter={(v, name) => [
+                      `${cs}${Number(v).toFixed(2)}`,
+                      name,
+                    ]}
+                    indicator="square"
+                  />
+                }
               />
               <ChartLegend content={<ChartLegendContent />} />
-              <Bar dataKey="expense" name="Expenses" fill={barChartConfig.expense.color} radius={[6, 6, 0, 0]} />
-              <Bar dataKey="income" name="Income" fill={barChartConfig.income.color} radius={[6, 6, 0, 0]} />
+              <Bar
+                dataKey="expense"
+                name={t('dashboard.barExpenses')}
+                fill={barChartConfig.expense.color}
+                radius={[6, 6, 0, 0]}
+              />
+              <Bar
+                dataKey="income"
+                name={t('dashboard.barIncome')}
+                fill={barChartConfig.income.color}
+                radius={[6, 6, 0, 0]}
+              />
             </BarChart>
           </ChartContainer>
         )}
@@ -490,13 +806,18 @@ export default function Dashboard() {
 
       {/* ── Two pie charts row ── */}
       <div className="grid md:grid-cols-2 gap-5">
-
         {/* Categories Donut */}
         <div className="bg-white dark:bg-slate-900 rounded-2xl border border-[var(--border)] shadow-sm p-5">
-          <h3 className="text-base font-semibold mb-1">Expense Categories</h3>
-          <p className="text-xs text-gray-400 mb-4">Share of total expenses by category</p>
+          <h3 className="text-base font-semibold mb-1">
+            {t('dashboard.expenseCategories')}
+          </h3>
+          <p className="text-xs text-gray-400 mb-4">
+            {t('dashboard.expenseCategoriesSub')}
+          </p>
           {catData.length === 0 ? (
-            <div className="flex items-center justify-center h-48 text-gray-400 text-sm">No expense data</div>
+            <div className="flex items-center justify-center h-48 text-gray-400 text-sm">
+              {t('dashboard.noExpenseData')}
+            </div>
           ) : (
             <>
               <ChartContainer config={{}} style={{ height: 220 }}>
@@ -513,7 +834,9 @@ export default function Dashboard() {
                     outerRadius={90}
                     onMouseEnter={(_, idx) => setActiveCatIdx(idx)}
                   >
-                    {catData.map((c, i) => <Cell key={i} fill={c.color} />)}
+                    {catData.map((c, i) => (
+                      <Cell key={i} fill={c.color} />
+                    ))}
                   </Pie>
                 </PieChart>
               </ChartContainer>
@@ -521,16 +844,28 @@ export default function Dashboard() {
               <ul className="mt-3 divide-y divide-gray-100 dark:divide-slate-800">
                 {catData.map((c) => {
                   const totalExp = summary?.totals?.expense || 0;
-                  const pct = totalExp > 0 ? ((c.amount / totalExp) * 100).toFixed(1) : 0;
+                  const pct =
+                    totalExp > 0 ? ((c.amount / totalExp) * 100).toFixed(1) : 0;
                   return (
-                    <li key={c.name} className="flex items-center justify-between py-1.5 text-sm">
+                    <li
+                      key={c.name}
+                      className="flex items-center justify-between py-1.5 text-sm"
+                    >
                       <div className="flex items-center gap-2">
-                        <span className="h-2.5 w-2.5 rounded-full flex-shrink-0" style={{ background: c.color }} />
-                        <span className="text-gray-700 dark:text-gray-300 truncate max-w-[160px]">{c.name}</span>
+                        <span
+                          className="h-2.5 w-2.5 rounded-full flex-shrink-0"
+                          style={{ background: c.color }}
+                        />
+                        <span className="text-gray-700 dark:text-gray-300 truncate max-w-[160px]">
+                          {c.name}
+                        </span>
                       </div>
                       <div className="flex items-center gap-3 text-right">
                         <span className="text-gray-400 text-xs">{pct}%</span>
-                        <span className="font-semibold text-gray-800 dark:text-gray-100 tabular-nums">{cs}{c.amount.toFixed(2)}</span>
+                        <span className="font-semibold text-gray-800 dark:text-gray-100 tabular-nums">
+                          {cs}
+                          {c.amount.toFixed(2)}
+                        </span>
                       </div>
                     </li>
                   );
@@ -542,10 +877,16 @@ export default function Dashboard() {
 
         {/* Income Categories Donut */}
         <div className="bg-white dark:bg-slate-900 rounded-2xl border border-[var(--border)] shadow-sm p-5">
-          <h3 className="text-base font-semibold mb-1">Income Categories</h3>
-          <p className="text-xs text-gray-400 mb-4">Share of total income by category</p>
+          <h3 className="text-base font-semibold mb-1">
+            {t('dashboard.incomeCategories')}
+          </h3>
+          <p className="text-xs text-gray-400 mb-4">
+            {t('dashboard.incomeCategoriesSub')}
+          </p>
           {incomeCatData.length === 0 ? (
-            <div className="flex items-center justify-center h-48 text-gray-400 text-sm">No income data</div>
+            <div className="flex items-center justify-center h-48 text-gray-400 text-sm">
+              {t('dashboard.noIncomeData')}
+            </div>
           ) : (
             <>
               <ChartContainer config={{}} style={{ height: 220 }}>
@@ -562,23 +903,37 @@ export default function Dashboard() {
                     outerRadius={90}
                     onMouseEnter={(_, idx) => setActiveIncomeIdx(idx)}
                   >
-                    {incomeCatData.map((c, i) => <Cell key={i} fill={c.color} />)}
+                    {incomeCatData.map((c, i) => (
+                      <Cell key={i} fill={c.color} />
+                    ))}
                   </Pie>
                 </PieChart>
               </ChartContainer>
               <ul className="mt-3 divide-y divide-gray-100 dark:divide-slate-800">
                 {incomeCatData.map((c) => {
                   const totalInc = summary?.totals?.income || 0;
-                  const pct = totalInc > 0 ? ((c.amount / totalInc) * 100).toFixed(1) : 0;
+                  const pct =
+                    totalInc > 0 ? ((c.amount / totalInc) * 100).toFixed(1) : 0;
                   return (
-                    <li key={c.name} className="flex items-center justify-between py-1.5 text-sm">
+                    <li
+                      key={c.name}
+                      className="flex items-center justify-between py-1.5 text-sm"
+                    >
                       <div className="flex items-center gap-2">
-                        <span className="h-2.5 w-2.5 rounded-full flex-shrink-0" style={{ background: c.color }} />
-                        <span className="text-gray-700 dark:text-gray-300 truncate max-w-[160px]">{c.name}</span>
+                        <span
+                          className="h-2.5 w-2.5 rounded-full flex-shrink-0"
+                          style={{ background: c.color }}
+                        />
+                        <span className="text-gray-700 dark:text-gray-300 truncate max-w-[160px]">
+                          {c.name}
+                        </span>
                       </div>
                       <div className="flex items-center gap-3 text-right">
                         <span className="text-gray-400 text-xs">{pct}%</span>
-                        <span className="font-semibold text-gray-800 dark:text-gray-100 tabular-nums">{cs}{c.amount.toFixed(2)}</span>
+                        <span className="font-semibold text-gray-800 dark:text-gray-100 tabular-nums">
+                          {cs}
+                          {c.amount.toFixed(2)}
+                        </span>
                       </div>
                     </li>
                   );
@@ -594,9 +949,13 @@ export default function Dashboard() {
         {/* Header + toggle */}
         <div className="flex items-center justify-between mb-4 gap-3 flex-wrap">
           <div>
-            <h3 className="text-base font-semibold">Budget Tracking</h3>
+            <h3 className="text-base font-semibold">
+              {t('dashboard.budgetTracking')}
+            </h3>
             <p className="text-xs text-gray-400">
-              {budgetView === 'monthly' ? 'Expense tracking vs. your monthly budget.' : 'Fixed per-category spending limits.'}
+              {budgetView === 'monthly'
+                ? t('dashboard.budgetMonthlySub')
+                : t('dashboard.budgetCategorySub')}
             </p>
           </div>
           <div className="flex rounded-lg border border-[var(--border)] overflow-hidden text-xs font-medium">
@@ -609,7 +968,7 @@ export default function Dashboard() {
                   : 'bg-white dark:bg-slate-800 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-slate-700'
               }`}
             >
-              Monthly Budget
+              {t('dashboard.monthlyBudget')}
             </button>
             <button
               id="budget-view-category"
@@ -620,7 +979,7 @@ export default function Dashboard() {
                   : 'bg-white dark:bg-slate-800 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-slate-700'
               }`}
             >
-              Category Budgets
+              {t('dashboard.categoryBudgets')}
             </button>
           </div>
         </div>
@@ -629,26 +988,56 @@ export default function Dashboard() {
         {budgetView === 'monthly' && (
           <>
             {!isMonthSelected ? (
-              <p className="text-sm text-gray-400">Select a specific month to compare against budget.</p>
+              <p className="text-sm text-gray-400">
+                {t('dashboard.selectMonthCompare')}
+              </p>
             ) : summary?.budgetAmount == null ? (
-              <p className="text-sm text-gray-400">No budget set for this month.</p>
+              <p className="text-sm text-gray-400">
+                {t('dashboard.noBudgetMonth')}
+              </p>
             ) : (
               <div className="space-y-3">
                 <div className="flex justify-between text-sm">
-                  <span className="text-gray-500 dark:text-gray-400">Budget <span className="font-semibold text-gray-800 dark:text-white">{cs}{budgetProgress.budget.toFixed(2)}</span></span>
-                  <span className="text-gray-500 dark:text-gray-400">Spent <span className="font-semibold text-rose-600">{cs}{budgetProgress.actual.toFixed(2)}</span></span>
                   <span className="text-gray-500 dark:text-gray-400">
-                    Remaining <span className={`font-semibold ${budgetProgress.remaining < 0 ? 'text-rose-600' : 'text-emerald-600'}`}>{cs}{budgetProgress.remaining.toFixed(2)}</span>
+                    {t('dashboard.budgetLabel')}{' '}
+                    <span className="font-semibold text-gray-800 dark:text-white">
+                      {cs}
+                      {budgetProgress.budget.toFixed(2)}
+                    </span>
+                  </span>
+                  <span className="text-gray-500 dark:text-gray-400">
+                    {t('dashboard.spent')}{' '}
+                    <span className="font-semibold text-rose-600">
+                      {cs}
+                      {budgetProgress.actual.toFixed(2)}
+                    </span>
+                  </span>
+                  <span className="text-gray-500 dark:text-gray-400">
+                    {t('dashboard.remaining')}{' '}
+                    <span
+                      className={`font-semibold ${budgetProgress.remaining < 0 ? 'text-rose-600' : 'text-emerald-600'}`}
+                    >
+                      {cs}
+                      {budgetProgress.remaining.toFixed(2)}
+                    </span>
                   </span>
                 </div>
                 <div className="w-full h-3 bg-gray-100 dark:bg-slate-800 rounded-full overflow-hidden">
                   <div
                     className={`h-3 ${barColorClass} rounded-full transition-all duration-700`}
-                    style={{ width: `${Math.min(budgetProgress.consumedPercent, 100)}%` }}
+                    style={{
+                      width: `${Math.min(budgetProgress.consumedPercent, 100)}%`,
+                    }}
                   />
                 </div>
                 <p className="text-xs text-gray-400">
-                  {budgetProgress.consumedPercent}% consumed{budgetProgress.consumedPercent > 100 ? ' — over budget!' : ''}
+                  {budgetProgress.consumedPercent > 100
+                    ? t('dashboard.consumedOver', {
+                        pct: budgetProgress.consumedPercent,
+                      })
+                    : t('dashboard.consumed', {
+                        pct: budgetProgress.consumedPercent,
+                      })}
                 </p>
               </div>
             )}
@@ -656,85 +1045,177 @@ export default function Dashboard() {
         )}
 
         {/* ── Category Budgets view (new) ── */}
-        {budgetView === 'category' && (() => {
-          if (!isMonthSelected) return (
-            <p className="text-sm text-gray-400">Select a specific month to compare against budget.</p>
-          );
-          const catsWithBudget = (summary?.categories || []).filter(c => c.monthlyBudget != null);
-          if (loading) return <p className="text-sm text-gray-400 animate-pulse">Loading…</p>;
-          if (catsWithBudget.length === 0) return (
-            <div className="flex flex-col items-center justify-center py-8 gap-2 text-center">
-              <span className="text-3xl opacity-30">📊</span>
-              <p className="text-sm text-gray-400">No categories have a budget set.</p>
-              <p className="text-xs text-gray-400">Go to <strong>Settings → Categories</strong> and add a monthly budget to a category.</p>
-            </div>
-          );
-          return (
-            <div className="space-y-4">
-              {catsWithBudget.map(cat => {
-                const budget = Number(cat.monthlyBudget);
-                const spent = Number(cat.amount || 0);
-                const remaining = budget - spent;
-                const pct = budget > 0 ? Math.round((spent / budget) * 100) : 0;
-                const isOver = remaining < 0;
-                const remainingPct = 100 - pct;
-                const barColor = isOver ? '#f43f5e' : remainingPct <= 10 ? '#f43f5e' : remainingPct <= 30 ? '#f59e0b' : cat.color;
-                return (
-                  <div key={cat.name} className="space-y-1.5">
-                    <div className="flex items-center justify-between text-sm">
-                      <div className="flex items-center gap-2">
-                        <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ background: cat.color }} />
-                        <span className="font-medium text-gray-800 dark:text-gray-100">{cat.name}</span>
+        {budgetView === 'category' &&
+          (() => {
+            if (!isMonthSelected)
+              return (
+                <p className="text-sm text-gray-400">
+                  {t('dashboard.selectMonthCompare')}
+                </p>
+              );
+            const catsWithBudget = (summary?.categories || []).filter(
+              (c) => c.monthlyBudget != null,
+            );
+            if (loading)
+              return (
+                <p className="text-sm text-gray-400 animate-pulse">
+                  {t('dashboard.loading')}
+                </p>
+              );
+            if (catsWithBudget.length === 0)
+              return (
+                <div className="flex flex-col items-center justify-center py-8 gap-2 text-center">
+                  <span className="text-3xl opacity-30">📊</span>
+                  <p className="text-sm text-gray-400">
+                    {t('dashboard.noCategoryBudget')}
+                  </p>
+                  <p className="text-xs text-gray-400">
+                    <Trans
+                      i18nKey="dashboard.categoryBudgetHint"
+                      components={[<strong key="s" />]}
+                    />
+                  </p>
+                </div>
+              );
+            return (
+              <div className="space-y-4">
+                {catsWithBudget.map((cat) => {
+                  const budget = Number(cat.monthlyBudget);
+                  const spent = Number(cat.amount || 0);
+                  const remaining = budget - spent;
+                  const pct =
+                    budget > 0 ? Math.round((spent / budget) * 100) : 0;
+                  const isOver = remaining < 0;
+                  const remainingPct = 100 - pct;
+                  const barColor = isOver
+                    ? '#f43f5e'
+                    : remainingPct <= 10
+                      ? '#f43f5e'
+                      : remainingPct <= 30
+                        ? '#f59e0b'
+                        : cat.color;
+                  return (
+                    <div key={cat.name} className="space-y-1.5">
+                      <div className="flex items-center justify-between text-sm">
+                        <div className="flex items-center gap-2">
+                          <span
+                            className="w-2.5 h-2.5 rounded-full flex-shrink-0"
+                            style={{ background: cat.color }}
+                          />
+                          <span className="font-medium text-gray-800 dark:text-gray-100">
+                            {cat.name}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-3 text-right">
+                          <span className="text-gray-500 dark:text-gray-400 tabular-nums">
+                            {cs}
+                            {spent.toFixed(2)}{' '}
+                            <span className="text-gray-300 dark:text-gray-600">
+                              /
+                            </span>{' '}
+                            {cs}
+                            {budget.toFixed(2)}
+                          </span>
+                          <span
+                            className={`text-xs font-semibold tabular-nums ${
+                              isOver ? 'text-rose-600' : 'text-emerald-600'
+                            }`}
+                          >
+                            {isOver
+                              ? t('dashboard.overBy', {
+                                  amount: `${cs}${Math.abs(remaining).toFixed(2)}`,
+                                })
+                              : t('dashboard.leftAmount', {
+                                  amount: `${cs}${remaining.toFixed(2)}`,
+                                })}
+                          </span>
+                        </div>
                       </div>
-                      <div className="flex items-center gap-3 text-right">
-                        <span className="text-gray-500 dark:text-gray-400 tabular-nums">
-                          {cs}{spent.toFixed(2)} <span className="text-gray-300 dark:text-gray-600">/</span> {cs}{budget.toFixed(2)}
-                        </span>
-                        <span className={`text-xs font-semibold tabular-nums ${
-                          isOver ? 'text-rose-600' : 'text-emerald-600'
-                        }`}>
-                          {isOver ? `+${cs}${Math.abs(remaining).toFixed(2)} over` : `${cs}${remaining.toFixed(2)} left`}
-                        </span>
+                      <div className="w-full h-2.5 bg-gray-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                        <div
+                          className="h-2.5 rounded-full transition-all duration-700"
+                          style={{
+                            width: `${Math.min(pct, 100)}%`,
+                            background: barColor,
+                          }}
+                        />
                       </div>
+                      <p className="text-[11px] text-gray-400">
+                        {isOver
+                          ? t('dashboard.consumedOver', {
+                              pct: Math.min(pct, 100),
+                            })
+                          : t('dashboard.consumed', {
+                              pct: Math.min(pct, 100),
+                            })}
+                      </p>
                     </div>
-                    <div className="w-full h-2.5 bg-gray-100 dark:bg-slate-800 rounded-full overflow-hidden">
-                      <div
-                        className="h-2.5 rounded-full transition-all duration-700"
-                        style={{ width: `${Math.min(pct, 100)}%`, background: barColor }}
-                      />
-                    </div>
-                    <p className="text-[11px] text-gray-400">{Math.min(pct, 100)}% consumed{isOver ? ' — over budget!' : ''}</p>
-                  </div>
-                );
-              })}
-            </div>
-          );
-        })()}
+                  );
+                })}
+              </div>
+            );
+          })()}
       </div>
 
       {/* ── Saldo + Payment Methods + Card Usage ── */}
       <div className="grid md:grid-cols-3 gap-5">
-
         {/* Saldo Inicial vs Final */}
         <div className="bg-white dark:bg-slate-900 rounded-2xl border border-[var(--border)] shadow-sm p-5">
-          <h3 className="text-base font-semibold mb-1">Monthly Balance</h3>
-          <p className="text-xs text-gray-400 mb-4">Opening vs. closing balance</p>
+          <h3 className="text-base font-semibold mb-1">
+            {t('dashboard.monthlyBalance')}
+          </h3>
+          <p className="text-xs text-gray-400 mb-4">
+            {t('dashboard.openingVsClosing')}
+          </p>
           {period === 'all' ? (
-            <p className="text-sm text-gray-400">Select a specific month to view.</p>
+            <p className="text-sm text-gray-400">
+              {t('dashboard.selectMonthView')}
+            </p>
           ) : initialBalance == null || finalBalance == null ? (
-            <p className="text-sm text-gray-400 animate-pulse">Loading…</p>
+            <p className="text-sm text-gray-400 animate-pulse">
+              {t('dashboard.loading')}
+            </p>
           ) : (
             <div className="flex flex-col gap-4">
               {[
-                { label: 'Opening', value: initialBalance, color: '#6366f1' },
-                { label: 'Closing', value: finalBalance, color: '#f59e0b' },
-              ].map(({ label, value, color }) => (
-                <div key={label} className="flex items-center justify-between rounded-xl p-4" style={{ background: color + '18', border: `1px solid ${color}33` }}>
+                {
+                  key: 'opening',
+                  label: t('dashboard.opening'),
+                  value: initialBalance,
+                  color: '#6366f1',
+                },
+                {
+                  key: 'closing',
+                  label: t('dashboard.closing'),
+                  value: finalBalance,
+                  color: '#f59e0b',
+                },
+              ].map(({ key, label, value, color }) => (
+                <div
+                  key={key}
+                  className="flex items-center justify-between rounded-xl p-4"
+                  style={{
+                    background: color + '18',
+                    border: `1px solid ${color}33`,
+                  }}
+                >
                   <div>
-                    <p className="text-xs font-semibold uppercase tracking-widest mb-1" style={{ color }}>{label}</p>
-                    <p className="text-xl font-bold tabular-nums" style={{ color }}>{formatCurrency(value)}</p>
+                    <p
+                      className="text-xs font-semibold uppercase tracking-widest mb-1"
+                      style={{ color }}
+                    >
+                      {label}
+                    </p>
+                    <p
+                      className="text-xl font-bold tabular-nums"
+                      style={{ color }}
+                    >
+                      {formatCurrency(value)}
+                    </p>
                   </div>
-                  <span className="text-3xl opacity-20">{label === 'Opening' ? '⬆' : '⬇'}</span>
+                  <span className="text-3xl opacity-20">
+                    {key === 'opening' ? '⬆' : '⬇'}
+                  </span>
                 </div>
               ))}
             </div>
@@ -743,49 +1224,118 @@ export default function Dashboard() {
 
         {/* Payment Methods */}
         <div className="bg-white dark:bg-slate-900 rounded-2xl border border-[var(--border)] shadow-sm p-5">
-          <h3 className="text-base font-semibold mb-1">Payment Methods</h3>
-          <p className="text-xs text-gray-400 mb-4">Expense split by method</p>
+          <h3 className="text-base font-semibold mb-1">
+            {t('dashboard.paymentMethods')}
+          </h3>
+          <p className="text-xs text-gray-400 mb-4">
+            {t('dashboard.expenseSplit')}
+          </p>
           <div className="space-y-3">
             {[
-              { label: 'Cash', amount: paymentTotals.cash, pct: paymentTotals.cashPct, color: '#10b981', icon: '💵' },
-              { label: 'Credit Cards', amount: paymentTotals.card, pct: paymentTotals.cardPct, color: '#0ea5e9', icon: '💳' },
-              { label: 'Account', amount: paymentTotals.account, pct: paymentTotals.accountPct, color: '#f59e0b', icon: '🏦' },
-            ].map(({ label, amount, pct, color, icon }) => (
-              <div key={label} className="rounded-xl p-4 flex items-center justify-between" style={{ background: color + '12', border: `1px solid ${color}30` }}>
+              {
+                key: 'cash',
+                label: t('dashboard.cash'),
+                amount: paymentTotals.cash,
+                pct: paymentTotals.cashPct,
+                color: '#10b981',
+                icon: '💵',
+              },
+              {
+                key: 'card',
+                label: t('dashboard.creditCards'),
+                amount: paymentTotals.card,
+                pct: paymentTotals.cardPct,
+                color: '#0ea5e9',
+                icon: '💳',
+              },
+              {
+                key: 'account',
+                label: t('dashboard.account'),
+                amount: paymentTotals.account,
+                pct: paymentTotals.accountPct,
+                color: '#f59e0b',
+                icon: '🏦',
+              },
+            ].map(({ key, label, amount, pct, color, icon }) => (
+              <div
+                key={key}
+                className="rounded-xl p-4 flex items-center justify-between"
+                style={{
+                  background: color + '12',
+                  border: `1px solid ${color}30`,
+                }}
+              >
                 <div className="flex items-center gap-3">
                   <span className="text-xl">{icon}</span>
                   <div>
-                    <p className="text-xs font-medium text-gray-500 dark:text-gray-400">{label}</p>
-                    <p className="text-lg font-bold tabular-nums" style={{ color }}>{cs}{amount.toFixed(2)}</p>
+                    <p className="text-xs font-medium text-gray-500 dark:text-gray-400">
+                      {label}
+                    </p>
+                    <p
+                      className="text-lg font-bold tabular-nums"
+                      style={{ color }}
+                    >
+                      {cs}
+                      {amount.toFixed(2)}
+                    </p>
                   </div>
                 </div>
-                <span className="text-sm font-semibold" style={{ color }}>{pct}%</span>
+                <span className="text-sm font-semibold" style={{ color }}>
+                  {pct}%
+                </span>
               </div>
             ))}
             <div className="text-right text-xs text-gray-400 pt-1">
-              Total spent: <span className="font-semibold text-gray-700 dark:text-gray-200">{cs}{paymentTotals.total.toFixed(2)}</span>
+              {t('dashboard.totalSpent')}{' '}
+              <span className="font-semibold text-gray-700 dark:text-gray-200">
+                {cs}
+                {paymentTotals.total.toFixed(2)}
+              </span>
             </div>
           </div>
         </div>
 
         {/* Credit Card Usage */}
         <div className="bg-white dark:bg-slate-900 rounded-2xl border border-[var(--border)] shadow-sm p-5">
-          <h3 className="text-base font-semibold mb-1">Card Usage</h3>
-          <p className="text-xs text-gray-400 mb-4">Spending per credit card</p>
+          <h3 className="text-base font-semibold mb-1">
+            {t('dashboard.cardUsage')}
+          </h3>
+          <p className="text-xs text-gray-400 mb-4">
+            {t('dashboard.spendingPerCard')}
+          </p>
           {perCardUsage.length === 0 ? (
-            <p className="text-sm text-gray-400">No card expenses yet.</p>
+            <p className="text-sm text-gray-400">
+              {t('dashboard.noCardExpenses')}
+            </p>
           ) : (
             <div className="space-y-3">
               {perCardUsage.map((c) => (
-                <div key={c.name} className="flex items-center justify-between rounded-xl p-4" style={{ background: c.color + '12', border: `1px solid ${c.color}30` }}>
+                <div
+                  key={c.name}
+                  className="flex items-center justify-between rounded-xl p-4"
+                  style={{
+                    background: c.color + '12',
+                    border: `1px solid ${c.color}30`,
+                  }}
+                >
                   <div className="flex items-center gap-3">
                     <span className="text-xl">💳</span>
                     <div>
-                      <p className="text-sm font-semibold text-gray-800 dark:text-white">{c.name}</p>
-                      {c.last4 && <p className="text-xs text-gray-400">•••• {c.last4}</p>}
+                      <p className="text-sm font-semibold text-gray-800 dark:text-white">
+                        {c.name}
+                      </p>
+                      {c.last4 && (
+                        <p className="text-xs text-gray-400">•••• {c.last4}</p>
+                      )}
                     </div>
                   </div>
-                  <p className="text-lg font-bold tabular-nums" style={{ color: c.color }}>{cs}{c.amount.toFixed(2)}</p>
+                  <p
+                    className="text-lg font-bold tabular-nums"
+                    style={{ color: c.color }}
+                  >
+                    {cs}
+                    {c.amount.toFixed(2)}
+                  </p>
                 </div>
               ))}
             </div>
@@ -798,15 +1348,27 @@ export default function Dashboard() {
         <div className="bg-white dark:bg-slate-900 rounded-2xl border border-[var(--border)] shadow-sm overflow-hidden">
           <div className="px-5 pt-5 pb-4 border-b border-[var(--border)] flex items-center justify-between">
             <div>
-              <h2 className="text-base font-semibold tracking-tight">Bank Accounts</h2>
-              <p className="text-xs text-gray-400 mt-0.5">Current balance across all accounts</p>
+              <h2 className="text-base font-semibold tracking-tight">
+                {t('dashboard.bankAccounts')}
+              </h2>
+              <p className="text-xs text-gray-400 mt-0.5">
+                {t('dashboard.currentBalanceAll')}
+              </p>
             </div>
             {integratedBalances.length > 0 && (
               <div className="flex flex-col items-end">
-                <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Net Worth</span>
-                <span className={`text-xl font-bold tabular-nums ${bankNetWorth >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-500 dark:text-rose-400'
-                  }`}>
-                  {cs}{bankNetWorth.toFixed(2)}
+                <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400">
+                  {t('dashboard.netWorth')}
+                </span>
+                <span
+                  className={`text-xl font-bold tabular-nums ${
+                    bankNetWorth >= 0
+                      ? 'text-emerald-600 dark:text-emerald-400'
+                      : 'text-rose-500 dark:text-rose-400'
+                  }`}
+                >
+                  {cs}
+                  {bankNetWorth.toFixed(2)}
                 </span>
               </div>
             )}
@@ -815,11 +1377,13 @@ export default function Dashboard() {
           {loading ? (
             <div className="px-5 py-8 flex items-center gap-2 text-sm text-gray-400 animate-pulse">
               <span className="h-2 w-2 rounded-full bg-current inline-block" />
-              Loading balances…
+              {t('dashboard.loadingBalances')}
             </div>
           ) : (
             <ul className="divide-y divide-[var(--border)]">
-              {integratedBalances.map((acc) => renderBankRow(acc, bankMaxBalance))}
+              {integratedBalances.map((acc) =>
+                renderBankRow(acc, bankMaxBalance),
+              )}
             </ul>
           )}
         </div>
@@ -831,23 +1395,37 @@ export default function Dashboard() {
           <div className="px-5 pt-5 pb-4 border-b border-[var(--border)] flex items-center justify-between">
             <div>
               <div className="flex items-center gap-2">
-                <h2 className="text-base font-semibold tracking-tight">Cuentas aisladas</h2>
+                <h2 className="text-base font-semibold tracking-tight">
+                  {t('dashboard.isolatedAccounts')}
+                </h2>
                 <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider bg-amber-100 text-amber-700 dark:bg-amber-950/50 dark:text-amber-400">
-                  No integrar
+                  {t('dashboard.doNotIntegrate')}
                 </span>
               </div>
-              <p className="text-xs text-gray-400 mt-0.5">No se incluyen en los totales generales ni en los gráficos</p>
+              <p className="text-xs text-gray-400 mt-0.5">
+                {t('dashboard.isolatedSub')}
+              </p>
             </div>
             <div className="flex flex-col items-end">
-              <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Subtotal</span>
-              <span className={`text-xl font-bold tabular-nums ${isolatedNetWorth >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-500 dark:text-rose-400'
-                }`}>
-                {cs}{isolatedNetWorth.toFixed(2)}
+              <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400">
+                {t('dashboard.subtotal')}
+              </span>
+              <span
+                className={`text-xl font-bold tabular-nums ${
+                  isolatedNetWorth >= 0
+                    ? 'text-emerald-600 dark:text-emerald-400'
+                    : 'text-rose-500 dark:text-rose-400'
+                }`}
+              >
+                {cs}
+                {isolatedNetWorth.toFixed(2)}
               </span>
             </div>
           </div>
           <ul className="divide-y divide-[var(--border)]">
-            {isolatedBalances.map((acc) => renderBankRow(acc, isolatedMaxBalance))}
+            {isolatedBalances.map((acc) =>
+              renderBankRow(acc, isolatedMaxBalance),
+            )}
           </ul>
         </div>
       )}

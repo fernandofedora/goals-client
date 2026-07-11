@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import api from '../api';
 import Button from '../components/ui/button';
 import Input from '../components/ui/input';
@@ -10,6 +11,7 @@ import { formatAmount } from '../utils/format';
 import { cn } from '../lib/utils';
 import { useCurrency } from '../context/CurrencyContext';
 import { getPref, setPref } from '../utils/userStorage';
+import { translateServerError } from '../utils/serverError';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 function Field({ label, children }) {
@@ -34,7 +36,7 @@ function IconButton({ onClick, title, danger, children }) {
         'inline-flex items-center justify-center w-8 h-8 rounded-lg transition-colors',
         danger
           ? 'text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/40'
-          : 'text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-slate-700'
+          : 'text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-slate-700',
       )}
     >
       {children}
@@ -46,15 +48,40 @@ function IconButton({ onClick, title, danger, children }) {
 function ProgressRing({ pct, size = 120, stroke = 10 }) {
   const r = (size - stroke) / 2;
   const circ = 2 * Math.PI * r;
-  const filled = circ * Math.min(pct, 100) / 100;
-  const color = pct >= 100 ? '#10b981' : pct >= 75 ? '#6366f1' : pct >= 40 ? '#6366f1' : '#6366f1';
+  const filled = (circ * Math.min(pct, 100)) / 100;
+  const color =
+    pct >= 100
+      ? '#10b981'
+      : pct >= 75
+        ? '#6366f1'
+        : pct >= 40
+          ? '#6366f1'
+          : '#6366f1';
 
   return (
-    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} className="-rotate-90">
-      <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="currentColor"
-        className="text-gray-200 dark:text-slate-700" strokeWidth={stroke} />
-      <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke={color}
-        strokeWidth={stroke} strokeLinecap="round"
+    <svg
+      width={size}
+      height={size}
+      viewBox={`0 0 ${size} ${size}`}
+      className="-rotate-90"
+    >
+      <circle
+        cx={size / 2}
+        cy={size / 2}
+        r={r}
+        fill="none"
+        stroke="currentColor"
+        className="text-gray-200 dark:text-slate-700"
+        strokeWidth={stroke}
+      />
+      <circle
+        cx={size / 2}
+        cy={size / 2}
+        r={r}
+        fill="none"
+        stroke={color}
+        strokeWidth={stroke}
+        strokeLinecap="round"
         strokeDasharray={`${filled} ${circ}`}
         style={{ transition: 'stroke-dasharray 0.6s ease' }}
       />
@@ -70,7 +97,9 @@ function Card({ title, subtitle, action, children, noPad }) {
         <div className="px-5 pt-5 pb-4 border-b border-[var(--border)] flex items-start justify-between gap-3 flex-wrap">
           <div>
             <h2 className="text-base font-semibold tracking-tight">{title}</h2>
-            {subtitle && <p className="text-xs text-gray-400 mt-0.5">{subtitle}</p>}
+            {subtitle && (
+              <p className="text-xs text-gray-400 mt-0.5">{subtitle}</p>
+            )}
           </div>
           {action}
         </div>
@@ -82,19 +111,40 @@ function Card({ title, subtitle, action, children, noPad }) {
 
 // ── SVG icons ─────────────────────────────────────────────────────────────────
 const EditIcon = () => (
-  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M12 20h9" /><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L8 18l-4 1 1-4 11.5-11.5z" />
+  <svg
+    width="14"
+    height="14"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <path d="M12 20h9" />
+    <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L8 18l-4 1 1-4 11.5-11.5z" />
   </svg>
 );
 const TrashIcon = () => (
-  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M3 6h18" /><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+  <svg
+    width="14"
+    height="14"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <path d="M3 6h18" />
+    <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
     <path d="M10 11v6M14 11v6M15 6V4a2 2 0 0 0-2-2h-2a2 2 0 0 0-2 2v2" />
   </svg>
 );
 
 // ─────────────────────────────────────────────────────────────────────────────
 export default function SavingPlan() {
+  const { t } = useTranslation();
   const today = new Date();
   const isoToday = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
   const { symbol: cs } = useCurrency();
@@ -103,9 +153,17 @@ export default function SavingPlan() {
   const [categories, setCategories] = useState([]);
   const [plans, setPlans] = useState([]);
   const [selectedPlanId, setSelectedPlanId] = useState('');
-  const [planForm, setPlanForm] = useState({ name: '', targetAmount: '', linkedCategoryId: '' });
+  const [planForm, setPlanForm] = useState({
+    name: '',
+    targetAmount: '',
+    linkedCategoryId: '',
+  });
   const [summary, setSummary] = useState(null);
-  const [contrForm, setContrForm] = useState({ amount: '', date: isoToday, note: '' });
+  const [contrForm, setContrForm] = useState({
+    amount: '',
+    date: isoToday,
+    note: '',
+  });
   const [editingContrId, setEditingContrId] = useState(null);
   const [loading, setLoading] = useState(false);
   const [confirm, setConfirm] = useState({ open: false, id: null });
@@ -116,7 +174,10 @@ export default function SavingPlan() {
 
   const [initialLoad, setInitialLoad] = useState(true);
 
-  const currentPlan = useMemo(() => plans.find(p => String(p.id) === String(selectedPlanId)), [plans, selectedPlanId]);
+  const currentPlan = useMemo(
+    () => plans.find((p) => String(p.id) === String(selectedPlanId)),
+    [plans, selectedPlanId],
+  );
 
   // ── async-parallel: load categories + plans together ─────────────────────
   useEffect(() => {
@@ -131,9 +192,14 @@ export default function SavingPlan() {
         setPlans(p);
         if (p.length > 0) {
           const savedId = getPref('savingPlan.selectedPlanId');
-          const chosen = p.find(x => String(x.id) === String(savedId)) || p[0];
+          const chosen =
+            p.find((x) => String(x.id) === String(savedId)) || p[0];
           setSelectedPlanId(String(chosen.id));
-          setPlanForm({ name: chosen.name || '', targetAmount: String(chosen.targetAmount || ''), linkedCategoryId: String(chosen.linkedCategoryId || '') });
+          setPlanForm({
+            name: chosen.name || '',
+            targetAmount: String(chosen.targetAmount || ''),
+            linkedCategoryId: String(chosen.linkedCategoryId || ''),
+          });
         }
       } catch (err) {
         console.error(err);
@@ -145,24 +211,41 @@ export default function SavingPlan() {
 
   // load summary when plan changes
   useEffect(() => {
-    if (!selectedPlanId) { setSummary(null); return; }
-    api.get(`/savings/plans/${selectedPlanId}/summary`).then(r => setSummary(r.data)).catch(() => { });
+    if (!selectedPlanId) {
+      setSummary(null);
+      return;
+    }
+    api
+      .get(`/savings/plans/${selectedPlanId}/summary`)
+      .then((r) => setSummary(r.data))
+      .catch(() => {});
   }, [selectedPlanId]);
 
   useEffect(() => {
-    if (selectedPlanId) setPref('savingPlan.selectedPlanId', String(selectedPlanId));
+    if (selectedPlanId)
+      setPref('savingPlan.selectedPlanId', String(selectedPlanId));
   }, [selectedPlanId]);
 
   // sync planForm when switching plans
   useEffect(() => {
     if (!currentPlan) return;
-    setPlanForm({ name: currentPlan.name || '', targetAmount: String(currentPlan.targetAmount || ''), linkedCategoryId: String(currentPlan.linkedCategoryId || '') });
+    setPlanForm({
+      name: currentPlan.name || '',
+      targetAmount: String(currentPlan.targetAmount || ''),
+      linkedCategoryId: String(currentPlan.linkedCategoryId || ''),
+    });
   }, [currentPlan]);
 
-
-
-  const onPlanField = useCallback(e => setPlanForm(prev => ({ ...prev, [e.target.name]: e.target.value })), []);
-  const onContrField = useCallback(e => setContrForm(prev => ({ ...prev, [e.target.name]: e.target.value })), []);
+  const onPlanField = useCallback(
+    (e) =>
+      setPlanForm((prev) => ({ ...prev, [e.target.name]: e.target.value })),
+    [],
+  );
+  const onContrField = useCallback(
+    (e) =>
+      setContrForm((prev) => ({ ...prev, [e.target.name]: e.target.value })),
+    [],
+  );
 
   const reloadSummary = useCallback(async () => {
     if (!selectedPlanId) return;
@@ -175,16 +258,24 @@ export default function SavingPlan() {
     e.preventDefault();
     try {
       setLoading(true);
-      const body = { name: planForm.name.trim(), targetAmount: Number(planForm.targetAmount), linkedCategoryId: planForm.linkedCategoryId ? Number(planForm.linkedCategoryId) : null };
+      const body = {
+        name: planForm.name.trim(),
+        targetAmount: Number(planForm.targetAmount),
+        linkedCategoryId: planForm.linkedCategoryId
+          ? Number(planForm.linkedCategoryId)
+          : null,
+      };
       const res = await api.post('/savings/plans', body);
-      setPlans(prev => [res.data, ...prev]);
+      setPlans((prev) => [res.data, ...prev]);
       setSelectedPlanId(String(res.data.id));
       setShowNewPlan(false);
       e.target.reset();
-      toast.success('Plan creado correctamente ✓');
+      toast.success(t('savings.planCreated'));
     } catch (err) {
-      toast.error(err.response?.data?.message || 'Error al crear el plan');
-    } finally { setLoading(false); }
+      toast.error(translateServerError(err, t, 'savings.createFailed'));
+    } finally {
+      setLoading(false);
+    }
   };
 
   const updatePlan = async (e) => {
@@ -192,22 +283,36 @@ export default function SavingPlan() {
     if (!selectedPlanId) return;
     try {
       setLoading(true);
-      const body = { name: planForm.name.trim(), targetAmount: Number(planForm.targetAmount), linkedCategoryId: planForm.linkedCategoryId ? Number(planForm.linkedCategoryId) : null };
+      const body = {
+        name: planForm.name.trim(),
+        targetAmount: Number(planForm.targetAmount),
+        linkedCategoryId: planForm.linkedCategoryId
+          ? Number(planForm.linkedCategoryId)
+          : null,
+      };
       const res = await api.put(`/savings/plans/${selectedPlanId}`, body);
-      setPlans(prev => prev.map(p => String(p.id) === String(selectedPlanId) ? res.data : p));
+      setPlans((prev) =>
+        prev.map((p) =>
+          String(p.id) === String(selectedPlanId) ? res.data : p,
+        ),
+      );
       await reloadSummary();
       e.target.reset();
-      toast.success('Plan actualizado ✓');
+      toast.success(t('savings.planUpdated'));
     } catch (err) {
-      toast.error(err.response?.data?.message || 'Error al actualizar el plan');
-    } finally { setLoading(false); }
+      toast.error(translateServerError(err, t, 'savings.updateFailed'));
+    } finally {
+      setLoading(false);
+    }
   };
 
   const deletePlan = async () => {
     try {
       setConfirmPlan({ open: false });
       await api.delete(`/savings/plans/${selectedPlanId}`);
-      const updatedPlans = plans.filter(p => String(p.id) !== String(selectedPlanId));
+      const updatedPlans = plans.filter(
+        (p) => String(p.id) !== String(selectedPlanId),
+      );
       setPlans(updatedPlans);
       if (updatedPlans.length > 0) {
         setSelectedPlanId(String(updatedPlans[0].id));
@@ -216,9 +321,9 @@ export default function SavingPlan() {
         setPlanForm({ name: '', targetAmount: '', linkedCategoryId: '' });
       }
       setSummary(null);
-      toast.success('Plan eliminado');
+      toast.success(t('savings.planDeleted'));
     } catch {
-      toast.error('No se pudo eliminar el plan');
+      toast.error(t('savings.deletePlanFailed'));
     }
   };
 
@@ -227,14 +332,21 @@ export default function SavingPlan() {
     if (!selectedPlanId) return;
     try {
       setLoading(true);
-      await api.post('/savings/contributions', { planId: Number(selectedPlanId), amount: Number(contrForm.amount), date: contrForm.date, note: contrForm.note?.trim() || null });
+      await api.post('/savings/contributions', {
+        planId: Number(selectedPlanId),
+        amount: Number(contrForm.amount),
+        date: contrForm.date,
+        note: contrForm.note?.trim() || null,
+      });
       setContrForm({ amount: '', date: isoToday, note: '' });
       await reloadSummary();
       e.target.reset();
-      toast.success('Contribución agregada ✓');
+      toast.success(t('savings.contribAdded'));
     } catch (err) {
-      toast.error(err.response?.data?.message || 'Error al agregar contribución');
-    } finally { setLoading(false); }
+      toast.error(translateServerError(err, t, 'savings.addContribFailed'));
+    } finally {
+      setLoading(false);
+    }
   };
 
   const updateContribution = async (e) => {
@@ -242,15 +354,21 @@ export default function SavingPlan() {
     if (!editingContrId) return;
     try {
       setLoading(true);
-      await api.put(`/savings/contributions/${editingContrId}`, { amount: Number(contrForm.amount), date: contrForm.date, note: contrForm.note?.trim() || null });
+      await api.put(`/savings/contributions/${editingContrId}`, {
+        amount: Number(contrForm.amount),
+        date: contrForm.date,
+        note: contrForm.note?.trim() || null,
+      });
       setContrForm({ amount: '', date: isoToday, note: '' });
       setEditingContrId(null);
       await reloadSummary();
       e.target.reset();
-      toast.success('Contribución actualizada ✓');
+      toast.success(t('savings.contribUpdated'));
     } catch (err) {
-      toast.error(err.response?.data?.message || 'Error al actualizar contribución');
-    } finally { setLoading(false); }
+      toast.error(translateServerError(err, t, 'savings.updateContribFailed'));
+    } finally {
+      setLoading(false);
+    }
   };
 
   const deleteContribution = async (id) => {
@@ -258,39 +376,67 @@ export default function SavingPlan() {
       setLoading(true);
       await api.delete(`/savings/contributions/${id}`);
       await reloadSummary();
-      toast.success('Contribución eliminada');
+      toast.success(t('savings.contribDeleted'));
     } catch (err) {
-      toast.error(err.response?.data?.message || 'Error al eliminar');
-    } finally { setLoading(false); setConfirm({ open: false, id: null }); }
+      toast.error(translateServerError(err, t, 'savings.deleteContribFailed'));
+    } finally {
+      setLoading(false);
+      setConfirm({ open: false, id: null });
+    }
   };
 
   // ── Derived ───────────────────────────────────────────────────────────────
-  const progressPct = summary ? Math.min(Math.round(summary.progressPercent), 100) : 0;
+  const progressPct = summary
+    ? Math.min(Math.round(summary.progressPercent), 100)
+    : 0;
   const totalSaved = summary ? summary.totalManual + summary.totalAuto : 0;
 
   const rows = useMemo(() => {
     if (!summary) return [];
-    const manual = (summary.contributions || []).map(c => ({ key: `c-${c.id}`, date: c.date, desc: c.note || 'Contribución manual', amount: c.amount, type: 'manual', c }));
-    const auto = (summary.autoTransactions || []).map(t => ({ key: `t-${t.id}`, date: t.date, desc: t.description, amount: t.amount, type: 'auto', t }));
+    const manual = (summary.contributions || []).map((c) => ({
+      key: `c-${c.id}`,
+      date: c.date,
+      desc: c.note || t('savings.manualContribution'),
+      amount: c.amount,
+      type: 'manual',
+      c,
+    }));
+    const auto = (summary.autoTransactions || []).map((tx) => ({
+      key: `t-${tx.id}`,
+      date: tx.date,
+      desc: tx.description,
+      amount: tx.amount,
+      type: 'auto',
+      t: tx,
+    }));
     return [...manual, ...auto].sort((a, b) => (b.date > a.date ? 1 : -1));
-  }, [summary]);
+  }, [summary, t]);
 
   const totalPages = Math.max(1, Math.ceil(rows.length / pageSize));
   const paginated = rows.slice((page - 1) * pageSize, page * pageSize);
-  useEffect(() => { if (page > totalPages) setPage(totalPages); }, [rows.length, pageSize, totalPages, page]);
+  useEffect(() => {
+    if (page > totalPages) setPage(totalPages);
+  }, [rows.length, pageSize, totalPages, page]);
 
   // ── Render ────────────────────────────────────────────────────────────────
   return (
     <div className="max-w-5xl mx-auto p-4 pb-12 space-y-5">
-
       {/* Confirm dialogs */}
-      <ConfirmDialog open={confirm.open} title="Eliminar contribución" description="Esta acción no se puede deshacer."
-        confirmText="Eliminar" cancelText="Cancelar"
+      <ConfirmDialog
+        open={confirm.open}
+        title={t('savings.deleteContribTitle')}
+        description={t('savings.deleteContribDesc')}
+        confirmText={t('savings.delete')}
+        cancelText={t('savings.cancel')}
         onCancel={() => setConfirm({ open: false, id: null })}
         onConfirm={() => deleteContribution(confirm.id)}
       />
-      <ConfirmDialog open={confirmPlan.open} title="Eliminar plan" description="¿Seguro que deseas eliminar este plan y todas sus contribuciones?"
-        confirmText="Eliminar" cancelText="Cancelar"
+      <ConfirmDialog
+        open={confirmPlan.open}
+        title={t('savings.deletePlanTitle')}
+        description={t('savings.deletePlanDesc')}
+        confirmText={t('savings.delete')}
+        cancelText={t('savings.cancel')}
         onCancel={() => setConfirmPlan({ open: false })}
         onConfirm={deletePlan}
       />
@@ -298,8 +444,12 @@ export default function SavingPlan() {
       {/* ── Page header ──────────────────────────────────────────────────── */}
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Savings Plans</h1>
-          <p className="text-sm text-gray-400 mt-0.5">Track your savings goals and contributions</p>
+          <h1 className="text-2xl font-semibold tracking-tight">
+            {t('savings.title')}
+          </h1>
+          <p className="text-sm text-gray-400 mt-0.5">
+            {t('savings.subtitle')}
+          </p>
         </div>
         <Button
           variant={showNewPlan ? 'outline' : 'secondary'}
@@ -307,7 +457,8 @@ export default function SavingPlan() {
             if (showNewPlan) {
               setShowNewPlan(false);
               const savedId = getPref('savingPlan.selectedPlanId');
-              const chosen = plans.find(x => String(x.id) === String(savedId)) || plans[0];
+              const chosen =
+                plans.find((x) => String(x.id) === String(savedId)) || plans[0];
               if (chosen) setSelectedPlanId(String(chosen.id));
             } else {
               setShowNewPlan(true);
@@ -316,25 +467,51 @@ export default function SavingPlan() {
             }
           }}
         >
-          {showNewPlan ? 'Cancel' : '+ New Plan'}
+          {showNewPlan ? t('savings.cancel') : t('savings.newPlan')}
         </Button>
       </div>
 
       {/* ── New plan form ─────────────────────────────────────────────────── */}
       {showNewPlan && (
-        <Card title="New Savings Plan" subtitle="Define your goal and start saving">
+        <Card
+          title={t('savings.newPlanTitle')}
+          subtitle={t('savings.newPlanSubtitle')}
+        >
           <form onSubmit={createPlan}>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <Field label="Plan Name">
-                <Input name="name" value={planForm.name} onChange={onPlanField} placeholder="e.g. Emergency Fund" required />
+              <Field label={t('savings.planName')}>
+                <Input
+                  name="name"
+                  value={planForm.name}
+                  onChange={onPlanField}
+                  placeholder={t('savings.planNamePlaceholder')}
+                  required
+                />
               </Field>
-              <Field label={`Target Amount (${cs})`}>
-                <Input name="targetAmount" type="number" step="0.01" min="0.01" value={planForm.targetAmount} onChange={onPlanField} placeholder="1000.00" required />
+              <Field label={t('savings.targetAmount', { symbol: cs })}>
+                <Input
+                  name="targetAmount"
+                  type="number"
+                  step="0.01"
+                  min="0.01"
+                  value={planForm.targetAmount}
+                  onChange={onPlanField}
+                  placeholder={t('savings.targetPlaceholder')}
+                  required
+                />
               </Field>
-              <Field label="Linked Category (optional)">
-                <Select value={planForm.linkedCategoryId} onChange={onPlanField} name="linkedCategoryId">
-                  <option value="">No category</option>
-                  {categories.map(c => <option key={c.id} value={String(c.id)}>{c.name}</option>)}
+              <Field label={t('savings.linkedCategory')}>
+                <Select
+                  value={planForm.linkedCategoryId}
+                  onChange={onPlanField}
+                  name="linkedCategoryId"
+                >
+                  <option value="">{t('savings.noCategory')}</option>
+                  {categories.map((c) => (
+                    <option key={c.id} value={String(c.id)}>
+                      {c.name}
+                    </option>
+                  ))}
                 </Select>
               </Field>
             </div>
@@ -344,7 +521,7 @@ export default function SavingPlan() {
                 disabled={loading}
                 className="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-6"
               >
-                {loading ? 'Creating…' : 'Create Plan'}
+                {loading ? t('savings.creating') : t('savings.createPlan')}
               </Button>
             </div>
           </form>
@@ -354,7 +531,7 @@ export default function SavingPlan() {
       {/* ── Plan tabs ─────────────────────────────────────────────────────── */}
       {!initialLoad && plans.length > 0 && (
         <div className="flex gap-2 flex-wrap">
-          {plans.map(p => (
+          {plans.map((p) => (
             <button
               key={p.id}
               type="button"
@@ -366,7 +543,7 @@ export default function SavingPlan() {
                 'px-4 py-2 rounded-xl text-sm font-medium transition-all border',
                 String(p.id) === selectedPlanId
                   ? 'bg-indigo-600 text-white border-indigo-600 shadow-sm'
-                  : 'bg-white dark:bg-slate-900 text-gray-600 dark:text-gray-300 border-[var(--border)] hover:border-indigo-400'
+                  : 'bg-white dark:bg-slate-900 text-gray-600 dark:text-gray-300 border-[var(--border)] hover:border-indigo-400',
               )}
             >
               {p.name}
@@ -379,7 +556,9 @@ export default function SavingPlan() {
       {initialLoad && (
         <div className="flex flex-col items-center justify-center py-32 gap-4">
           <div className="w-8 h-8 rounded-full border-[3px] border-indigo-200 border-t-indigo-600 animate-spin" />
-          <p className="text-sm font-medium text-gray-500 animate-pulse">Cargando planes de ahorro...</p>
+          <p className="text-sm font-medium text-gray-500 animate-pulse">
+            {t('savings.loadingPlans')}
+          </p>
         </div>
       )}
 
@@ -387,9 +566,16 @@ export default function SavingPlan() {
       {!initialLoad && plans.length === 0 && !showNewPlan && (
         <div className="flex flex-col items-center justify-center py-20 gap-3 text-center">
           <span className="text-5xl opacity-40">🎯</span>
-          <h3 className="text-base font-semibold text-gray-600 dark:text-gray-300">No savings plans yet</h3>
-          <p className="text-sm text-gray-400">Create your first plan to start tracking your savings goals.</p>
-          <Button onClick={() => setShowNewPlan(true)} className="mt-2 bg-indigo-600 hover:bg-indigo-700 text-white">+ New Plan</Button>
+          <h3 className="text-base font-semibold text-gray-600 dark:text-gray-300">
+            {t('savings.emptyTitle')}
+          </h3>
+          <p className="text-sm text-gray-400">{t('savings.emptyHint')}</p>
+          <Button
+            onClick={() => setShowNewPlan(true)}
+            className="mt-2 bg-indigo-600 hover:bg-indigo-700 text-white"
+          >
+            {t('savings.newPlan')}
+          </Button>
         </div>
       )}
 
@@ -406,18 +592,29 @@ export default function SavingPlan() {
                 <div className="relative flex-shrink-0">
                   <ProgressRing pct={progressPct} size={130} stroke={11} />
                   <div className="absolute inset-0 flex flex-col items-center justify-center">
-                    <span className="text-2xl font-bold text-gray-900 dark:text-white tabular-nums">{progressPct}%</span>
-                    <span className="text-[11px] text-gray-400 uppercase tracking-widest">saved</span>
+                    <span className="text-2xl font-bold text-gray-900 dark:text-white tabular-nums">
+                      {progressPct}%
+                    </span>
+                    <span className="text-[11px] text-gray-400 uppercase tracking-widest">
+                      {t('savings.saved')}
+                    </span>
                   </div>
                 </div>
 
                 {/* Stats */}
                 <div className="flex-1 space-y-4 w-full">
                   <div>
-                    <h3 className="text-xl font-bold tracking-tight text-gray-900 dark:text-white">{currentPlan.name}</h3>
+                    <h3 className="text-xl font-bold tracking-tight text-gray-900 dark:text-white">
+                      {currentPlan.name}
+                    </h3>
                     {currentPlan.linkedCategoryId && (
                       <span className="inline-flex items-center gap-1 mt-1 text-xs px-2 py-0.5 rounded-full bg-indigo-50 dark:bg-indigo-950/30 text-indigo-700 dark:text-indigo-400 font-medium">
-                        🔗 {categories.find(c => String(c.id) === String(currentPlan.linkedCategoryId))?.name || 'Categoría vinculada'}
+                        🔗{' '}
+                        {categories.find(
+                          (c) =>
+                            String(c.id) ===
+                            String(currentPlan.linkedCategoryId),
+                        )?.name || t('savings.linkedCategoryFallback')}
                       </span>
                     )}
                   </div>
@@ -425,32 +622,81 @@ export default function SavingPlan() {
                   {/* Progress bar */}
                   <div>
                     <div className="flex justify-between text-xs text-gray-400 mb-1.5">
-                      <span className="font-semibold text-gray-700 dark:text-gray-200">{fmt(totalSaved)}</span>
-                      <span>Goal: {fmt(currentPlan.targetAmount)}</span>
+                      <span className="font-semibold text-gray-700 dark:text-gray-200">
+                        {fmt(totalSaved)}
+                      </span>
+                      <span>
+                        {t('savings.goal', {
+                          amount: fmt(currentPlan.targetAmount),
+                        })}
+                      </span>
                     </div>
                     <div className="h-2.5 bg-gray-100 dark:bg-slate-700 rounded-full overflow-hidden">
                       <div
-                        className={cn('h-full rounded-full transition-all duration-700', progressPct >= 100 ? 'bg-emerald-500' : 'bg-indigo-600')}
+                        className={cn(
+                          'h-full rounded-full transition-all duration-700',
+                          progressPct >= 100
+                            ? 'bg-emerald-500'
+                            : 'bg-indigo-600',
+                        )}
                         style={{ width: `${progressPct}%` }}
                       />
                     </div>
                     <div className="flex justify-between mt-1.5 text-xs text-gray-400">
-                      <span>{fmt(summary?.remaining ?? 0)} remaining</span>
-                      {progressPct >= 100 && <span className="text-emerald-600 font-bold">🎉 Goal reached!</span>}
-                      {progressPct >= 90 && progressPct < 100 && <span className="text-amber-500 font-semibold">🔥 Almost there!</span>}
+                      <span>
+                        {t('savings.remaining', {
+                          amount: fmt(summary?.remaining ?? 0),
+                        })}
+                      </span>
+                      {progressPct >= 100 && (
+                        <span className="text-emerald-600 font-bold">
+                          {t('savings.goalReached')}
+                        </span>
+                      )}
+                      {progressPct >= 90 && progressPct < 100 && (
+                        <span className="text-amber-500 font-semibold">
+                          {t('savings.almostThere')}
+                        </span>
+                      )}
                     </div>
                   </div>
 
                   {/* Mini stats row */}
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                     {[
-                      { label: 'Manual', value: fmt(summary?.totalManual ?? 0), color: 'text-indigo-600 dark:text-indigo-400' },
-                      { label: 'Auto', value: fmt(summary?.totalAuto ?? 0), color: 'text-violet-600 dark:text-violet-400' },
-                      { label: 'Contributions', value: (summary?.contributions?.length ?? 0) + (summary?.autoTransactions?.length ?? 0), color: 'text-gray-700 dark:text-gray-200' },
-                    ].map(s => (
-                      <div key={s.label} className="bg-gray-50 dark:bg-slate-800/60 rounded-xl px-3 py-2">
-                        <p className={cn('text-base font-bold tabular-nums', s.color)}>{s.value}</p>
-                        <p className="text-[11px] text-gray-400 uppercase tracking-widest">{s.label}</p>
+                      {
+                        label: t('savings.manual'),
+                        value: fmt(summary?.totalManual ?? 0),
+                        color: 'text-indigo-600 dark:text-indigo-400',
+                      },
+                      {
+                        label: t('savings.auto'),
+                        value: fmt(summary?.totalAuto ?? 0),
+                        color: 'text-violet-600 dark:text-violet-400',
+                      },
+                      {
+                        label: t('savings.contributions'),
+                        value:
+                          (summary?.contributions?.length ?? 0) +
+                          (summary?.autoTransactions?.length ?? 0),
+                        color: 'text-gray-700 dark:text-gray-200',
+                      },
+                    ].map((s) => (
+                      <div
+                        key={s.label}
+                        className="bg-gray-50 dark:bg-slate-800/60 rounded-xl px-3 py-2"
+                      >
+                        <p
+                          className={cn(
+                            'text-base font-bold tabular-nums',
+                            s.color,
+                          )}
+                        >
+                          {s.value}
+                        </p>
+                        <p className="text-[11px] text-gray-400 uppercase tracking-widest">
+                          {s.label}
+                        </p>
                       </div>
                     ))}
                   </div>
@@ -461,20 +707,45 @@ export default function SavingPlan() {
 
           {/* ── Edit plan + contribute (two columns on md+) ─────────────── */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-
             {/* Edit plan */}
-            <Card title="Edit Plan" subtitle="Update goal or linked category">
+            <Card
+              title={t('savings.editPlanTitle')}
+              subtitle={t('savings.editPlanSubtitle')}
+            >
               <form onSubmit={updatePlan} className="space-y-4">
-                <Field label="Plan Name">
-                  <Input name="name" value={planForm.name} onChange={onPlanField} placeholder="Plan name" required />
+                <Field label={t('savings.planName')}>
+                  <Input
+                    name="name"
+                    value={planForm.name}
+                    onChange={onPlanField}
+                    placeholder={t('savings.planNameShort')}
+                    required
+                  />
                 </Field>
-                <Field label={`Target Amount (${cs})`}>
-                  <Input name="targetAmount" type="number" step="0.01" min="0.01" value={planForm.targetAmount} onChange={onPlanField} placeholder="0.00" required />
+                <Field label={t('savings.targetAmount', { symbol: cs })}>
+                  <Input
+                    name="targetAmount"
+                    type="number"
+                    step="0.01"
+                    min="0.01"
+                    value={planForm.targetAmount}
+                    onChange={onPlanField}
+                    placeholder="0.00"
+                    required
+                  />
                 </Field>
-                <Field label="Linked Category (optional)">
-                  <Select value={planForm.linkedCategoryId} onChange={onPlanField} name="linkedCategoryId">
-                    <option value="">No category</option>
-                    {categories.map(c => <option key={c.id} value={String(c.id)}>{c.name}</option>)}
+                <Field label={t('savings.linkedCategory')}>
+                  <Select
+                    value={planForm.linkedCategoryId}
+                    onChange={onPlanField}
+                    name="linkedCategoryId"
+                  >
+                    <option value="">{t('savings.noCategory')}</option>
+                    {categories.map((c) => (
+                      <option key={c.id} value={String(c.id)}>
+                        {c.name}
+                      </option>
+                    ))}
                   </Select>
                 </Field>
                 <div className="flex gap-2 pt-1">
@@ -483,7 +754,7 @@ export default function SavingPlan() {
                     disabled={loading}
                     className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold"
                   >
-                    {loading ? 'Saving…' : 'Save Changes'}
+                    {loading ? t('savings.saving') : t('savings.saveChanges')}
                   </Button>
                   <Button
                     type="button"
@@ -491,7 +762,7 @@ export default function SavingPlan() {
                     onClick={() => setConfirmPlan({ open: true })}
                     className="px-4"
                   >
-                    Delete
+                    {t('savings.delete')}
                   </Button>
                 </div>
               </form>
@@ -499,37 +770,86 @@ export default function SavingPlan() {
 
             {/* Add/edit contribution */}
             <Card
-              title={editingContrId ? 'Edit Contribution' : 'Add Contribution'}
-              subtitle={editingContrId ? 'Modify the selected contribution' : 'Record a new savings deposit'}
+              title={
+                editingContrId
+                  ? t('savings.editContribTitle')
+                  : t('savings.addContribTitle')
+              }
+              subtitle={
+                editingContrId
+                  ? t('savings.editContribSubtitle')
+                  : t('savings.addContribSubtitle')
+              }
             >
-              <form onSubmit={editingContrId ? updateContribution : addContribution} className="space-y-4">
-                <Field label={`Amount (${cs})`}>
-                  <Input name="amount" type="number" step="0.01" min="0.01" value={contrForm.amount} onChange={onContrField} placeholder="0.00" required />
-                </Field>
-                <Field label="Date">
-                  <DateInput
-                    value={contrForm.date}
-                    onChange={e => setContrForm(v => ({ ...v, date: e.target.value }))}
+              <form
+                onSubmit={editingContrId ? updateContribution : addContribution}
+                className="space-y-4"
+              >
+                <Field label={t('savings.amount', { symbol: cs })}>
+                  <Input
+                    name="amount"
+                    type="number"
+                    step="0.01"
+                    min="0.01"
+                    value={contrForm.amount}
+                    onChange={onContrField}
+                    placeholder="0.00"
                     required
-                    placeholder="Pick a date"
                   />
                 </Field>
-                <Field label="Note (optional)">
-                  <Input name="note" value={contrForm.note} onChange={onContrField} placeholder="e.g. Monthly deposit" />
+                <Field label={t('savings.date')}>
+                  <DateInput
+                    value={contrForm.date}
+                    onChange={(e) =>
+                      setContrForm((v) => ({ ...v, date: e.target.value }))
+                    }
+                    required
+                    placeholder={t('savings.pickDate')}
+                  />
+                </Field>
+                <Field label={t('savings.note')}>
+                  <Input
+                    name="note"
+                    value={contrForm.note}
+                    onChange={onContrField}
+                    placeholder={t('savings.notePlaceholder')}
+                  />
                 </Field>
                 <div className="flex gap-2 pt-1">
                   {editingContrId ? (
                     <>
-                      <Button type="submit" disabled={loading} className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold">
-                        {loading ? 'Updating…' : 'Update'}
+                      <Button
+                        type="submit"
+                        disabled={loading}
+                        className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold"
+                      >
+                        {loading ? t('savings.updating') : t('savings.update')}
                       </Button>
-                      <Button type="button" variant="outline" onClick={() => { setContrForm({ amount: '', date: isoToday, note: '' }); setEditingContrId(null); }} className="px-4">
-                        Cancel
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => {
+                          setContrForm({
+                            amount: '',
+                            date: isoToday,
+                            note: '',
+                          });
+                          setEditingContrId(null);
+                        }}
+                        className="px-4"
+                      >
+                        {t('savings.cancel')}
                       </Button>
                     </>
                   ) : (
-                    <Button type="submit" disabled={loading} className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold">
-                      {loading ? 'Adding…' : '+ Add Contribution'}
+                    <Button
+                      type="submit"
+                      disabled={loading}
+                      className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold"
+                    >
+                      {loading
+                        ? t('savings.adding')
+                        : t('savings.addContribution')}
                     </Button>
                   )}
                 </div>
@@ -542,17 +862,27 @@ export default function SavingPlan() {
             <section className="bg-white dark:bg-slate-900 rounded-2xl border border-[var(--border)] shadow-sm overflow-hidden">
               <div className="px-5 pt-5 pb-4 border-b border-[var(--border)] flex items-center justify-between flex-wrap gap-3">
                 <div>
-                  <h2 className="text-base font-semibold tracking-tight">Contribution History</h2>
-                  <p className="text-xs text-gray-400 mt-0.5">{rows.length} record{rows.length !== 1 ? 's' : ''}</p>
+                  <h2 className="text-base font-semibold tracking-tight">
+                    {t('savings.historyTitle')}
+                  </h2>
+                  <p className="text-xs text-gray-400 mt-0.5">
+                    {t('savings.records', { count: rows.length })}
+                  </p>
                 </div>
                 <div className="flex items-center gap-2 text-xs">
-                  <span className="text-gray-400">Show</span>
-                  <Select value={String(pageSize)} onChange={e => { setPageSize(Number(e.target.value)); setPage(1); }}>
+                  <span className="text-gray-400">{t('savings.show')}</span>
+                  <Select
+                    value={String(pageSize)}
+                    onChange={(e) => {
+                      setPageSize(Number(e.target.value));
+                      setPage(1);
+                    }}
+                  >
                     <option value="5">5</option>
                     <option value="10">10</option>
                     <option value="20">20</option>
                   </Select>
-                  <span className="text-gray-400">per page</span>
+                  <span className="text-gray-400">{t('savings.perPage')}</span>
                 </div>
               </div>
 
@@ -560,32 +890,62 @@ export default function SavingPlan() {
                 {rows.length === 0 ? (
                   <div className="flex flex-col items-center justify-center py-14 gap-2 text-center">
                     <span className="text-3xl opacity-30">📭</span>
-                    <p className="text-sm text-gray-400">No contributions yet.</p>
-                    <p className="text-xs text-gray-300 dark:text-gray-600">Use the form above to record your first deposit.</p>
+                    <p className="text-sm text-gray-400">
+                      {t('savings.noContributions')}
+                    </p>
+                    <p className="text-xs text-gray-300 dark:text-gray-600">
+                      {t('savings.noContributionsHint')}
+                    </p>
                   </div>
                 ) : (
                   <table className="min-w-[560px] w-full text-sm">
                     <thead>
                       <tr className="bg-gray-50 dark:bg-slate-800/50 border-b border-[var(--border)]">
-                        {['Date', 'Description', 'Type', 'Amount', ''].map((h, i) => (
-                          <th key={i} className={cn('px-4 py-2.5 text-left text-[11px] font-bold uppercase tracking-widest text-gray-400', i === 4 && 'text-right')}>
+                        {[
+                          t('savings.colDate'),
+                          t('savings.colDescription'),
+                          t('savings.colType'),
+                          t('savings.colAmount'),
+                          '',
+                        ].map((h, i) => (
+                          <th
+                            key={i}
+                            className={cn(
+                              'px-4 py-2.5 text-left text-[11px] font-bold uppercase tracking-widest text-gray-400',
+                              i === 4 && 'text-right',
+                            )}
+                          >
                             {h}
                           </th>
                         ))}
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-[var(--border)]">
-                      {paginated.map(r => (
-                        <tr key={r.key} className="group hover:bg-gray-50/60 dark:hover:bg-slate-800/30 transition-colors">
-                          <td className="px-4 py-3 whitespace-nowrap text-xs text-gray-500 dark:text-gray-400 tabular-nums">{r.date}</td>
+                      {paginated.map((r) => (
+                        <tr
+                          key={r.key}
+                          className="group hover:bg-gray-50/60 dark:hover:bg-slate-800/30 transition-colors"
+                        >
+                          <td className="px-4 py-3 whitespace-nowrap text-xs text-gray-500 dark:text-gray-400 tabular-nums">
+                            {r.date}
+                          </td>
                           <td className="px-4 py-3 max-w-[200px]">
-                            <span className="truncate block font-medium text-gray-800 dark:text-gray-100" title={r.desc}>{r.desc}</span>
+                            <span
+                              className="truncate block font-medium text-gray-800 dark:text-gray-100"
+                              title={r.desc}
+                            >
+                              {r.desc}
+                            </span>
                           </td>
                           <td className="px-4 py-3 whitespace-nowrap">
                             {r.type === 'auto' ? (
-                              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-violet-100 text-violet-700 dark:bg-violet-950/40 dark:text-violet-400">Auto</span>
+                              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-violet-100 text-violet-700 dark:bg-violet-950/40 dark:text-violet-400">
+                                {t('savings.auto')}
+                              </span>
                             ) : (
-                              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-indigo-100 text-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-400">Manual</span>
+                              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-indigo-100 text-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-400">
+                                {t('savings.manual')}
+                              </span>
                             )}
                           </td>
                           <td className="px-4 py-3 whitespace-nowrap font-semibold tabular-nums text-emerald-600 dark:text-emerald-400">
@@ -595,17 +955,32 @@ export default function SavingPlan() {
                             {r.type === 'manual' ? (
                               <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                                 <IconButton
-                                  onClick={() => { setEditingContrId(r.c.id); setContrForm({ amount: String(r.c.amount), date: r.c.date, note: r.c.note || '' }); }}
-                                  title="Edit contribution"
+                                  onClick={() => {
+                                    setEditingContrId(r.c.id);
+                                    setContrForm({
+                                      amount: String(r.c.amount),
+                                      date: r.c.date,
+                                      note: r.c.note || '',
+                                    });
+                                  }}
+                                  title={t('savings.editContribution')}
                                 >
                                   <EditIcon />
                                 </IconButton>
-                                <IconButton onClick={() => setConfirm({ open: true, id: r.c.id })} title="Delete contribution" danger>
+                                <IconButton
+                                  onClick={() =>
+                                    setConfirm({ open: true, id: r.c.id })
+                                  }
+                                  title={t('savings.deleteContribution')}
+                                  danger
+                                >
                                   <TrashIcon />
                                 </IconButton>
                               </div>
                             ) : (
-                              <span className="text-gray-300 dark:text-gray-600 text-xs">—</span>
+                              <span className="text-gray-300 dark:text-gray-600 text-xs">
+                                —
+                              </span>
                             )}
                           </td>
                         </tr>
@@ -617,21 +992,25 @@ export default function SavingPlan() {
 
               {rows.length > 0 && (
                 <div className="px-5 py-3 border-t border-[var(--border)] flex items-center justify-between flex-wrap gap-3">
-                  <span className="text-xs text-gray-400">Page {page} of {totalPages}</span>
+                  <span className="text-xs text-gray-400">
+                    {t('savings.page', { page, total: totalPages })}
+                  </span>
                   <div className="flex gap-1">
                     <button
-                      onClick={() => setPage(p => Math.max(1, p - 1))}
+                      onClick={() => setPage((p) => Math.max(1, p - 1))}
                       disabled={page <= 1}
                       className="px-3 py-1.5 text-xs rounded-lg border border-[var(--border)] text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-800 disabled:opacity-40 font-medium"
                     >
-                      ← Prev
+                      {t('savings.prev')}
                     </button>
                     <button
-                      onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                      onClick={() =>
+                        setPage((p) => Math.min(totalPages, p + 1))
+                      }
                       disabled={page >= totalPages}
                       className="px-3 py-1.5 text-xs rounded-lg border border-[var(--border)] text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-800 disabled:opacity-40 font-medium"
                     >
-                      Next →
+                      {t('savings.next')}
                     </button>
                   </div>
                 </div>

@@ -6,7 +6,11 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import ResetPassword from './pages/ResetPassword';
 import Dashboard from './pages/Dashboard';
-import Settings from './pages/Settings';
+import SettingsLayout from './pages/settings/SettingsLayout';
+import SettingsCurrency from './pages/settings/SettingsCurrency';
+import SettingsAccounts from './pages/settings/SettingsAccounts';
+import SettingsCategories from './pages/settings/SettingsCategories';
+import SettingsCards from './pages/settings/SettingsCards';
 import SavingPlan from './pages/SavingPlan';
 import Accounts from './pages/Accounts';
 import Profile from './pages/Profile';
@@ -19,6 +23,7 @@ import VerifyEmail from './pages/VerifyEmail';
 import useTheme from './hooks/useTheme';
 import { Toaster } from './components/ui/sonner';
 import { CurrencyProvider } from './context/CurrencyContext';
+import { LanguageProvider } from './context/LanguageContext';
 import { isTokenExpired, clearSession } from './utils/session';
 import { currentUserId } from './utils/userStorage';
 
@@ -52,7 +57,12 @@ function SuperAdminRoute({ children }) {
 
 export default function App() {
   const location = useLocation();
-  const hideNavbar = ['/login', '/register', '/reset-password', '/verify-email'].some(path => location.pathname.startsWith(path));
+  const hideNavbar = [
+    '/login',
+    '/register',
+    '/reset-password',
+    '/verify-email',
+  ].some((path) => location.pathname.startsWith(path));
   const { theme, toggleTheme } = useTheme();
 
   // Re-key the CurrencyProvider by the authenticated identity. App re-renders on
@@ -69,34 +79,132 @@ export default function App() {
   return (
     <>
       <CurrencyProvider key={authUserId}>
-      <div className="min-h-screen bg-[var(--background)] text-[var(--foreground)]">
-        {!hideNavbar && <Navbar theme={theme} onToggleTheme={toggleTheme} />}
-        <div className="max-w-6xl mx-auto px-4 py-6">
-          <ErrorBoundary key={location.pathname}>
-            <Routes>
-              <Route path="/login" element={<Login />} />
-              <Route path="/register" element={<Register />} />
-              <Route path="/reset-password" element={<ResetPassword />} />
-              <Route path="/verify-email/:token" element={<VerifyEmail />} />
-              <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-              <Route path="/transactions" element={<Navigate to="/transactions/add" replace />} />
-              <Route path="/transactions/budget" element={<ProtectedRoute><Budget /></ProtectedRoute>} />
-              <Route path="/transactions/add" element={<ProtectedRoute><AddTransaction /></ProtectedRoute>} />
-              <Route path="/saving-plan" element={<Navigate to="/plans/savings" replace />} />
-              <Route path="/plans" element={<Navigate to="/plans/savings" replace />} />
-              <Route path="/plans/savings" element={<ProtectedRoute><SavingPlan /></ProtectedRoute>} />
-              <Route path="/plans/accounts" element={<ProtectedRoute><Accounts /></ProtectedRoute>} />
-              <Route path="/plans/scheduled-payments" element={<ProtectedRoute><ScheduledPayments /></ProtectedRoute>} />
-              <Route path="/graphics" element={<Navigate to="/graphics/categories" replace />} />
-              <Route path="/graphics/categories" element={<ProtectedRoute><GraphicsByCategories /></ProtectedRoute>} />
-              <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
-              <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
-              <Route path="/admin/users" element={<SuperAdminRoute><UserManager /></SuperAdminRoute>} />
-              <Route path="*" element={<Navigate to="/" replace />} />
-            </Routes>
-          </ErrorBoundary>
-        </div>
-      </div>
+        <LanguageProvider>
+          <div className="min-h-screen bg-[var(--background)] text-[var(--foreground)]">
+            {!hideNavbar && (
+              <Navbar theme={theme} onToggleTheme={toggleTheme} />
+            )}
+            <div className="max-w-6xl mx-auto px-4 py-6">
+              <ErrorBoundary key={location.pathname}>
+                <Routes>
+                  <Route path="/login" element={<Login />} />
+                  <Route path="/register" element={<Register />} />
+                  <Route path="/reset-password" element={<ResetPassword />} />
+                  <Route
+                    path="/verify-email/:token"
+                    element={<VerifyEmail />}
+                  />
+                  <Route
+                    path="/"
+                    element={
+                      <ProtectedRoute>
+                        <Dashboard />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/transactions"
+                    element={<Navigate to="/transactions/add" replace />}
+                  />
+                  <Route
+                    path="/transactions/budget"
+                    element={
+                      <ProtectedRoute>
+                        <Budget />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/transactions/add"
+                    element={
+                      <ProtectedRoute>
+                        <AddTransaction />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/saving-plan"
+                    element={<Navigate to="/plans/savings" replace />}
+                  />
+                  <Route
+                    path="/plans"
+                    element={<Navigate to="/plans/savings" replace />}
+                  />
+                  <Route
+                    path="/plans/savings"
+                    element={
+                      <ProtectedRoute>
+                        <SavingPlan />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/plans/accounts"
+                    element={
+                      <ProtectedRoute>
+                        <Accounts />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/plans/scheduled-payments"
+                    element={
+                      <ProtectedRoute>
+                        <ScheduledPayments />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/graphics"
+                    element={<Navigate to="/graphics/categories" replace />}
+                  />
+                  <Route
+                    path="/graphics/categories"
+                    element={
+                      <ProtectedRoute>
+                        <GraphicsByCategories />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/profile"
+                    element={
+                      <ProtectedRoute>
+                        <Profile />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/settings"
+                    element={
+                      <ProtectedRoute>
+                        <SettingsLayout />
+                      </ProtectedRoute>
+                    }
+                  >
+                    <Route
+                      index
+                      element={<Navigate to="/settings/currency" replace />}
+                    />
+                    <Route path="currency" element={<SettingsCurrency />} />
+                    <Route path="accounts" element={<SettingsAccounts />} />
+                    <Route path="categories" element={<SettingsCategories />} />
+                    <Route path="cards" element={<SettingsCards />} />
+                  </Route>
+                  <Route
+                    path="/admin/users"
+                    element={
+                      <SuperAdminRoute>
+                        <UserManager />
+                      </SuperAdminRoute>
+                    }
+                  />
+                  <Route path="*" element={<Navigate to="/" replace />} />
+                </Routes>
+              </ErrorBoundary>
+            </div>
+          </div>
+        </LanguageProvider>
       </CurrencyProvider>
       <Toaster />
     </>

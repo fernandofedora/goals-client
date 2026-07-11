@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import api from '../api';
 import Input from '../components/ui/input';
 import Button from '../components/ui/button';
@@ -24,7 +25,7 @@ function IconButton({ onClick, title, danger, children }) {
         'inline-flex items-center justify-center w-8 h-8 rounded-lg transition-colors flex-shrink-0',
         danger
           ? 'text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/40'
-          : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-slate-700'
+          : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-slate-700',
       )}
     >
       {children}
@@ -33,14 +34,19 @@ function IconButton({ onClick, title, danger, children }) {
 }
 
 function Badge({ type }) {
+  const { t } = useTranslation();
   return (
-    <span className={cn(
-      'inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider',
-      type === 'expense'
-        ? 'bg-rose-100 text-rose-600 dark:bg-rose-950/50 dark:text-rose-400'
-        : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-400'
-    )}>
-      {type}
+    <span
+      className={cn(
+        'inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider',
+        type === 'expense'
+          ? 'bg-rose-100 text-rose-600 dark:bg-rose-950/50 dark:text-rose-400'
+          : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-400',
+      )}
+    >
+      {type === 'expense'
+        ? t('transactions.expense')
+        : t('transactions.income')}
     </span>
   );
 }
@@ -50,6 +56,7 @@ const ACCOUNT_CARD = 'card';
 const ACCOUNT_BANK = 'bank';
 
 export default function Accounts() {
+  const { t } = useTranslation();
   // ── Data ─────────────────────────────────────────────────────────────────
   const [cards, setCards] = useState([]);
   const [bankAccounts, setBankAccounts] = useState([]);
@@ -57,16 +64,34 @@ export default function Accounts() {
   const { symbol: cs } = useCurrency();
 
   // ── Hidden cards & bank accounts (persisted locally) ──────────────────────
-  const [hiddenCardIds, setHiddenCardIds] = useState(() => getPrefJSON('accounts.hiddenCardIds', []));
-  const [hiddenBankIds, setHiddenBankIds] = useState(() => getPrefJSON('accounts.hiddenBankIds', []));
+  const [hiddenCardIds, setHiddenCardIds] = useState(() =>
+    getPrefJSON('accounts.hiddenCardIds', []),
+  );
+  const [hiddenBankIds, setHiddenBankIds] = useState(() =>
+    getPrefJSON('accounts.hiddenBankIds', []),
+  );
 
   // ── Selected account (unified: {kind, id}) ────────────────────────────────
-  const [selectedItem, setSelectedItem] = useState(() => getPrefJSON('accounts.selectedItem', null));
+  const [selectedItem, setSelectedItem] = useState(() =>
+    getPrefJSON('accounts.selectedItem', null),
+  );
 
-  const visibleCards = useMemo(() => cards.filter(c => !hiddenCardIds.includes(c.id)), [cards, hiddenCardIds]);
-  const hiddenCards = useMemo(() => cards.filter(c => hiddenCardIds.includes(c.id)), [cards, hiddenCardIds]);
-  const visibleBankAccounts = useMemo(() => bankAccounts.filter(a => !hiddenBankIds.includes(a.id)), [bankAccounts, hiddenBankIds]);
-  const hiddenBankAccounts = useMemo(() => bankAccounts.filter(a => hiddenBankIds.includes(a.id)), [bankAccounts, hiddenBankIds]);
+  const visibleCards = useMemo(
+    () => cards.filter((c) => !hiddenCardIds.includes(c.id)),
+    [cards, hiddenCardIds],
+  );
+  const hiddenCards = useMemo(
+    () => cards.filter((c) => hiddenCardIds.includes(c.id)),
+    [cards, hiddenCardIds],
+  );
+  const visibleBankAccounts = useMemo(
+    () => bankAccounts.filter((a) => !hiddenBankIds.includes(a.id)),
+    [bankAccounts, hiddenBankIds],
+  );
+  const hiddenBankAccounts = useMemo(
+    () => bankAccounts.filter((a) => hiddenBankIds.includes(a.id)),
+    [bankAccounts, hiddenBankIds],
+  );
 
   useEffect(() => {
     setPrefJSON('accounts.hiddenCardIds', hiddenCardIds);
@@ -88,7 +113,13 @@ export default function Accounts() {
 
   // ── Add-transaction form ──────────────────────────────────────────────────
   const [txMode, setTxMode] = useState('expense');
-  const [txForm, setTxForm] = useState({ description: '', amount: '', date: new Date().toISOString().slice(0, 10), categoryId: '', paymentMethod: 'cash' });
+  const [txForm, setTxForm] = useState({
+    description: '',
+    amount: '',
+    date: new Date().toISOString().slice(0, 10),
+    categoryId: '',
+    paymentMethod: 'cash',
+  });
   const [addError, setAddError] = useState('');
 
   // ── Add Account panel ─────────────────────────────────────────────────────
@@ -97,14 +128,31 @@ export default function Accounts() {
   const [addTab, setAddTab] = useState('newCard');
 
   // New card form
-  const [cardForm, setCardForm] = useState({ name: '', color: '#0ea5e9', last4: '' });
+  const [cardForm, setCardForm] = useState({
+    name: '',
+    color: '#0ea5e9',
+    last4: '',
+  });
   const [editingCardId, setEditingCardId] = useState(null);
-  const [editCardForm, setEditCardForm] = useState({ name: '', color: '#0ea5e9', last4: '' });
+  const [editCardForm, setEditCardForm] = useState({
+    name: '',
+    color: '#0ea5e9',
+    last4: '',
+  });
 
   // New bank account form
-  const [bankForm, setBankForm] = useState({ name: '', color: '#10b981', initialBalance: '', isExcludedFromTotals: false });
+  const [bankForm, setBankForm] = useState({
+    name: '',
+    color: '#10b981',
+    initialBalance: '',
+    isExcludedFromTotals: false,
+  });
   const [editingBankId, setEditingBankId] = useState(null);
-  const [editBankForm, setEditBankForm] = useState({ name: '', color: '#10b981', isExcludedFromTotals: false });
+  const [editBankForm, setEditBankForm] = useState({
+    name: '',
+    color: '#10b981',
+    isExcludedFromTotals: false,
+  });
 
   // Link existing
   const [cardToLink, setCardToLink] = useState('');
@@ -112,17 +160,32 @@ export default function Accounts() {
 
   // ── Edit transaction dialog ───────────────────────────────────────────────
   const [editingTxId, setEditingTxId] = useState(null);
-  const [editTxData, setEditTxData] = useState({ type: 'expense', description: '', categoryId: '', amount: '', date: '', paymentMethod: 'cash' });
+  const [editTxData, setEditTxData] = useState({
+    type: 'expense',
+    description: '',
+    categoryId: '',
+    amount: '',
+    date: '',
+    paymentMethod: 'cash',
+  });
   const [editOpen, setEditOpen] = useState(false);
   const [editError, setEditError] = useState('');
 
-  const expenseCats = useMemo(() => categories.filter(c => c.type === 'expense'), [categories]);
-  const incomeCats = useMemo(() => categories.filter(c => c.type === 'income'), [categories]);
+  const expenseCats = useMemo(
+    () => categories.filter((c) => c.type === 'expense'),
+    [categories],
+  );
+  const incomeCats = useMemo(
+    () => categories.filter((c) => c.type === 'income'),
+    [categories],
+  );
 
   // ── Load ──────────────────────────────────────────────────────────────────
   const loadBase = useCallback(async () => {
     const [cardsRes, catsRes, accRes] = await Promise.all([
-      api.get('/cards'), api.get('/categories'), api.get('/accounts')
+      api.get('/cards'),
+      api.get('/categories'),
+      api.get('/accounts'),
     ]);
     setCards(cardsRes.data);
     setCategories(catsRes.data);
@@ -131,8 +194,10 @@ export default function Accounts() {
     // Auto-select first visible item if nothing selected
     const currentHidden = getPrefJSON('accounts.hiddenCardIds', []);
     const currentHiddenBanks = getPrefJSON('accounts.hiddenBankIds', []);
-    const visible = cardsRes.data.filter(c => !currentHidden.includes(c.id));
-    const visibleBanks = accRes.data.filter(a => !currentHiddenBanks.includes(a.id));
+    const visible = cardsRes.data.filter((c) => !currentHidden.includes(c.id));
+    const visibleBanks = accRes.data.filter(
+      (a) => !currentHiddenBanks.includes(a.id),
+    );
     const current = getPrefJSON('accounts.selectedItem', null);
 
     if (!current) {
@@ -147,32 +212,51 @@ export default function Accounts() {
   }, []);
 
   const loadTransactionsPage = useCallback(async (item, page, limit) => {
-    if (!item) { setTxItems([]); setTxTotal(0); return; }
-    const params = item.kind === ACCOUNT_CARD
-      ? { cardId: item.id, page, limit }
-      : { accountId: item.id, page, limit };
+    if (!item) {
+      setTxItems([]);
+      setTxTotal(0);
+      return;
+    }
+    const params =
+      item.kind === ACCOUNT_CARD
+        ? { cardId: item.id, page, limit }
+        : { accountId: item.id, page, limit };
     const res = await api.get('/transactions', { params });
     setTxItems(res.data.items || []);
     setTxTotal(res.data.total || 0);
   }, []);
 
   const loadSummary = useCallback(async (item) => {
-    if (!item) { setSummary({ income: 0, expense: 0 }); return; }
-    const params = item.kind === ACCOUNT_CARD
-      ? { cardId: item.id }
-      : { accountId: item.id };
+    if (!item) {
+      setSummary({ income: 0, expense: 0 });
+      return;
+    }
+    const params =
+      item.kind === ACCOUNT_CARD ? { cardId: item.id } : { accountId: item.id };
     const res = await api.get('/transactions', { params });
-    const items = Array.isArray(res.data) ? res.data : (res.data.items || []);
-    const income = items.filter(i => i.type === 'income').reduce((a, b) => a + Number(b.amount), 0);
-    const expense = items.filter(i => i.type === 'expense').reduce((a, b) => a + Number(b.amount), 0);
+    const items = Array.isArray(res.data) ? res.data : res.data.items || [];
+    const income = items
+      .filter((i) => i.type === 'income')
+      .reduce((a, b) => a + Number(b.amount), 0);
+    const expense = items
+      .filter((i) => i.type === 'expense')
+      .reduce((a, b) => a + Number(b.amount), 0);
     setSummary({ income, expense });
   }, []);
 
-  useEffect(() => { loadBase(); }, [loadBase]);
+  useEffect(() => {
+    loadBase();
+  }, [loadBase]);
 
   useEffect(() => {
     setTxPage(1);
-    setTxForm({ description: '', amount: '', date: new Date().toISOString().slice(0, 10), categoryId: '', paymentMethod: 'cash' });
+    setTxForm({
+      description: '',
+      amount: '',
+      date: new Date().toISOString().slice(0, 10),
+      categoryId: '',
+      paymentMethod: 'cash',
+    });
     loadTransactionsPage(selectedItem, 1, txLimit);
     loadSummary(selectedItem);
   }, [selectedItem]);
@@ -191,8 +275,10 @@ export default function Accounts() {
       setCardForm({ name: '', color: '#0ea5e9', last4: '' });
       setShowAddPanel(false);
       await loadBase();
-      toast.success('Tarjeta agregada');
-    } catch { toast.error('No se pudo agregar la tarjeta'); }
+      toast.success(t('accountsPage.cardAdded'));
+    } catch {
+      toast.error(t('accountsPage.cardAddFailed'));
+    }
   };
 
   const saveEditCard = async (id) => {
@@ -202,24 +288,31 @@ export default function Accounts() {
       loadBase();
       loadTransactionsPage(selectedItem, txPage, txLimit);
       loadSummary(selectedItem);
-      toast.success('Tarjeta actualizada');
-    } catch { toast.error('No se pudo actualizar la tarjeta'); }
+      toast.success(t('accountsPage.cardUpdated'));
+    } catch {
+      toast.error(t('accountsPage.cardUpdateFailed'));
+    }
   };
 
   const hideCard = (id) => {
-    if (!confirm('Remove from this list? (Data is preserved)')) return;
-    setHiddenCardIds(prev => [...prev, id]);
+    if (!confirm(t('accountsPage.confirmHideCard'))) return;
+    setHiddenCardIds((prev) => [...prev, id]);
     if (selectedItem?.kind === ACCOUNT_CARD && selectedItem?.id === id) {
-      const remaining = visibleCards.filter(c => c.id !== id);
-      const next = remaining[0] ? { kind: ACCOUNT_CARD, id: remaining[0].id }
-        : visibleBankAccounts[0] ? { kind: ACCOUNT_BANK, id: visibleBankAccounts[0].id } : null;
+      const remaining = visibleCards.filter((c) => c.id !== id);
+      const next = remaining[0]
+        ? { kind: ACCOUNT_CARD, id: remaining[0].id }
+        : visibleBankAccounts[0]
+          ? { kind: ACCOUNT_BANK, id: visibleBankAccounts[0].id }
+          : null;
       setSelectedItem(next);
     }
   };
 
   const linkCard = () => {
     if (!cardToLink) return;
-    setHiddenCardIds(prev => prev.filter(hid => hid !== parseInt(cardToLink, 10)));
+    setHiddenCardIds((prev) =>
+      prev.filter((hid) => hid !== parseInt(cardToLink, 10)),
+    );
     setCardToLink('');
     setShowAddPanel(false);
   };
@@ -234,12 +327,19 @@ export default function Accounts() {
         initialBalance: parseFloat(bankForm.initialBalance || '0'),
         isExcludedFromTotals: bankForm.isExcludedFromTotals,
       });
-      setBankForm({ name: '', color: '#10b981', initialBalance: '', isExcludedFromTotals: false });
+      setBankForm({
+        name: '',
+        color: '#10b981',
+        initialBalance: '',
+        isExcludedFromTotals: false,
+      });
       setShowAddPanel(false);
       await loadBase();
       setSelectedItem({ kind: ACCOUNT_BANK, id: res.data.id });
-      toast.success('Cuenta agregada');
-    } catch { toast.error('No se pudo agregar la cuenta'); }
+      toast.success(t('accountsPage.accountAdded'));
+    } catch {
+      toast.error(t('accountsPage.accountAddFailed'));
+    }
   };
 
   const saveEditBank = async (id) => {
@@ -247,18 +347,23 @@ export default function Accounts() {
       await api.put(`/accounts/${id}`, editBankForm);
       setEditingBankId(null);
       loadBase();
-      toast.success('Cuenta actualizada');
-    } catch { toast.error('No se pudo actualizar la cuenta'); }
+      toast.success(t('accountsPage.accountUpdated'));
+    } catch {
+      toast.error(t('accountsPage.accountUpdateFailed'));
+    }
   };
 
   // Hide bank account (same pattern as cards — data preserved)
   const hideBank = (id) => {
-    if (!confirm('Remove from list? Data and transactions are preserved.')) return;
-    setHiddenBankIds(prev => [...prev, id]);
+    if (!confirm(t('accountsPage.confirmHideBank'))) return;
+    setHiddenBankIds((prev) => [...prev, id]);
     if (selectedItem?.kind === ACCOUNT_BANK && selectedItem?.id === id) {
-      const remaining = visibleBankAccounts.filter(a => a.id !== id);
-      const next = remaining[0] ? { kind: ACCOUNT_BANK, id: remaining[0].id }
-        : visibleCards[0] ? { kind: ACCOUNT_CARD, id: visibleCards[0].id } : null;
+      const remaining = visibleBankAccounts.filter((a) => a.id !== id);
+      const next = remaining[0]
+        ? { kind: ACCOUNT_BANK, id: remaining[0].id }
+        : visibleCards[0]
+          ? { kind: ACCOUNT_CARD, id: visibleCards[0].id }
+          : null;
       setSelectedItem(next);
     }
   };
@@ -266,7 +371,9 @@ export default function Accounts() {
   // Restore a hidden bank account
   const linkBank = () => {
     if (!bankToLink) return;
-    setHiddenBankIds(prev => prev.filter(hid => hid !== parseInt(bankToLink, 10)));
+    setHiddenBankIds((prev) =>
+      prev.filter((hid) => hid !== parseInt(bankToLink, 10)),
+    );
     setBankToLink('');
     setShowAddPanel(false);
   };
@@ -276,8 +383,14 @@ export default function Accounts() {
     e.preventDefault();
     if (!selectedItem) return;
     const amt = Number(txForm.amount);
-    if (!txForm.description.trim()) { setAddError('Description is required'); return; }
-    if (!(amt > 0)) { setAddError('Amount must be > 0'); return; }
+    if (!txForm.description.trim()) {
+      setAddError(t('accountsPage.descriptionRequired'));
+      return;
+    }
+    if (!(amt > 0)) {
+      setAddError(t('accountsPage.amountPositive'));
+      return;
+    }
     const payload = {
       type: txMode,
       description: txForm.description,
@@ -291,13 +404,29 @@ export default function Accounts() {
 
     try {
       await api.post('/transactions', payload);
-      setTxForm({ description: '', amount: '', date: new Date().toISOString().slice(0, 10), categoryId: '', paymentMethod: 'cash' });
+      setTxForm({
+        description: '',
+        amount: '',
+        date: new Date().toISOString().slice(0, 10),
+        categoryId: '',
+        paymentMethod: 'cash',
+      });
       setAddError('');
       loadTransactionsPage(selectedItem, 1, txLimit);
       loadSummary(selectedItem);
       setTxPage(1);
-      toast.success(txMode === 'income' ? 'Ingreso agregado' : 'Gasto agregado');
-    } catch { toast.error(txMode === 'income' ? 'No se pudo agregar el ingreso' : 'No se pudo agregar el gasto'); }
+      toast.success(
+        txMode === 'income'
+          ? t('accountsPage.incomeAdded')
+          : t('accountsPage.expenseAdded'),
+      );
+    } catch {
+      toast.error(
+        txMode === 'income'
+          ? t('accountsPage.incomeAddFailed')
+          : t('accountsPage.expenseAddFailed'),
+      );
+    }
   };
 
   const deleteTransaction = async (id) => {
@@ -305,79 +434,121 @@ export default function Accounts() {
       await api.delete(`/transactions/${id}`);
       loadTransactionsPage(selectedItem, txPage, txLimit);
       loadSummary(selectedItem);
-      toast.success('Transacción eliminada');
-    } catch { toast.error('No se pudo eliminar la transacción'); }
+      toast.success(t('accountsPage.txDeleted'));
+    } catch {
+      toast.error(t('accountsPage.txDeleteFailed'));
+    }
   };
 
-  const startEditTx = (t) => {
-    setEditingTxId(t.id);
+  const startEditTx = (tx) => {
+    setEditingTxId(tx.id);
     setEditTxData({
-      type: t.type, description: t.description || '',
-      categoryId: t.CategoryId || t.Category?.id || '',
-      amount: (t.amount ?? '').toString(),
-      date: t.date || new Date().toISOString().slice(0, 10),
-      paymentMethod: t.paymentMethod || 'cash',
+      type: tx.type,
+      description: tx.description || '',
+      categoryId: tx.CategoryId || tx.Category?.id || '',
+      amount: (tx.amount ?? '').toString(),
+      date: tx.date || new Date().toISOString().slice(0, 10),
+      paymentMethod: tx.paymentMethod || 'cash',
     });
-    setEditOpen(true); setEditError('');
+    setEditOpen(true);
+    setEditError('');
   };
 
-  const cancelEditTx = () => { setEditOpen(false); setEditingTxId(null); };
+  const cancelEditTx = () => {
+    setEditOpen(false);
+    setEditingTxId(null);
+  };
 
   const saveEditTx = async (data, patchOnly) => {
-    if (patchOnly) { setEditTxData(data); return; }
+    if (patchOnly) {
+      setEditTxData(data);
+      return;
+    }
     const amt = parseFloat(data.amount || 0);
-    if (!data.description.trim()) { setEditError('Description is required'); return; }
-    if (!(amt > 0)) { setEditError('Amount must be > 0'); return; }
-    const payload = { ...data, amount: amt, paymentMethod: data.type === 'income' ? 'cash' : data.paymentMethod };
+    if (!data.description.trim()) {
+      setEditError(t('accountsPage.descriptionRequired'));
+      return;
+    }
+    if (!(amt > 0)) {
+      setEditError(t('accountsPage.amountPositive'));
+      return;
+    }
+    const payload = {
+      ...data,
+      amount: amt,
+      paymentMethod: data.type === 'income' ? 'cash' : data.paymentMethod,
+    };
     if (selectedItem?.kind === ACCOUNT_CARD) payload.cardId = selectedItem.id;
-    else if (selectedItem?.kind === ACCOUNT_BANK) payload.accountId = selectedItem.id;
+    else if (selectedItem?.kind === ACCOUNT_BANK)
+      payload.accountId = selectedItem.id;
     try {
       await api.put(`/transactions/${editingTxId}`, payload);
       cancelEditTx();
       loadTransactionsPage(selectedItem, txPage, txLimit);
       loadSummary(selectedItem);
-      toast.success('Cambios guardados');
-    } catch { toast.error('No se pudo guardar la transacción'); }
+      toast.success(t('accountsPage.changesSaved'));
+    } catch {
+      toast.error(t('accountsPage.txSaveFailed'));
+    }
   };
 
   // ── Unified account list for the left sidebar ─────────────────────────────
   const allItems = [
-    ...visibleCards.map(c => ({ kind: ACCOUNT_CARD, ...c, emoji: '💳' })),
-    ...visibleBankAccounts.map(a => ({ kind: ACCOUNT_BANK, ...a, emoji: '🏦' })),
+    ...visibleCards.map((c) => ({ kind: ACCOUNT_CARD, ...c, emoji: '💳' })),
+    ...visibleBankAccounts.map((a) => ({
+      kind: ACCOUNT_BANK,
+      ...a,
+      emoji: '🏦',
+    })),
   ];
 
   const selectedRaw = selectedItem
-    ? (selectedItem.kind === ACCOUNT_CARD
-      ? visibleCards.find(c => c.id === selectedItem.id)
-      : visibleBankAccounts.find(a => a.id === selectedItem.id))
+    ? selectedItem.kind === ACCOUNT_CARD
+      ? visibleCards.find((c) => c.id === selectedItem.id)
+      : visibleBankAccounts.find((a) => a.id === selectedItem.id)
     : null;
-  const selectedData = selectedRaw ? { ...selectedRaw, kind: selectedItem.kind } : null;
+  const selectedData = selectedRaw
+    ? { ...selectedRaw, kind: selectedItem.kind }
+    : null;
 
-  const isSelected = (kind, id) => selectedItem?.kind === kind && selectedItem?.id === id;
+  const isSelected = (kind, id) =>
+    selectedItem?.kind === kind && selectedItem?.id === id;
 
   // ── Tab config for Add Account panel ─────────────────────────────────────
   const addTabs = [
-    { id: 'newCard', label: '💳 New Card' },
-    { id: 'newBank', label: '🏦 Bank Account' },
-    ...(hiddenCards.length > 0 ? [{ id: 'linkCard', label: '🔗 Link Card' }] : []),
-    ...(hiddenBankAccounts.length > 0 ? [{ id: 'linkBank', label: '🏦 Link Bank' }] : []),
+    { id: 'newCard', label: t('accountsPage.tabNewCard') },
+    { id: 'newBank', label: t('accountsPage.tabBank') },
+    ...(hiddenCards.length > 0
+      ? [{ id: 'linkCard', label: t('accountsPage.tabLinkCard') }]
+      : []),
+    ...(hiddenBankAccounts.length > 0
+      ? [{ id: 'linkBank', label: t('accountsPage.tabLinkBank') }]
+      : []),
   ];
 
   // ── Render ────────────────────────────────────────────────────────────────
   return (
     <div className="max-w-6xl mx-auto p-5 space-y-5">
-
       {/* Page header */}
       <div className="flex items-start justify-between flex-wrap gap-3">
         <div>
-          <h2 className="text-xl font-bold tracking-tight">Accounts</h2>
-          <p className="text-xs text-gray-400 mt-0.5">Manage credit cards and bank accounts</p>
+          <h2 className="text-xl font-bold tracking-tight">
+            {t('accountsPage.title')}
+          </h2>
+          <p className="text-xs text-gray-400 mt-0.5">
+            {t('accountsPage.subtitle')}
+          </p>
         </div>
         <Button
           variant="secondary"
-          onClick={() => { setShowAddPanel(v => !v); setAddTab('newCard'); }}
+          onClick={() => {
+            setShowAddPanel((v) => !v);
+            setAddTab('newCard');
+          }}
         >
-          {showAddPanel ? '✕ Close' : '+ Add Account'}
+          {showAddPanel
+            ? t('accountsPage.close')
+            : t('accountsPage.addAccount')}
         </Button>
       </div>
 
@@ -386,7 +557,7 @@ export default function Accounts() {
         <section className="bg-white dark:bg-slate-900 rounded-2xl border border-[var(--border)] shadow-sm overflow-hidden">
           {/* Tab bar */}
           <div className="flex gap-0 border-b border-[var(--border)] px-1 pt-1 bg-gray-50/50 dark:bg-slate-800/30">
-            {addTabs.map(tab => (
+            {addTabs.map((tab) => (
               <button
                 key={tab.id}
                 type="button"
@@ -395,7 +566,7 @@ export default function Accounts() {
                   'px-4 py-2.5 text-sm font-medium transition-colors rounded-t-lg border-b-2 -mb-px',
                   addTab === tab.id
                     ? 'border-indigo-500 text-indigo-600 dark:text-indigo-400 bg-white dark:bg-slate-900'
-                    : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
+                    : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200',
                 )}
               >
                 {tab.label}
@@ -406,29 +577,58 @@ export default function Accounts() {
           <div className="p-5">
             {/* ── New Card ── */}
             {addTab === 'newCard' && (
-              <form onSubmit={addCard} className="grid grid-cols-1 sm:grid-cols-[1fr_auto_auto_auto] gap-3 items-end">
+              <form
+                onSubmit={addCard}
+                className="grid grid-cols-1 sm:grid-cols-[1fr_auto_auto_auto] gap-3 items-end"
+              >
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-semibold text-gray-400 uppercase tracking-widest">Card Name</label>
-                  <Input placeholder="e.g. Visa Platinum" value={cardForm.name} onChange={e => setCardForm(v => ({ ...v, name: e.target.value }))} required />
-                </div>
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-semibold text-gray-400 uppercase tracking-widest">Color</label>
-                  <input
-                    className="w-10 h-10 rounded-lg border border-[var(--border)] cursor-pointer p-0.5 bg-white dark:bg-slate-800"
-                    type="color" value={cardForm.color}
-                    onChange={e => setCardForm(v => ({ ...v, color: e.target.value }))}
-                  />
-                </div>
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-semibold text-gray-400 uppercase tracking-widest">Last 4</label>
+                  <label className="text-xs font-semibold text-gray-400 uppercase tracking-widest">
+                    {t('accountsPage.cardName')}
+                  </label>
                   <Input
-                    className="w-24" placeholder="0000"
-                    value={cardForm.last4}
-                    onChange={e => setCardForm(v => ({ ...v, last4: e.target.value.replace(/[^0-9]/g, '').slice(0, 4) }))}
+                    placeholder={t('accountsPage.cardNamePlaceholder')}
+                    value={cardForm.name}
+                    onChange={(e) =>
+                      setCardForm((v) => ({ ...v, name: e.target.value }))
+                    }
                     required
                   />
                 </div>
-                <Button type="submit" variant="primary">Add Card</Button>
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-xs font-semibold text-gray-400 uppercase tracking-widest">
+                    {t('accountsPage.color')}
+                  </label>
+                  <input
+                    className="w-10 h-10 rounded-lg border border-[var(--border)] cursor-pointer p-0.5 bg-white dark:bg-slate-800"
+                    type="color"
+                    value={cardForm.color}
+                    onChange={(e) =>
+                      setCardForm((v) => ({ ...v, color: e.target.value }))
+                    }
+                  />
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-xs font-semibold text-gray-400 uppercase tracking-widest">
+                    {t('accountsPage.last4')}
+                  </label>
+                  <Input
+                    className="w-24"
+                    placeholder="0000"
+                    value={cardForm.last4}
+                    onChange={(e) =>
+                      setCardForm((v) => ({
+                        ...v,
+                        last4: e.target.value
+                          .replace(/[^0-9]/g, '')
+                          .slice(0, 4),
+                      }))
+                    }
+                    required
+                  />
+                </div>
+                <Button type="submit" variant="primary">
+                  {t('accountsPage.addCard')}
+                </Button>
               </form>
             )}
 
@@ -437,35 +637,70 @@ export default function Accounts() {
               <form onSubmit={addBankAccount} className="space-y-4">
                 <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto_auto_auto] gap-3 items-end">
                   <div className="flex flex-col gap-1.5">
-                    <label className="text-xs font-semibold text-gray-400 uppercase tracking-widest">Account Name</label>
-                    <Input placeholder="e.g. Chase Checking" value={bankForm.name} onChange={e => setBankForm(v => ({ ...v, name: e.target.value }))} required />
+                    <label className="text-xs font-semibold text-gray-400 uppercase tracking-widest">
+                      {t('accountsPage.accountName')}
+                    </label>
+                    <Input
+                      placeholder={t('accountsPage.accountNamePlaceholder')}
+                      value={bankForm.name}
+                      onChange={(e) =>
+                        setBankForm((v) => ({ ...v, name: e.target.value }))
+                      }
+                      required
+                    />
                   </div>
                   <div className="flex flex-col gap-1.5">
-                    <label className="text-xs font-semibold text-gray-400 uppercase tracking-widest">Color</label>
+                    <label className="text-xs font-semibold text-gray-400 uppercase tracking-widest">
+                      {t('accountsPage.color')}
+                    </label>
                     <input
                       className="w-10 h-10 rounded-lg border border-[var(--border)] cursor-pointer p-0.5 bg-white dark:bg-slate-800"
-                      type="color" value={bankForm.color}
-                      onChange={e => setBankForm(v => ({ ...v, color: e.target.value }))}
+                      type="color"
+                      value={bankForm.color}
+                      onChange={(e) =>
+                        setBankForm((v) => ({ ...v, color: e.target.value }))
+                      }
                     />
                   </div>
                   <div className="flex flex-col gap-1.5">
-                    <label className="text-xs font-semibold text-gray-400 uppercase tracking-widest">Starting Balance</label>
+                    <label className="text-xs font-semibold text-gray-400 uppercase tracking-widest">
+                      {t('accountsPage.startingBalance')}
+                    </label>
                     <Input
-                      type="number" step="0.01" className="w-32" placeholder="0.00"
+                      type="number"
+                      step="0.01"
+                      className="w-32"
+                      placeholder="0.00"
                       value={bankForm.initialBalance}
-                      onChange={e => setBankForm(v => ({ ...v, initialBalance: e.target.value }))}
+                      onChange={(e) =>
+                        setBankForm((v) => ({
+                          ...v,
+                          initialBalance: e.target.value,
+                        }))
+                      }
                     />
                   </div>
-                  <Button type="submit" className="bg-emerald-600 hover:bg-emerald-700 text-white">Add Account</Button>
+                  <Button
+                    type="submit"
+                    className="bg-emerald-600 hover:bg-emerald-700 text-white"
+                  >
+                    {t('accountsPage.addAccountBtn')}
+                  </Button>
                 </div>
                 <label className="flex items-start gap-3 rounded-xl border border-[var(--border)] bg-[var(--muted)]/40 px-4 py-3 cursor-pointer">
                   <Switch
                     checked={bankForm.isExcludedFromTotals}
-                    onCheckedChange={val => setBankForm(v => ({ ...v, isExcludedFromTotals: val }))}
+                    onCheckedChange={(val) =>
+                      setBankForm((v) => ({ ...v, isExcludedFromTotals: val }))
+                    }
                   />
                   <span className="min-w-0">
-                    <span className="block text-sm font-medium text-gray-700 dark:text-gray-200">No integrar</span>
-                    <span className="block text-xs text-gray-400 mt-0.5">Mantén esta cuenta separada de tus totales generales: sus datos no se mostrarán en el dashboard general ni en el historial de transacciones.</span>
+                    <span className="block text-sm font-medium text-gray-700 dark:text-gray-200">
+                      {t('accountsPage.doNotIntegrate')}
+                    </span>
+                    <span className="block text-xs text-gray-400 mt-0.5">
+                      {t('accountsPage.doNotIntegrateHint')}
+                    </span>
                   </span>
                 </label>
               </form>
@@ -475,13 +710,30 @@ export default function Accounts() {
             {addTab === 'linkCard' && (
               <div className="flex gap-3 items-end">
                 <div className="flex flex-col gap-1.5 flex-1">
-                  <label className="text-xs font-semibold text-gray-400 uppercase tracking-widest">Hidden Cards</label>
-                  <Select value={cardToLink} onChange={e => setCardToLink(e.target.value)}>
-                    <option value="">Select a card to restore…</option>
-                    {hiddenCards.map(c => <option key={c.id} value={c.id}>{c.name} (•••• {c.last4})</option>)}
+                  <label className="text-xs font-semibold text-gray-400 uppercase tracking-widest">
+                    {t('accountsPage.hiddenCards')}
+                  </label>
+                  <Select
+                    value={cardToLink}
+                    onChange={(e) => setCardToLink(e.target.value)}
+                  >
+                    <option value="">
+                      {t('accountsPage.selectCardRestore')}
+                    </option>
+                    {hiddenCards.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.name} (•••• {c.last4})
+                      </option>
+                    ))}
                   </Select>
                 </div>
-                <Button onClick={linkCard} disabled={!cardToLink} variant="primary">Restore</Button>
+                <Button
+                  onClick={linkCard}
+                  disabled={!cardToLink}
+                  variant="primary"
+                >
+                  {t('accountsPage.restore')}
+                </Button>
               </div>
             )}
 
@@ -489,13 +741,30 @@ export default function Accounts() {
             {addTab === 'linkBank' && (
               <div className="flex gap-3 items-end">
                 <div className="flex flex-col gap-1.5 flex-1">
-                  <label className="text-xs font-semibold text-gray-400 uppercase tracking-widest">Hidden Bank Accounts</label>
-                  <Select value={bankToLink} onChange={e => setBankToLink(e.target.value)}>
-                    <option value="">Select an account to restore…</option>
-                    {hiddenBankAccounts.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
+                  <label className="text-xs font-semibold text-gray-400 uppercase tracking-widest">
+                    {t('accountsPage.hiddenBanks')}
+                  </label>
+                  <Select
+                    value={bankToLink}
+                    onChange={(e) => setBankToLink(e.target.value)}
+                  >
+                    <option value="">
+                      {t('accountsPage.selectBankRestore')}
+                    </option>
+                    {hiddenBankAccounts.map((a) => (
+                      <option key={a.id} value={a.id}>
+                        {a.name}
+                      </option>
+                    ))}
                   </Select>
                 </div>
-                <Button onClick={linkBank} disabled={!bankToLink} className="bg-emerald-600 hover:bg-emerald-700 text-white">Restore</Button>
+                <Button
+                  onClick={linkBank}
+                  disabled={!bankToLink}
+                  className="bg-emerald-600 hover:bg-emerald-700 text-white"
+                >
+                  {t('accountsPage.restore')}
+                </Button>
               </div>
             )}
           </div>
@@ -504,111 +773,249 @@ export default function Accounts() {
 
       {/* ── Main grid ─────────────────────────────────────────────────────── */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-
         {/* Left: unified account list */}
         <div className="md:col-span-1 space-y-4">
-
           {/* Account list card */}
           <div className="bg-white dark:bg-slate-900 rounded-2xl border border-[var(--border)] shadow-sm overflow-hidden">
             <div className="px-4 pt-4 pb-3 border-b border-[var(--border)]">
-              <h3 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-widest">Your Accounts</h3>
+              <h3 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-widest">
+                {t('accountsPage.yourAccounts')}
+              </h3>
             </div>
             <ul className="divide-y divide-[var(--border)]">
               {allItems.length === 0 && (
                 <li className="px-4 py-8 text-center text-sm text-gray-400">
-                  No accounts yet.<br /><span className="text-xs">Use "+ Add Account" to get started.</span>
+                  {t('accountsPage.noAccounts1')}
+                  <br />
+                  <span className="text-xs">
+                    {t('accountsPage.noAccounts2')}
+                  </span>
                 </li>
               )}
-              {allItems.map(item => {
+              {allItems.map((item) => {
                 const sel = isSelected(item.kind, item.id);
                 return (
                   <li key={`${item.kind}-${item.id}`}>
                     {/* Edit state */}
-                    {(item.kind === ACCOUNT_CARD && editingCardId === item.id) && (
-                      <div className="px-4 py-3 space-y-2">
-                        <Input value={editCardForm.name} onChange={e => setEditCardForm(v => ({ ...v, name: e.target.value }))} placeholder="Name" />
-                        <div className="flex gap-2 items-center">
-                          <input className="w-8 h-8 rounded cursor-pointer border border-[var(--border)] p-0.5" type="color"
-                            value={editCardForm.color} onChange={e => setEditCardForm(v => ({ ...v, color: e.target.value }))} />
-                          <Input className="w-24" value={editCardForm.last4}
-                            onChange={e => setEditCardForm(v => ({ ...v, last4: e.target.value.replace(/[^0-9]/g, '').slice(0, 4) }))} placeholder="Last 4" />
-                        </div>
-                        <div className="flex gap-2">
-                          <Button className="text-xs px-3 py-1.5" onClick={() => saveEditCard(item.id)}>Save</Button>
-                          <Button className="text-xs px-3 py-1.5" variant="outline" onClick={() => setEditingCardId(null)}>Cancel</Button>
-                        </div>
-                      </div>
-                    )}
-                    {(item.kind === ACCOUNT_BANK && editingBankId === item.id) && (
-                      <div className="px-4 py-3 space-y-2">
-                        <Input value={editBankForm.name} onChange={e => setEditBankForm(v => ({ ...v, name: e.target.value }))} placeholder="Name" />
-                        <input className="w-8 h-8 rounded cursor-pointer border border-[var(--border)] p-0.5" type="color"
-                          value={editBankForm.color} onChange={e => setEditBankForm(v => ({ ...v, color: e.target.value }))} />
-                        <label className="flex items-center justify-between gap-2 pt-1">
-                          <span className="text-xs font-medium text-gray-600 dark:text-gray-300">No integrar</span>
-                          <Switch
-                            checked={editBankForm.isExcludedFromTotals}
-                            onCheckedChange={val => setEditBankForm(v => ({ ...v, isExcludedFromTotals: val }))}
+                    {item.kind === ACCOUNT_CARD &&
+                      editingCardId === item.id && (
+                        <div className="px-4 py-3 space-y-2">
+                          <Input
+                            value={editCardForm.name}
+                            onChange={(e) =>
+                              setEditCardForm((v) => ({
+                                ...v,
+                                name: e.target.value,
+                              }))
+                            }
+                            placeholder={t('accountsPage.namePlaceholder')}
                           />
-                        </label>
-                        <div className="flex gap-2">
-                          <Button className="text-xs px-3 py-1.5" onClick={() => saveEditBank(item.id)}>Save</Button>
-                          <Button className="text-xs px-3 py-1.5" variant="outline" onClick={() => setEditingBankId(null)}>Cancel</Button>
+                          <div className="flex gap-2 items-center">
+                            <input
+                              className="w-8 h-8 rounded cursor-pointer border border-[var(--border)] p-0.5"
+                              type="color"
+                              value={editCardForm.color}
+                              onChange={(e) =>
+                                setEditCardForm((v) => ({
+                                  ...v,
+                                  color: e.target.value,
+                                }))
+                              }
+                            />
+                            <Input
+                              className="w-24"
+                              value={editCardForm.last4}
+                              onChange={(e) =>
+                                setEditCardForm((v) => ({
+                                  ...v,
+                                  last4: e.target.value
+                                    .replace(/[^0-9]/g, '')
+                                    .slice(0, 4),
+                                }))
+                              }
+                              placeholder={t('accountsPage.last4Placeholder')}
+                            />
+                          </div>
+                          <div className="flex gap-2">
+                            <Button
+                              className="text-xs px-3 py-1.5"
+                              onClick={() => saveEditCard(item.id)}
+                            >
+                              {t('accountsPage.save')}
+                            </Button>
+                            <Button
+                              className="text-xs px-3 py-1.5"
+                              variant="outline"
+                              onClick={() => setEditingCardId(null)}
+                            >
+                              {t('accountsPage.cancel')}
+                            </Button>
+                          </div>
                         </div>
-                      </div>
-                    )}
+                      )}
+                    {item.kind === ACCOUNT_BANK &&
+                      editingBankId === item.id && (
+                        <div className="px-4 py-3 space-y-2">
+                          <Input
+                            value={editBankForm.name}
+                            onChange={(e) =>
+                              setEditBankForm((v) => ({
+                                ...v,
+                                name: e.target.value,
+                              }))
+                            }
+                            placeholder={t('accountsPage.namePlaceholder')}
+                          />
+                          <input
+                            className="w-8 h-8 rounded cursor-pointer border border-[var(--border)] p-0.5"
+                            type="color"
+                            value={editBankForm.color}
+                            onChange={(e) =>
+                              setEditBankForm((v) => ({
+                                ...v,
+                                color: e.target.value,
+                              }))
+                            }
+                          />
+                          <label className="flex items-center justify-between gap-2 pt-1">
+                            <span className="text-xs font-medium text-gray-600 dark:text-gray-300">
+                              {t('accountsPage.doNotIntegrate')}
+                            </span>
+                            <Switch
+                              checked={editBankForm.isExcludedFromTotals}
+                              onCheckedChange={(val) =>
+                                setEditBankForm((v) => ({
+                                  ...v,
+                                  isExcludedFromTotals: val,
+                                }))
+                              }
+                            />
+                          </label>
+                          <div className="flex gap-2">
+                            <Button
+                              className="text-xs px-3 py-1.5"
+                              onClick={() => saveEditBank(item.id)}
+                            >
+                              {t('accountsPage.save')}
+                            </Button>
+                            <Button
+                              className="text-xs px-3 py-1.5"
+                              variant="outline"
+                              onClick={() => setEditingBankId(null)}
+                            >
+                              {t('accountsPage.cancel')}
+                            </Button>
+                          </div>
+                        </div>
+                      )}
                     {/* Normal state */}
-                    {(item.kind === ACCOUNT_CARD ? editingCardId !== item.id : editingBankId !== item.id) && (
+                    {(item.kind === ACCOUNT_CARD
+                      ? editingCardId !== item.id
+                      : editingBankId !== item.id) && (
                       <button
                         type="button"
-                        onClick={() => setSelectedItem({ kind: item.kind, id: item.id })}
+                        onClick={() =>
+                          setSelectedItem({ kind: item.kind, id: item.id })
+                        }
                         className={cn(
                           'w-full flex items-center justify-between px-4 py-3 text-left transition-colors group',
                           sel
                             ? 'bg-indigo-50 dark:bg-indigo-950/30'
                             : 'hover:bg-gray-50 dark:hover:bg-slate-800/40',
                         )}
-                        style={sel ? { borderLeft: `3px solid ${item.color}` } : { borderLeft: '3px solid transparent' }}
+                        style={
+                          sel
+                            ? { borderLeft: `3px solid ${item.color}` }
+                            : { borderLeft: '3px solid transparent' }
+                        }
                       >
                         <div className="flex items-center gap-3 min-w-0">
-                          <span className="text-base leading-none flex-shrink-0">{item.emoji}</span>
+                          <span className="text-base leading-none flex-shrink-0">
+                            {item.emoji}
+                          </span>
                           <div className="min-w-0">
                             <div className="flex items-center gap-1.5 min-w-0">
-                              <p className="text-sm font-medium text-gray-800 dark:text-gray-100 truncate">{item.name}</p>
-                              {item.kind === ACCOUNT_BANK && item.isExcludedFromTotals && (
-                                <span className="flex-shrink-0 inline-flex items-center px-1.5 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider bg-amber-100 text-amber-700 dark:bg-amber-950/50 dark:text-amber-400">
-                                  Aislada
-                                </span>
-                              )}
+                              <p className="text-sm font-medium text-gray-800 dark:text-gray-100 truncate">
+                                {item.name}
+                              </p>
+                              {item.kind === ACCOUNT_BANK &&
+                                item.isExcludedFromTotals && (
+                                  <span className="flex-shrink-0 inline-flex items-center px-1.5 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider bg-amber-100 text-amber-700 dark:bg-amber-950/50 dark:text-amber-400">
+                                    {t('accountsPage.isolated')}
+                                  </span>
+                                )}
                             </div>
                             <p className="text-[11px] text-gray-400 tracking-widest">
                               {item.kind === ACCOUNT_CARD
                                 ? `•••• ${item.last4}`
-                                : item.initialBalance > 0 ? `Opens ${cs}${Number(item.initialBalance).toFixed(2)}` : 'Bank account'}
+                                : item.initialBalance > 0
+                                  ? t('accountsPage.opens', {
+                                      amount: `${cs}${Number(item.initialBalance).toFixed(2)}`,
+                                    })
+                                  : t('accountsPage.bankAccount')}
                             </p>
                           </div>
                         </div>
                         <div className="flex gap-1 flex-shrink-0">
                           <IconButton
-                            title="Edit"
-                            onClick={e => {
+                            title={t('accountsPage.edit')}
+                            onClick={(e) => {
                               e.stopPropagation();
-                              if (item.kind === ACCOUNT_CARD) { setEditingCardId(item.id); setEditCardForm({ name: item.name, color: item.color, last4: item.last4 }); }
-                              else { setEditingBankId(item.id); setEditBankForm({ name: item.name, color: item.color, isExcludedFromTotals: !!item.isExcludedFromTotals }); }
+                              if (item.kind === ACCOUNT_CARD) {
+                                setEditingCardId(item.id);
+                                setEditCardForm({
+                                  name: item.name,
+                                  color: item.color,
+                                  last4: item.last4,
+                                });
+                              } else {
+                                setEditingBankId(item.id);
+                                setEditBankForm({
+                                  name: item.name,
+                                  color: item.color,
+                                  isExcludedFromTotals:
+                                    !!item.isExcludedFromTotals,
+                                });
+                              }
                             }}
                           >
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9" /><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L8 18l-4 1 1-4 11.5-11.5z" /></svg>
+                            <svg
+                              width="14"
+                              height="14"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="2"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                            >
+                              <path d="M12 20h9" />
+                              <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L8 18l-4 1 1-4 11.5-11.5z" />
+                            </svg>
                           </IconButton>
                           <IconButton
-                            title={item.kind === ACCOUNT_CARD ? 'Hide' : 'Hide'}
+                            title={t('accountsPage.hide')}
                             danger
-                            onClick={e => {
+                            onClick={(e) => {
                               e.stopPropagation();
                               if (item.kind === ACCOUNT_CARD) hideCard(item.id);
                               else hideBank(item.id);
                             }}
                           >
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18" /><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" /><path d="M10 11v6M14 11v6M15 6V4a2 2 0 0 0-2-2h-2a2 2 0 0 0-2 2v2" /></svg>
+                            <svg
+                              width="14"
+                              height="14"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="2"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                            >
+                              <path d="M3 6h18" />
+                              <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+                              <path d="M10 11v6M14 11v6M15 6V4a2 2 0 0 0-2-2h-2a2 2 0 0 0-2 2v2" />
+                            </svg>
                           </IconButton>
                         </div>
                       </button>
@@ -623,24 +1030,69 @@ export default function Accounts() {
           {selectedData && (
             <div className="bg-white dark:bg-slate-900 rounded-2xl border border-[var(--border)] shadow-sm p-4">
               <div className="flex items-center gap-2 mb-3">
-                <span className="h-2.5 w-2.5 rounded-full flex-shrink-0" style={{ background: selectedData.color }} />
-                <h3 className="text-sm font-semibold text-gray-600 dark:text-gray-300 truncate">{selectedData.name}</h3>
+                <span
+                  className="h-2.5 w-2.5 rounded-full flex-shrink-0"
+                  style={{ background: selectedData.color }}
+                />
+                <h3 className="text-sm font-semibold text-gray-600 dark:text-gray-300 truncate">
+                  {selectedData.name}
+                </h3>
               </div>
               <div className="space-y-2 text-sm">
                 {(() => {
-                  const opening = selectedData.kind === ACCOUNT_BANK ? Number(selectedData.initialBalance || 0) : 0;
+                  const opening =
+                    selectedData.kind === ACCOUNT_BANK
+                      ? Number(selectedData.initialBalance || 0)
+                      : 0;
                   return [
                     ...(selectedData.kind === ACCOUNT_BANK
-                      ? [{ label: 'Apertura', value: opening, color: 'text-gray-500 dark:text-gray-400' }]
+                      ? [
+                          {
+                            key: 'opening',
+                            label: t('accountsPage.opening'),
+                            value: opening,
+                            color: 'text-gray-500 dark:text-gray-400',
+                          },
+                        ]
                       : []),
-                    { label: 'Income', value: summary.income, color: 'text-emerald-600' },
-                    { label: 'Expenses', value: summary.expense, color: 'text-rose-500' },
-                    { label: 'Balance', value: opening + summary.income - summary.expense, color: null, bold: true, border: true },
+                    {
+                      key: 'income',
+                      label: t('accountsPage.income'),
+                      value: summary.income,
+                      color: 'text-emerald-600',
+                    },
+                    {
+                      key: 'expenses',
+                      label: t('accountsPage.expenses'),
+                      value: summary.expense,
+                      color: 'text-rose-500',
+                    },
+                    {
+                      key: 'balance',
+                      label: t('accountsPage.balance'),
+                      value: opening + summary.income - summary.expense,
+                      color: null,
+                      bold: true,
+                      border: true,
+                    },
                   ];
-                })().map(({ label, value, color, bold, border }) => (
-                  <div key={label} className={cn('flex items-center justify-between', border && 'border-t border-[var(--border)] pt-2 mt-2')}>
-                    <span className="text-gray-500 dark:text-gray-400">{label}</span>
-                    <span className={cn('tabular-nums', bold && 'font-bold', color)}>{cs}{value.toFixed(2)}</span>
+                })().map(({ key, label, value, color, bold, border }) => (
+                  <div
+                    key={key}
+                    className={cn(
+                      'flex items-center justify-between',
+                      border && 'border-t border-[var(--border)] pt-2 mt-2',
+                    )}
+                  >
+                    <span className="text-gray-500 dark:text-gray-400">
+                      {label}
+                    </span>
+                    <span
+                      className={cn('tabular-nums', bold && 'font-bold', color)}
+                    >
+                      {cs}
+                      {value.toFixed(2)}
+                    </span>
                   </div>
                 ))}
               </div>
@@ -650,44 +1102,101 @@ export default function Accounts() {
 
         {/* Right: transactions */}
         <div className="md:col-span-2 space-y-4">
-
           {/* Add transaction */}
           <div className="bg-white dark:bg-slate-900 rounded-2xl border border-[var(--border)] shadow-sm overflow-hidden">
             <div className="px-5 pt-4 pb-3 border-b border-[var(--border)] flex items-center justify-between gap-3">
               <h3 className="text-sm font-semibold tracking-tight">
-                Add {txMode === 'expense' ? 'Expense' : 'Income'}
-                {selectedData && <span className="ml-1 font-normal text-gray-400">· {selectedData.name}</span>}
+                {txMode === 'expense'
+                  ? t('accountsPage.addExpenseHeader')
+                  : t('accountsPage.addIncomeHeader')}
+                {selectedData && (
+                  <span className="ml-1 font-normal text-gray-400">
+                    · {selectedData.name}
+                  </span>
+                )}
               </h3>
               <div className="inline-flex rounded-xl border border-[var(--border)] bg-[var(--muted)] p-0.5 gap-0.5">
-                {['expense', 'income'].map(m => (
-                  <button key={m} type="button" onClick={() => setTxMode(m)}
+                {['expense', 'income'].map((m) => (
+                  <button
+                    key={m}
+                    type="button"
+                    onClick={() => setTxMode(m)}
                     className={cn(
-                      'px-4 py-1.5 text-xs font-semibold rounded-lg capitalize transition-all duration-150',
+                      'px-4 py-1.5 text-xs font-semibold rounded-lg transition-all duration-150',
                       txMode === m
-                        ? m === 'expense' ? 'bg-rose-600 text-white shadow-sm' : 'bg-emerald-600 text-white shadow-sm'
-                        : 'text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
+                        ? m === 'expense'
+                          ? 'bg-rose-600 text-white shadow-sm'
+                          : 'bg-emerald-600 text-white shadow-sm'
+                        : 'text-gray-400 hover:text-gray-700 dark:hover:text-gray-200',
                     )}
                   >
-                    {m === 'expense' ? '↑ Expense' : '↓ Income'}
+                    {m === 'expense'
+                      ? t('accountsPage.expenseTabLabel')
+                      : t('accountsPage.incomeTabLabel')}
                   </button>
                 ))}
               </div>
             </div>
-            {addError && <Alert variant="error" message={addError} onClose={() => setAddError('')} className="mx-5 mt-3" />}
-            <form onSubmit={addTransaction} className="p-5 grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {addError && (
+              <Alert
+                variant="error"
+                message={addError}
+                onClose={() => setAddError('')}
+                className="mx-5 mt-3"
+              />
+            )}
+            <form
+              onSubmit={addTransaction}
+              className="p-5 grid grid-cols-1 sm:grid-cols-2 gap-3"
+            >
               <div className="sm:col-span-2">
-                <Input placeholder="Description" value={txForm.description} onChange={e => setTxForm(v => ({ ...v, description: e.target.value }))} required />
+                <Input
+                  placeholder={t('accountsPage.descriptionPlaceholder')}
+                  value={txForm.description}
+                  onChange={(e) =>
+                    setTxForm((v) => ({ ...v, description: e.target.value }))
+                  }
+                  required
+                />
               </div>
-              <Input type="number" step="0.01" placeholder="Amount (0.00)" value={txForm.amount} onChange={e => setTxForm(v => ({ ...v, amount: e.target.value }))} required />
-              <DateInput value={txForm.date} onChange={e => setTxForm(v => ({ ...v, date: e.target.value }))} />
-              <Select value={txForm.categoryId} onChange={e => setTxForm(v => ({ ...v, categoryId: e.target.value }))}>
-                <option value="">No category</option>
-                {(txMode === 'expense' ? expenseCats : incomeCats).map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+              <Input
+                type="number"
+                step="0.01"
+                placeholder={t('accountsPage.amountPlaceholder')}
+                value={txForm.amount}
+                onChange={(e) =>
+                  setTxForm((v) => ({ ...v, amount: e.target.value }))
+                }
+                required
+              />
+              <DateInput
+                value={txForm.date}
+                onChange={(e) =>
+                  setTxForm((v) => ({ ...v, date: e.target.value }))
+                }
+              />
+              <Select
+                value={txForm.categoryId}
+                onChange={(e) =>
+                  setTxForm((v) => ({ ...v, categoryId: e.target.value }))
+                }
+              >
+                <option value="">{t('accountsPage.noCategory')}</option>
+                {(txMode === 'expense' ? expenseCats : incomeCats).map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name}
+                  </option>
+                ))}
               </Select>
               {txMode === 'expense' && (
-                <Select value={txForm.paymentMethod} onChange={e => setTxForm(v => ({ ...v, paymentMethod: e.target.value }))}>
-                  <option value="cash">💵 Cash</option>
-                  <option value="card">💳 Card</option>
+                <Select
+                  value={txForm.paymentMethod}
+                  onChange={(e) =>
+                    setTxForm((v) => ({ ...v, paymentMethod: e.target.value }))
+                  }
+                >
+                  <option value="cash">💵 {t('accountsPage.cash')}</option>
+                  <option value="card">💳 {t('accountsPage.card')}</option>
                 </Select>
               )}
               <div className="sm:col-span-2 flex justify-end">
@@ -696,10 +1205,16 @@ export default function Accounts() {
                   disabled={!selectedItem}
                   className={cn(
                     'px-6 font-semibold',
-                    txMode === 'expense' ? 'bg-rose-600 hover:bg-rose-700 text-white' : 'bg-emerald-600 hover:bg-emerald-700 text-white'
+                    txMode === 'expense'
+                      ? 'bg-rose-600 hover:bg-rose-700 text-white'
+                      : 'bg-emerald-600 hover:bg-emerald-700 text-white',
                   )}
                 >
-                  {!selectedItem ? 'Select an account first' : `+ ${txMode === 'expense' ? 'Add Expense' : 'Add Income'}`}
+                  {!selectedItem
+                    ? t('accountsPage.selectAccountFirst')
+                    : txMode === 'expense'
+                      ? t('accountsPage.addExpenseBtn')
+                      : t('accountsPage.addIncomeBtn')}
                 </Button>
               </div>
             </form>
@@ -708,68 +1223,173 @@ export default function Accounts() {
           {/* Transaction history */}
           <div className="bg-white dark:bg-slate-900 rounded-2xl border border-[var(--border)] shadow-sm overflow-hidden">
             <div className="px-5 py-3 border-b border-[var(--border)] flex items-center justify-between gap-3">
-              <h3 className="text-sm font-semibold tracking-tight">Transactions</h3>
+              <h3 className="text-sm font-semibold tracking-tight">
+                {t('accountsPage.transactions')}
+              </h3>
               <div className="flex items-center gap-2 text-xs">
-                <Select value={txLimit} onChange={e => setTxLimit(parseInt(e.target.value, 10))}>
-                  {[10, 20, 50].map(n => <option key={n} value={n}>{n} per page</option>)}
+                <Select
+                  value={txLimit}
+                  onChange={(e) => setTxLimit(parseInt(e.target.value, 10))}
+                >
+                  {[10, 20, 50].map((n) => (
+                    <option key={n} value={n}>
+                      {t('accountsPage.perPage', { n })}
+                    </option>
+                  ))}
                 </Select>
-                <span className="text-gray-400">{txTotal} total</span>
+                <span className="text-gray-400">
+                  {t('accountsPage.total', { count: txTotal })}
+                </span>
               </div>
             </div>
             <div className="overflow-x-auto">
               <table className="min-w-full text-sm">
                 <thead>
                   <tr className="bg-gray-50 dark:bg-slate-800/50 border-b border-[var(--border)]">
-                    {['Date', 'Type', 'Description', 'Category', 'Amount', ''].map((h, i) => (
-                      <th key={i} className="px-4 py-2.5 text-left text-[11px] font-bold uppercase tracking-widest text-gray-400 whitespace-nowrap">{h}</th>
+                    {[
+                      t('accountsPage.colDate'),
+                      t('accountsPage.colType'),
+                      t('accountsPage.colDescription'),
+                      t('accountsPage.colCategory'),
+                      t('accountsPage.colAmount'),
+                      '',
+                    ].map((h, i) => (
+                      <th
+                        key={i}
+                        className="px-4 py-2.5 text-left text-[11px] font-bold uppercase tracking-widest text-gray-400 whitespace-nowrap"
+                      >
+                        {h}
+                      </th>
                     ))}
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[var(--border)]">
-                  {txItems.map(t => (
-                    <tr key={t.id} className="group hover:bg-gray-50/60 dark:hover:bg-slate-800/30 transition-colors">
-                      <td className="px-4 py-3 text-xs text-gray-400 whitespace-nowrap">{t.date}</td>
-                      <td className="px-4 py-3"><Badge type={t.type} /></td>
-                      <td className="px-4 py-3 font-medium text-gray-800 dark:text-gray-100 max-w-[180px] truncate">{t.description}</td>
-                      <td className="px-4 py-3 text-xs text-gray-400">{t.Category?.name || '—'}</td>
-                      <td className={cn(
-                        'px-4 py-3 font-semibold tabular-nums whitespace-nowrap',
-                        t.type === 'expense' ? 'text-rose-600 dark:text-rose-400' : 'text-emerald-600 dark:text-emerald-400'
-                      )}>
-                        {t.type === 'expense' ? '−' : '+'}{cs}{Number(t.amount).toFixed(2)}
+                  {txItems.map((tx) => (
+                    <tr
+                      key={tx.id}
+                      className="group hover:bg-gray-50/60 dark:hover:bg-slate-800/30 transition-colors"
+                    >
+                      <td className="px-4 py-3 text-xs text-gray-400 whitespace-nowrap">
+                        {tx.date}
+                      </td>
+                      <td className="px-4 py-3">
+                        <Badge type={tx.type} />
+                      </td>
+                      <td className="px-4 py-3 font-medium text-gray-800 dark:text-gray-100 max-w-[180px] truncate">
+                        {tx.description}
+                      </td>
+                      <td className="px-4 py-3 text-xs text-gray-400">
+                        {tx.Category?.name || '—'}
+                      </td>
+                      <td
+                        className={cn(
+                          'px-4 py-3 font-semibold tabular-nums whitespace-nowrap',
+                          tx.type === 'expense'
+                            ? 'text-rose-600 dark:text-rose-400'
+                            : 'text-emerald-600 dark:text-emerald-400',
+                        )}
+                      >
+                        {tx.type === 'expense' ? '−' : '+'}
+                        {cs}
+                        {Number(tx.amount).toFixed(2)}
                       </td>
                       <td className="px-4 py-3 text-right">
                         <div className="flex justify-end gap-1">
-                          <IconButton onClick={() => startEditTx(t)} title="Edit">
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9" /><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L8 18l-4 1 1-4 11.5-11.5z" /></svg>
+                          <IconButton
+                            onClick={() => startEditTx(tx)}
+                            title={t('accountsPage.edit')}
+                          >
+                            <svg
+                              width="14"
+                              height="14"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="2"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                            >
+                              <path d="M12 20h9" />
+                              <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L8 18l-4 1 1-4 11.5-11.5z" />
+                            </svg>
                           </IconButton>
-                          <IconButton onClick={() => deleteTransaction(t.id)} title="Delete" danger>
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18" /><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" /><path d="M10 11v6M14 11v6" /><path d="M15 6V4a2 2 0 0 0-2-2h-2a2 2 0 0 0-2 2v2" /></svg>
+                          <IconButton
+                            onClick={() => deleteTransaction(tx.id)}
+                            title={t('accountsPage.hide')}
+                            danger
+                          >
+                            <svg
+                              width="14"
+                              height="14"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="2"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                            >
+                              <path d="M3 6h18" />
+                              <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+                              <path d="M10 11v6M14 11v6" />
+                              <path d="M15 6V4a2 2 0 0 0-2-2h-2a2 2 0 0 0-2 2v2" />
+                            </svg>
                           </IconButton>
                         </div>
                       </td>
                     </tr>
                   ))}
                   {txItems.length === 0 && (
-                    <tr><td colSpan={6} className="py-12 text-center text-sm text-gray-400">
-                      <p>No transactions yet</p>
-                      <p className="text-xs mt-1">{selectedItem ? 'Add your first one above.' : 'Select an account from the left panel.'}</p>
-                    </td></tr>
+                    <tr>
+                      <td
+                        colSpan={6}
+                        className="py-12 text-center text-sm text-gray-400"
+                      >
+                        <p>{t('accountsPage.noTransactions')}</p>
+                        <p className="text-xs mt-1">
+                          {selectedItem
+                            ? t('accountsPage.addFirstAbove')
+                            : t('accountsPage.selectFromLeft')}
+                        </p>
+                      </td>
+                    </tr>
                   )}
                 </tbody>
               </table>
             </div>
             {/* Pagination */}
             <div className="px-5 py-3 border-t border-[var(--border)] flex items-center justify-between text-xs">
-              <span className="text-gray-400">Page {txPage} of {totalPages}</span>
+              <span className="text-gray-400">
+                {t('accountsPage.page', { page: txPage, total: totalPages })}
+              </span>
               <div className="flex gap-1">
-                {[{ label: '«', action: () => setTxPage(1), disabled: txPage === 1 },
-                { label: '‹', action: () => setTxPage(p => Math.max(1, p - 1)), disabled: txPage === 1 },
-                { label: '›', action: () => setTxPage(p => Math.min(totalPages, p + 1)), disabled: txPage >= totalPages },
-                { label: '»', action: () => setTxPage(totalPages), disabled: txPage >= totalPages },
+                {[
+                  {
+                    label: '«',
+                    action: () => setTxPage(1),
+                    disabled: txPage === 1,
+                  },
+                  {
+                    label: '‹',
+                    action: () => setTxPage((p) => Math.max(1, p - 1)),
+                    disabled: txPage === 1,
+                  },
+                  {
+                    label: '›',
+                    action: () => setTxPage((p) => Math.min(totalPages, p + 1)),
+                    disabled: txPage >= totalPages,
+                  },
+                  {
+                    label: '»',
+                    action: () => setTxPage(totalPages),
+                    disabled: txPage >= totalPages,
+                  },
                 ].map(({ label, action, disabled }) => (
-                  <button key={label} onClick={action} disabled={disabled}
-                    className="w-7 h-7 rounded-lg border border-[var(--border)] text-sm font-medium transition-colors disabled:opacity-30 hover:bg-gray-100 dark:hover:bg-slate-800">
+                  <button
+                    key={label}
+                    onClick={action}
+                    disabled={disabled}
+                    className="w-7 h-7 rounded-lg border border-[var(--border)] text-sm font-medium transition-colors disabled:opacity-30 hover:bg-gray-100 dark:hover:bg-slate-800"
+                  >
                     {label}
                   </button>
                 ))}
@@ -782,7 +1402,9 @@ export default function Accounts() {
       {/* Edit tx dialog */}
       <EditTransactionDialog
         open={editOpen}
-        onOpenChange={o => { if (!o) cancelEditTx(); }}
+        onOpenChange={(o) => {
+          if (!o) cancelEditTx();
+        }}
         initial={editTxData}
         expenseCats={expenseCats}
         incomeCats={incomeCats}
