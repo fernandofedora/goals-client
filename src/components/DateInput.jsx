@@ -13,7 +13,7 @@ import { cn } from '../lib/utils';
 export default function DateInput({
   value,
   onChange,
-  placeholder = 'Date',
+  placeholder,
   className = '',
   required = false,
   min,
@@ -21,7 +21,9 @@ export default function DateInput({
   name,
   id,
 }) {
+  const { t } = useTranslation();
   const isEmpty = !value;
+  const placeholderText = placeholder ?? t('ui.dateInput.placeholder');
 
   return (
     <div className="relative group">
