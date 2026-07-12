@@ -1,9 +1,12 @@
 import { useEffect, useState, useCallback, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import api from '../api';
 import Button from '../components/ui/button';
 import Input from '../components/ui/input';
 import Alert from '../components/ui/alert';
 import { cn } from '../lib/utils';
+import { intlLocale } from '../utils/dateLocale';
+import { translateServerError } from '../utils/serverError';
 
 // ── Inline field wrapper ───────────────────────────────────────────────────────
 function Field({ label, htmlFor, error, hint, children }) {
@@ -27,6 +30,7 @@ function Field({ label, htmlFor, error, hint, children }) {
 
 // ── Password strength meter ───────────────────────────────────────────────────
 function PasswordStrength({ password }) {
+  const { t } = useTranslation();
   const score = useMemo(() => {
     if (!password) return 0;
     let s = 0;
@@ -40,28 +44,47 @@ function PasswordStrength({ password }) {
 
   if (!password) return null;
 
-  const labels = ['Too weak', 'Weak', 'Fair', 'Good', 'Strong'];
+  const labels = [
+    t('profile.strengthTooWeak'),
+    t('profile.strengthWeak'),
+    t('profile.strengthFair'),
+    t('profile.strengthGood'),
+    t('profile.strengthStrong'),
+  ];
   const colors = [
-    'bg-rose-500', 'bg-orange-400', 'bg-amber-400', 'bg-emerald-400', 'bg-emerald-500',
+    'bg-rose-500',
+    'bg-orange-400',
+    'bg-amber-400',
+    'bg-emerald-400',
+    'bg-emerald-500',
   ];
   const textColors = [
-    'text-rose-500', 'text-orange-400', 'text-amber-500', 'text-emerald-500', 'text-emerald-600',
+    'text-rose-500',
+    'text-orange-400',
+    'text-amber-500',
+    'text-emerald-500',
+    'text-emerald-600',
   ];
 
   return (
     <div className="space-y-1.5 mt-1">
       <div className="flex gap-1">
-        {[1, 2, 3, 4, 5].map(i => (
+        {[1, 2, 3, 4, 5].map((i) => (
           <div
             key={i}
             className={cn(
               'h-1 flex-1 rounded-full transition-all duration-300',
-              i <= score ? colors[score - 1] : 'bg-gray-200 dark:bg-slate-700'
+              i <= score ? colors[score - 1] : 'bg-gray-200 dark:bg-slate-700',
             )}
           />
         ))}
       </div>
-      <p className={cn('text-[11px] font-semibold', textColors[score - 1] ?? 'text-gray-400')}>
+      <p
+        className={cn(
+          'text-[11px] font-semibold',
+          textColors[score - 1] ?? 'text-gray-400',
+        )}
+      >
         {labels[score - 1] ?? ''}
       </p>
     </div>
@@ -74,16 +97,14 @@ function Avatar({ name, size = 'lg' }) {
     .split(' ')
     .filter(Boolean)
     .slice(0, 2)
-    .map(w => w[0].toUpperCase())
+    .map((w) => w[0].toUpperCase())
     .join('');
   return (
     <div
       className={cn(
         'rounded-full flex items-center justify-center font-bold select-none ring-4 ring-white dark:ring-slate-900 shadow-xl',
-        size === 'lg'
-          ? 'w-20 h-20 text-2xl'
-          : 'w-10 h-10 text-sm',
-        'bg-gradient-to-br from-indigo-500 via-violet-500 to-purple-600 text-white'
+        size === 'lg' ? 'w-20 h-20 text-2xl' : 'w-10 h-10 text-sm',
+        'bg-gradient-to-br from-indigo-500 via-violet-500 to-purple-600 text-white',
       )}
       aria-hidden
     >
@@ -100,7 +121,9 @@ function Card({ icon, title, subtitle, children }) {
         <span className="text-lg">{icon}</span>
         <div>
           <h2 className="text-sm font-semibold tracking-tight">{title}</h2>
-          {subtitle && <p className="text-xs text-gray-400 mt-0.5">{subtitle}</p>}
+          {subtitle && (
+            <p className="text-xs text-gray-400 mt-0.5">{subtitle}</p>
+          )}
         </div>
       </div>
       <div className="px-6 py-5">{children}</div>
@@ -112,8 +135,12 @@ function Card({ icon, title, subtitle, children }) {
 function StatRow({ label, value }) {
   return (
     <div className="flex items-center justify-between py-3 border-b border-[var(--border)] last:border-0">
-      <span className="text-xs font-semibold uppercase tracking-widest text-gray-400">{label}</span>
-      <span className="text-sm font-medium text-gray-800 dark:text-gray-100 tabular-nums">{value || '—'}</span>
+      <span className="text-xs font-semibold uppercase tracking-widest text-gray-400">
+        {label}
+      </span>
+      <span className="text-sm font-medium text-gray-800 dark:text-gray-100 tabular-nums">
+        {value || '—'}
+      </span>
     </div>
   );
 }
@@ -121,11 +148,30 @@ function StatRow({ label, value }) {
 // ── Eye toggle icon ───────────────────────────────────────────────────────────
 function EyeIcon({ open }) {
   return open ? (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" />
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+      <circle cx="12" cy="12" r="3" />
     </svg>
   ) : (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
       <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
       <line x1="1" y1="1" x2="23" y2="23" />
     </svg>
@@ -133,7 +179,15 @@ function EyeIcon({ open }) {
 }
 
 // ── Password input with reveal toggle ────────────────────────────────────────
-function PasswordInput({ id, value, onChange, placeholder, error, 'aria-describedby': ariaDescribedBy }) {
+function PasswordInput({
+  id,
+  value,
+  onChange,
+  placeholder,
+  error,
+  'aria-describedby': ariaDescribedBy,
+}) {
+  const { t } = useTranslation();
   const [show, setShow] = useState(false);
   return (
     <div className="relative">
@@ -149,10 +203,12 @@ function PasswordInput({ id, value, onChange, placeholder, error, 'aria-describe
       />
       <button
         type="button"
-        onClick={() => setShow(v => !v)}
+        onClick={() => setShow((v) => !v)}
         className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
         tabIndex={-1}
-        aria-label={show ? 'Hide password' : 'Show password'}
+        aria-label={
+          show ? t('profile.hidePassword') : t('profile.showPassword')
+        }
       >
         <EyeIcon open={show} />
       </button>
@@ -162,9 +218,10 @@ function PasswordInput({ id, value, onChange, placeholder, error, 'aria-describe
 
 // ─────────────────────────────────────────────────────────────────────────────
 export default function Profile() {
+  const { t } = useTranslation();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
-  const [initialEmail, setInitialEmail] = useState('');
+  const [, setInitialEmail] = useState('');
   const [createdAt, setCreatedAt] = useState('');
   const [lastLoginAt, setLastLoginAt] = useState('');
   const [profilePassword, setProfilePassword] = useState('');
@@ -181,22 +238,27 @@ export default function Profile() {
   // ── Load user ─────────────────────────────────────────────────────────────
   useEffect(() => {
     let mounted = true;
-    api.get('/user/me').then(({ data }) => {
-      if (!mounted) return;
-      setName(data.name || '');
-      setEmail(data.email || '');
-      setInitialEmail(data.email || '');
-      setCreatedAt(data.createdAt || '');
-      setLastLoginAt(data.lastLoginAt || '');
-    }).catch(() => { });
-    return () => { mounted = false; };
+    api
+      .get('/user/me')
+      .then(({ data }) => {
+        if (!mounted) return;
+        setName(data.name || '');
+        setEmail(data.email || '');
+        setInitialEmail(data.email || '');
+        setCreatedAt(data.createdAt || '');
+        setLastLoginAt(data.lastLoginAt || '');
+      })
+      .catch(() => {});
+    return () => {
+      mounted = false;
+    };
   }, []);
 
   // Auto-dismiss status
   useEffect(() => {
     if (!statusMsg) return;
-    const t = setTimeout(() => setStatusMsg(null), 5000);
-    return () => clearTimeout(t);
+    const timer = setTimeout(() => setStatusMsg(null), 5000);
+    return () => clearTimeout(timer);
   }, [statusMsg]);
 
   // ── Update profile ────────────────────────────────────────────────────────
@@ -204,26 +266,37 @@ export default function Profile() {
     e.preventDefault();
     const emailValid = /^\S+@\S+\.\S+$/.test(email);
     const nextErrors = {};
-    if (!name.trim()) nextErrors.name = 'El nombre es requerido';
-    if (!email.trim()) nextErrors.email = 'El correo es requerido';
-    else if (!emailValid) nextErrors.email = 'Formato de correo inválido';
-    if (!profilePassword.trim()) nextErrors.currentPassword = 'Contraseña actual requerida';
+    if (!name.trim()) nextErrors.name = t('profile.nameRequired');
+    if (!email.trim()) nextErrors.email = t('profile.emailRequired');
+    else if (!emailValid) nextErrors.email = t('profile.emailInvalid');
+    if (!profilePassword.trim())
+      nextErrors.currentPassword = t('profile.currentPasswordRequired');
     if (Object.keys(nextErrors).length) {
       setPErrors(nextErrors);
-      setStatusType('error'); setStatusMsg('Completa los campos requeridos');
+      setStatusType('error');
+      setStatusMsg(t('profile.fillRequired'));
       return;
     }
     setPErrors({});
     setSubmittingProfile(true);
     try {
-      const { data } = await api.put('/user/profile', { name, email, currentPassword: profilePassword });
-      setName(data.name); setEmail(data.email); setInitialEmail(data.email);
+      const { data } = await api.put('/user/profile', {
+        name,
+        email,
+        currentPassword: profilePassword,
+      });
+      setName(data.name);
+      setEmail(data.email);
+      setInitialEmail(data.email);
       setProfilePassword('');
-      setStatusType('success'); setStatusMsg('Perfil actualizado correctamente ✓');
+      setStatusType('success');
+      setStatusMsg(t('profile.profileUpdated'));
     } catch (err) {
       setStatusType('error');
-      setStatusMsg(err.response?.data?.message || 'Error al actualizar perfil');
-    } finally { setSubmittingProfile(false); }
+      setStatusMsg(translateServerError(err, t, 'profile.updateProfileFailed'));
+    } finally {
+      setSubmittingProfile(false);
+    }
   };
 
   // ── Change password ───────────────────────────────────────────────────────
@@ -231,41 +304,65 @@ export default function Profile() {
     e.preventDefault();
     const strong = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/.test(newPassword);
     const nextErrors = {};
-    if (!passwordCurrent.trim()) nextErrors.currentPassword = 'La contraseña actual es requerida';
-    if (!newPassword.trim()) nextErrors.newPassword = 'La nueva contraseña es requerida';
-    else if (!strong) nextErrors.newPassword = 'Mínimo 8 caracteres, mayúscula, minúscula y número';
-    if (!confirmPassword.trim()) nextErrors.confirmPassword = 'Confirma la nueva contraseña';
-    else if (newPassword !== confirmPassword) nextErrors.confirmPassword = 'Las contraseñas no coinciden';
+    if (!passwordCurrent.trim())
+      nextErrors.currentPassword = t('profile.currentPasswordRequired');
+    if (!newPassword.trim())
+      nextErrors.newPassword = t('profile.newPasswordRequired');
+    else if (!strong) nextErrors.newPassword = t('profile.passwordWeak');
+    if (!confirmPassword.trim())
+      nextErrors.confirmPassword = t('profile.confirmRequired');
+    else if (newPassword !== confirmPassword)
+      nextErrors.confirmPassword = t('profile.passwordsDoNotMatch');
     if (Object.keys(nextErrors).length) {
       setPwErrors(nextErrors);
-      setStatusType('error'); setStatusMsg('Completa los campos requeridos');
+      setStatusType('error');
+      setStatusMsg(t('profile.fillRequired'));
       return;
     }
     setPwErrors({});
     setSubmittingPassword(true);
     try {
-      await api.post('/user/change-password', { currentPassword: passwordCurrent, newPassword });
-      setPasswordCurrent(''); setNewPassword(''); setConfirmPassword('');
-      setStatusType('success'); setStatusMsg('Contraseña cambiada correctamente ✓');
+      await api.post('/user/change-password', {
+        currentPassword: passwordCurrent,
+        newPassword,
+      });
+      setPasswordCurrent('');
+      setNewPassword('');
+      setConfirmPassword('');
+      setStatusType('success');
+      setStatusMsg(t('profile.passwordChanged'));
     } catch (err) {
       setStatusType('error');
-      setStatusMsg(err.response?.data?.message || 'Error al cambiar contraseña');
-    } finally { setSubmittingPassword(false); }
+      setStatusMsg(
+        translateServerError(err, t, 'profile.changePasswordFailed'),
+      );
+    } finally {
+      setSubmittingPassword(false);
+    }
   };
 
   const fmt = useCallback((v) => {
     if (!v) return '';
-    try { return new Date(v).toLocaleString('es', { dateStyle: 'medium', timeStyle: 'short' }); }
-    catch { return v; }
+    try {
+      return new Date(v).toLocaleString(intlLocale(), {
+        dateStyle: 'medium',
+        timeStyle: 'short',
+      });
+    } catch {
+      return v;
+    }
   }, []);
 
   // ── Render ────────────────────────────────────────────────────────────────
   return (
     <div className="max-w-3xl mx-auto p-4 pb-12 space-y-5">
-
       {/* Feedback toast */}
       {statusMsg && (
-        <Alert variant={statusType} message={statusMsg} onClose={() => setStatusMsg(null)} />
+        <Alert
+          variant={statusType}
+          message={statusMsg}
+          onClose={() => setStatusMsg(null)}
+        />
       )}
 
       {/* ── Hero header ──────────────────────────────────────────────────── */}
@@ -278,9 +375,11 @@ export default function Profile() {
             <Avatar name={name} size="lg" />
             <div className="pb-1">
               <h1 className="text-xl font-bold tracking-tight text-gray-900 dark:text-white leading-tight">
-                {name || 'Your Name'}
+                {name || t('profile.yourName')}
               </h1>
-              <p className="text-sm text-gray-500 dark:text-gray-400">{email}</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400">
+                {email}
+              </p>
             </div>
           </div>
         </div>
@@ -288,50 +387,84 @@ export default function Profile() {
 
       {/* ── Two-column layout on md+ ──────────────────────────────────────── */}
       <div className="grid grid-cols-1 md:grid-cols-5 gap-5">
-
         {/* Left: forms (wider) */}
         <div className="md:col-span-3 space-y-5">
-
           {/* Profile info */}
-          <Card icon="✏️" title="Profile Information" subtitle="Update your name and email">
+          <Card
+            icon="✏️"
+            title={t('profile.profileInfo')}
+            subtitle={t('profile.profileInfoSub')}
+          >
             <form className="space-y-4" onSubmit={onUpdateProfile} noValidate>
-              <Field label="Full Name" htmlFor="name" error={pErrors.name}>
+              <Field
+                label={t('profile.fullName')}
+                htmlFor="name"
+                error={pErrors.name}
+              >
                 <Input
                   id="name"
-                  placeholder="Jane Doe"
+                  placeholder={t('profile.fullNamePlaceholder')}
                   value={name}
-                  onChange={e => { setName(e.target.value); if (pErrors.name) setPErrors(x => ({ ...x, name: undefined })); }}
+                  onChange={(e) => {
+                    setName(e.target.value);
+                    if (pErrors.name)
+                      setPErrors((x) => ({ ...x, name: undefined }));
+                  }}
                   aria-invalid={!!pErrors.name}
                   aria-describedby={pErrors.name ? 'name-error' : undefined}
-                  className={pErrors.name ? 'border-rose-500 focus:ring-rose-500' : undefined}
-                />
-              </Field>
-
-              <Field label="Email Address" htmlFor="email" error={pErrors.email}>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="jane@example.com"
-                  value={email}
-                  onChange={e => { setEmail(e.target.value); if (pErrors.email) setPErrors(x => ({ ...x, email: undefined })); }}
-                  aria-invalid={!!pErrors.email}
-                  aria-describedby={pErrors.email ? 'email-error' : undefined}
-                  className={pErrors.email ? 'border-rose-500 focus:ring-rose-500' : undefined}
+                  className={
+                    pErrors.name
+                      ? 'border-rose-500 focus:ring-rose-500'
+                      : undefined
+                  }
                 />
               </Field>
 
               <Field
-                label="Current Password"
+                label={t('profile.emailAddress')}
+                htmlFor="email"
+                error={pErrors.email}
+              >
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder={t('profile.emailPlaceholder')}
+                  value={email}
+                  onChange={(e) => {
+                    setEmail(e.target.value);
+                    if (pErrors.email)
+                      setPErrors((x) => ({ ...x, email: undefined }));
+                  }}
+                  aria-invalid={!!pErrors.email}
+                  aria-describedby={pErrors.email ? 'email-error' : undefined}
+                  className={
+                    pErrors.email
+                      ? 'border-rose-500 focus:ring-rose-500'
+                      : undefined
+                  }
+                />
+              </Field>
+
+              <Field
+                label={t('profile.currentPassword')}
                 htmlFor="profilePassword"
                 error={pErrors.currentPassword}
-                hint="Required to confirm identity before saving changes"
+                hint={t('profile.currentPasswordHint')}
               >
                 <PasswordInput
                   id="profilePassword"
                   value={profilePassword}
-                  onChange={e => { setProfilePassword(e.target.value); if (pErrors.currentPassword) setPErrors(x => ({ ...x, currentPassword: undefined })); }}
+                  onChange={(e) => {
+                    setProfilePassword(e.target.value);
+                    if (pErrors.currentPassword)
+                      setPErrors((x) => ({ ...x, currentPassword: undefined }));
+                  }}
                   error={pErrors.currentPassword}
-                  aria-describedby={pErrors.currentPassword ? 'profilePassword-error' : undefined}
+                  aria-describedby={
+                    pErrors.currentPassword
+                      ? 'profilePassword-error'
+                      : undefined
+                  }
                 />
               </Field>
 
@@ -341,48 +474,90 @@ export default function Profile() {
                   disabled={submittingProfile}
                   className="w-full sm:w-auto bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-6"
                 >
-                  {submittingProfile ? 'Saving…' : 'Save Changes'}
+                  {submittingProfile
+                    ? t('profile.saving')
+                    : t('profile.saveChanges')}
                 </Button>
               </div>
             </form>
           </Card>
 
           {/* Change password */}
-          <Card icon="🔒" title="Change Password" subtitle="Use a strong password to keep your account secure">
+          <Card
+            icon="🔒"
+            title={t('profile.changePassword')}
+            subtitle={t('profile.changePasswordSub')}
+          >
             <form className="space-y-4" onSubmit={onChangePassword} noValidate>
-              <Field label="Current Password" htmlFor="pwCurrent" error={pwErrors.currentPassword}>
+              <Field
+                label={t('profile.currentPassword')}
+                htmlFor="pwCurrent"
+                error={pwErrors.currentPassword}
+              >
                 <PasswordInput
                   id="pwCurrent"
                   value={passwordCurrent}
-                  onChange={e => { setPasswordCurrent(e.target.value); if (pwErrors.currentPassword) setPwErrors(x => ({ ...x, currentPassword: undefined })); }}
+                  onChange={(e) => {
+                    setPasswordCurrent(e.target.value);
+                    if (pwErrors.currentPassword)
+                      setPwErrors((x) => ({
+                        ...x,
+                        currentPassword: undefined,
+                      }));
+                  }}
                   error={pwErrors.currentPassword}
                 />
               </Field>
 
-              <Field label="New Password" htmlFor="pwNew" error={pwErrors.newPassword}>
+              <Field
+                label={t('profile.newPassword')}
+                htmlFor="pwNew"
+                error={pwErrors.newPassword}
+              >
                 <PasswordInput
                   id="pwNew"
                   value={newPassword}
-                  onChange={e => { setNewPassword(e.target.value); if (pwErrors.newPassword) setPwErrors(x => ({ ...x, newPassword: undefined })); }}
+                  onChange={(e) => {
+                    setNewPassword(e.target.value);
+                    if (pwErrors.newPassword)
+                      setPwErrors((x) => ({ ...x, newPassword: undefined }));
+                  }}
                   error={pwErrors.newPassword}
                 />
                 <PasswordStrength password={newPassword} />
               </Field>
 
-              <Field label="Confirm New Password" htmlFor="pwConfirm" error={pwErrors.confirmPassword}>
+              <Field
+                label={t('profile.confirmNewPassword')}
+                htmlFor="pwConfirm"
+                error={pwErrors.confirmPassword}
+              >
                 <PasswordInput
                   id="pwConfirm"
                   value={confirmPassword}
-                  onChange={e => { setConfirmPassword(e.target.value); if (pwErrors.confirmPassword) setPwErrors(x => ({ ...x, confirmPassword: undefined })); }}
+                  onChange={(e) => {
+                    setConfirmPassword(e.target.value);
+                    if (pwErrors.confirmPassword)
+                      setPwErrors((x) => ({
+                        ...x,
+                        confirmPassword: undefined,
+                      }));
+                  }}
                   error={pwErrors.confirmPassword}
                 />
                 {/* match indicator */}
                 {confirmPassword && newPassword && (
-                  <p className={cn(
-                    'text-[11px] font-semibold',
-                    confirmPassword === newPassword ? 'text-emerald-500' : 'text-rose-500'
-                  )}>
-                    {confirmPassword === newPassword ? '✓ Passwords match' : '✗ Passwords do not match'}
+                  <p
+                    className={cn(
+                      'text-[11px] font-semibold',
+                      confirmPassword === newPassword
+                        ? 'text-emerald-500'
+                        : 'text-rose-500',
+                    )}
+                  >
+                    {confirmPassword === newPassword
+                      ? t('profile.passwordsMatch')
+                      : t('profile.passwordsNoMatch')}
                   </p>
                 )}
               </Field>
@@ -393,7 +568,9 @@ export default function Profile() {
                   disabled={submittingPassword}
                   className="w-full sm:w-auto bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-6"
                 >
-                  {submittingPassword ? 'Updating…' : 'Update Password'}
+                  {submittingPassword
+                    ? t('profile.updating')
+                    : t('profile.updatePassword')}
                 </Button>
               </div>
             </form>
@@ -402,11 +579,21 @@ export default function Profile() {
 
         {/* Right: account info (narrower) */}
         <div className="md:col-span-2 space-y-5">
-          <Card icon="📋" title="Account Details" subtitle="Your account information">
+          <Card
+            icon="📋"
+            title={t('profile.accountDetails')}
+            subtitle={t('profile.accountDetailsSub')}
+          >
             <div>
-              <StatRow label="Member Since" value={fmt(createdAt)} />
-              <StatRow label="Last Login" value={fmt(lastLoginAt)} />
-              <StatRow label="Email" value={email} />
+              <StatRow
+                label={t('profile.memberSince')}
+                value={fmt(createdAt)}
+              />
+              <StatRow
+                label={t('profile.lastLogin')}
+                value={fmt(lastLoginAt)}
+              />
+              <StatRow label={t('profile.email')} value={email} />
             </div>
           </Card>
 
@@ -414,19 +601,22 @@ export default function Profile() {
           <div className="rounded-2xl border border-[var(--border)] bg-indigo-50 dark:bg-indigo-950/20 p-5 space-y-3">
             <div className="flex items-center gap-2">
               <span className="text-base">🛡️</span>
-              <h3 className="text-sm font-semibold text-indigo-800 dark:text-indigo-300">Security Tips</h3>
+              <h3 className="text-sm font-semibold text-indigo-800 dark:text-indigo-300">
+                {t('profile.securityTips')}
+              </h3>
             </div>
             <ul className="space-y-2">
-              {[
-                'Use a unique password not used elsewhere',
-                'Avoid sharing your credentials',
-                'Log out when using shared devices',
-              ].map((tip, i) => (
-                <li key={i} className="flex items-start gap-2 text-xs text-indigo-700 dark:text-indigo-400">
-                  <span className="mt-px opacity-60">•</span>
-                  <span>{tip}</span>
-                </li>
-              ))}
+              {[t('profile.tip1'), t('profile.tip2'), t('profile.tip3')].map(
+                (tip, i) => (
+                  <li
+                    key={i}
+                    className="flex items-start gap-2 text-xs text-indigo-700 dark:text-indigo-400"
+                  >
+                    <span className="mt-px opacity-60">•</span>
+                    <span>{tip}</span>
+                  </li>
+                ),
+              )}
             </ul>
           </div>
         </div>

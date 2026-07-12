@@ -1,15 +1,26 @@
 import { useEffect, useRef, useState } from 'react';
 import { NavLink, Link, useNavigate, useLocation } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { cn } from '../lib/utils';
 import { clearSession } from '../utils/session';
+import LanguageSelector from './LanguageSelector';
 
 // ─── Chevron icon ─────────────────────────────────────────────────────────────
 const ChevronDown = ({ open }) => (
   <svg
-    xmlns="http://www.w3.org/2000/svg" width="14" height="14"
-    viewBox="0 0 24 24" fill="none" stroke="currentColor"
-    strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
-    style={{ transition: 'transform 0.2s', transform: open ? 'rotate(180deg)' : 'rotate(0deg)' }}
+    xmlns="http://www.w3.org/2000/svg"
+    width="14"
+    height="14"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2.5"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    style={{
+      transition: 'transform 0.2s',
+      transform: open ? 'rotate(180deg)' : 'rotate(0deg)',
+    }}
   >
     <path d="M6 9l6 6 6-6" />
   </svg>
@@ -17,24 +28,61 @@ const ChevronDown = ({ open }) => (
 
 // ─── Shield icon (Super Admin) ────────────────────────────────────────────────
 const ShieldIcon = () => (
-  <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24"
-    fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    width="13"
+    height="13"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2.5"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
     <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
   </svg>
 );
 
 // ─── Avatar initials ──────────────────────────────────────────────────────────
 function Avatar({ name = '', size = 30 }) {
-  const colors = ['#6366f1', '#8b5cf6', '#ec4899', '#f59e0b', '#10b981', '#3b82f6'];
+  const colors = [
+    '#6366f1',
+    '#8b5cf6',
+    '#ec4899',
+    '#f59e0b',
+    '#10b981',
+    '#3b82f6',
+  ];
   let h = 0;
-  for (let i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) % colors.length;
-  const initials = name.split(' ').map(p => p[0]).join('').slice(0, 2).toUpperCase();
+  for (let i = 0; i < name.length; i++)
+    h = (h * 31 + name.charCodeAt(i)) % colors.length;
+  const initials = name
+    .split(' ')
+    .map((p) => p[0])
+    .join('')
+    .slice(0, 2)
+    .toUpperCase();
   return (
-    <div style={{
-      width: size, height: size, borderRadius: '50%', background: colors[h],
-      display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-    }}>
-      <span style={{ color: '#fff', fontSize: size * 0.38, fontWeight: 700, lineHeight: 1 }}>
+    <div
+      style={{
+        width: size,
+        height: size,
+        borderRadius: '50%',
+        background: colors[h],
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        flexShrink: 0,
+      }}
+    >
+      <span
+        style={{
+          color: '#fff',
+          fontSize: size * 0.38,
+          fontWeight: 700,
+          lineHeight: 1,
+        }}
+      >
         {initials}
       </span>
     </div>
@@ -55,7 +103,7 @@ function Dropdown({ label, isActive, isOpen, onToggle, children, mobile }) {
           mobile && 'w-full justify-between',
           isActive
             ? 'bg-[var(--muted)] text-[var(--foreground)] shadow-sm'
-            : 'text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:bg-[var(--muted)]'
+            : 'text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:bg-[var(--muted)]',
         )}
       >
         {label}
@@ -91,7 +139,7 @@ function DropdownItem({ to, onClick, children, mobile }) {
           mobile && 'px-3 py-1.5',
           isActive
             ? 'bg-[var(--muted)] text-[var(--foreground)] font-semibold'
-            : 'text-[var(--muted-foreground)] hover:bg-[var(--muted)] hover:text-[var(--foreground)]'
+            : 'text-[var(--muted-foreground)] hover:bg-[var(--muted)] hover:text-[var(--foreground)]',
         )
       }
     >
@@ -110,9 +158,14 @@ export default function Navbar({ theme, onToggleTheme }) {
   const navRef = useRef(null);
   const navigate = useNavigate();
   const location = useLocation();
+  const { t } = useTranslation();
 
   const user = (() => {
-    try { return JSON.parse(localStorage.getItem('user') || 'null'); } catch { return null; }
+    try {
+      return JSON.parse(localStorage.getItem('user') || 'null');
+    } catch {
+      return null;
+    }
   })();
   const isSuperAdmin = user?.isSuperAdmin === true;
 
@@ -160,7 +213,7 @@ export default function Navbar({ theme, onToggleTheme }) {
       'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-150',
       isActive
         ? 'bg-[var(--muted)] text-[var(--foreground)] shadow-sm'
-        : 'text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:bg-[var(--muted)]'
+        : 'text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:bg-[var(--muted)]',
     );
 
   const mobileNavLinkClass = ({ isActive }) =>
@@ -168,7 +221,7 @@ export default function Navbar({ theme, onToggleTheme }) {
       'flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-150 w-full',
       isActive
         ? 'bg-[var(--muted)] text-[var(--foreground)] font-semibold'
-        : 'text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:bg-[var(--muted)]'
+        : 'text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:bg-[var(--muted)]',
     );
 
   return (
@@ -183,31 +236,51 @@ export default function Navbar({ theme, onToggleTheme }) {
     >
       <div className="max-w-6xl mx-auto px-4">
         <div className="flex items-center justify-between h-14 gap-4">
-
           {/* ── Left: Brand ──────────────────────────────── */}
           <div className="flex items-center gap-5 shrink-0">
             {/* Mobile hamburger */}
             <button
               className="md:hidden p-1.5 -ml-1 rounded-lg text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:bg-[var(--muted)] transition-colors"
               onClick={() => setMenuOpen(!menuOpen)}
-              aria-label="Toggle menu"
+              aria-label={t('nav.toggleMenu')}
             >
               {menuOpen ? (
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
-                  fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M18 6 6 18" /><path d="m6 6 12 12" />
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M18 6 6 18" />
+                  <path d="m6 6 12 12" />
                 </svg>
               ) : (
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
-                  fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <line x1="4" x2="20" y1="6" y2="6" /><line x1="4" x2="20" y1="12" y2="12" /><line x1="4" x2="20" y1="18" y2="18" />
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <line x1="4" x2="20" y1="6" y2="6" />
+                  <line x1="4" x2="20" y1="12" y2="12" />
+                  <line x1="4" x2="20" y1="18" y2="18" />
                 </svg>
               )}
             </button>
 
             <Link
               to="/"
-              aria-label="Goals - Ir al inicio"
+              aria-label={t('nav.home')}
               className="font-bold text-base text-[var(--foreground)] tracking-tight leading-tight hover:opacity-80 transition-opacity"
             >
               Goals
@@ -217,42 +290,68 @@ export default function Navbar({ theme, onToggleTheme }) {
           {/* ── Center: Desktop Navigation ────────────────── */}
           <div className="hidden md:flex items-center gap-1">
             <NavLink to="/" end className={navLinkClass} onClick={closeAll}>
-              Dashboard
+              {t('nav.dashboard')}
             </NavLink>
 
             <Dropdown
-              label="Transactions"
+              label={t('nav.transactions')}
               isActive={location.pathname.startsWith('/transactions')}
               isOpen={txOpen}
-              onToggle={() => { setTxOpen(v => !v); setPlansOpen(false); setGraphicsOpen(false); setUserMenuOpen(false); }}
+              onToggle={() => {
+                setTxOpen((v) => !v);
+                setPlansOpen(false);
+                setGraphicsOpen(false);
+                setUserMenuOpen(false);
+              }}
             >
-              <DropdownItem to="/transactions/budget" onClick={closeAll}>Budget</DropdownItem>
-              <DropdownItem to="/transactions/add" onClick={closeAll}>Add Transaction</DropdownItem>
+              <DropdownItem to="/transactions/budget" onClick={closeAll}>
+                {t('nav.budget')}
+              </DropdownItem>
+              <DropdownItem to="/transactions/add" onClick={closeAll}>
+                {t('nav.addTransaction')}
+              </DropdownItem>
             </Dropdown>
 
             <Dropdown
-              label="Plans"
-              isActive={location.pathname.startsWith('/plans') || location.pathname === '/saving-plan'}
+              label={t('nav.plans')}
+              isActive={
+                location.pathname.startsWith('/plans') ||
+                location.pathname === '/saving-plan'
+              }
               isOpen={plansOpen}
-              onToggle={() => { setPlansOpen(v => !v); setTxOpen(false); setGraphicsOpen(false); setUserMenuOpen(false); }}
+              onToggle={() => {
+                setPlansOpen((v) => !v);
+                setTxOpen(false);
+                setGraphicsOpen(false);
+                setUserMenuOpen(false);
+              }}
             >
-              <DropdownItem to="/plans/savings" onClick={closeAll}>Savings Plans</DropdownItem>
-              <DropdownItem to="/plans/accounts" onClick={closeAll}>Accounts</DropdownItem>
-              <DropdownItem to="/plans/scheduled-payments" onClick={closeAll}>Scheduled Payments</DropdownItem>
+              <DropdownItem to="/plans/savings" onClick={closeAll}>
+                {t('nav.savingsPlans')}
+              </DropdownItem>
+              <DropdownItem to="/plans/accounts" onClick={closeAll}>
+                {t('nav.accounts')}
+              </DropdownItem>
+              <DropdownItem to="/plans/scheduled-payments" onClick={closeAll}>
+                {t('nav.scheduledPayments')}
+              </DropdownItem>
             </Dropdown>
 
             <Dropdown
-              label="Graphics"
+              label={t('nav.graphics')}
               isActive={location.pathname.startsWith('/graphics')}
               isOpen={graphicsOpen}
-              onToggle={() => { setGraphicsOpen(v => !v); setTxOpen(false); setPlansOpen(false); setUserMenuOpen(false); }}
+              onToggle={() => {
+                setGraphicsOpen((v) => !v);
+                setTxOpen(false);
+                setPlansOpen(false);
+                setUserMenuOpen(false);
+              }}
             >
-              <DropdownItem to="/graphics/categories" onClick={closeAll}>By Categories</DropdownItem>
+              <DropdownItem to="/graphics/categories" onClick={closeAll}>
+                {t('nav.byCategories')}
+              </DropdownItem>
             </Dropdown>
-
-            <NavLink to="/settings" className={navLinkClass} onClick={closeAll}>
-              Settings
-            </NavLink>
 
             {/* Super Admin badge */}
             {isSuperAdmin && (
@@ -264,7 +363,7 @@ export default function Navbar({ theme, onToggleTheme }) {
                     'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-semibold transition-all duration-150',
                     isActive
                       ? 'bg-amber-500/20 text-amber-500 shadow-sm shadow-amber-500/10'
-                      : 'text-amber-500/80 hover:text-amber-500 hover:bg-amber-500/10'
+                      : 'text-amber-500/80 hover:text-amber-500 hover:bg-amber-500/10',
                   )
                 }
               >
@@ -276,10 +375,13 @@ export default function Navbar({ theme, onToggleTheme }) {
 
           {/* ── Right: User area ──────────────────────────── */}
           <div className="hidden md:flex items-center gap-2 shrink-0">
+            {/* Language selector */}
+            <LanguageSelector />
+
             {/* Theme toggle */}
             <button
               onClick={onToggleTheme}
-              aria-label="Toggle theme"
+              aria-label={t('nav.toggleTheme')}
               className="w-8 h-8 flex items-center justify-center rounded-lg text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:bg-[var(--muted)] transition-colors text-base"
             >
               {theme === 'dark' ? '🌙' : '☀️'}
@@ -292,7 +394,11 @@ export default function Navbar({ theme, onToggleTheme }) {
             {user && (
               <div className="relative">
                 <button
-                  onClick={() => { setUserMenuOpen(v => !v); setPlansOpen(false); setTxOpen(false); }}
+                  onClick={() => {
+                    setUserMenuOpen((v) => !v);
+                    setPlansOpen(false);
+                    setTxOpen(false);
+                  }}
                   className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-[var(--muted)] transition-colors group"
                 >
                   <Avatar name={user.name} size={28} />
@@ -306,11 +412,15 @@ export default function Navbar({ theme, onToggleTheme }) {
                   <div className="absolute top-full right-0 mt-2 w-52 rounded-xl border border-[var(--border)] bg-[var(--card)] shadow-xl z-50 overflow-hidden">
                     {/* User info header */}
                     <div className="px-4 py-3 border-b border-[var(--border)]">
-                      <p className="text-xs font-semibold text-[var(--foreground)] truncate">{user.name}</p>
-                      <p className="text-xs text-[var(--muted-foreground)] truncate mt-0.5">{user.email}</p>
+                      <p className="text-xs font-semibold text-[var(--foreground)] truncate">
+                        {user.name}
+                      </p>
+                      <p className="text-xs text-[var(--muted-foreground)] truncate mt-0.5">
+                        {user.email}
+                      </p>
                       {isSuperAdmin && (
                         <span className="inline-flex items-center gap-1 mt-1.5 text-amber-500 text-xs font-semibold">
-                          <ShieldIcon /> Super Admin
+                          <ShieldIcon /> {t('nav.superAdmin')}
                         </span>
                       )}
                     </div>
@@ -322,8 +432,44 @@ export default function Navbar({ theme, onToggleTheme }) {
                           'flex items-center gap-2.5 px-4 py-2 text-sm text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:bg-[var(--muted)] transition-colors mx-1 rounded-md'
                         }
                       >
-                        <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="8" r="4"/><path d="M6 20v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"/></svg>
-                        Profile
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          width="15"
+                          height="15"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        >
+                          <circle cx="12" cy="8" r="4" />
+                          <path d="M6 20v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2" />
+                        </svg>
+                        {t('nav.profile')}
+                      </NavLink>
+                      <NavLink
+                        to="/settings"
+                        onClick={closeAll}
+                        className={() =>
+                          'flex items-center gap-2.5 px-4 py-2 text-sm text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:bg-[var(--muted)] transition-colors mx-1 rounded-md'
+                        }
+                      >
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          width="15"
+                          height="15"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        >
+                          <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" />
+                          <circle cx="12" cy="12" r="3" />
+                        </svg>
+                        {t('nav.settings')}
                       </NavLink>
                       {isSuperAdmin && (
                         <NavLink
@@ -333,7 +479,7 @@ export default function Navbar({ theme, onToggleTheme }) {
                             'flex items-center gap-2.5 px-4 py-2 text-sm text-amber-500 hover:bg-amber-500/10 transition-colors mx-1 rounded-md font-medium'
                           }
                         >
-                          <ShieldIcon /> User Manager
+                          <ShieldIcon /> {t('nav.userManager')}
                         </NavLink>
                       )}
                       <a
@@ -343,18 +489,48 @@ export default function Navbar({ theme, onToggleTheme }) {
                         onClick={closeAll}
                         className="flex items-center gap-2.5 px-4 py-2 text-sm text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:bg-[var(--muted)] transition-colors mx-1 rounded-md mt-1"
                       >
-                        <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
-                        Report Issue
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          width="15"
+                          height="15"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        >
+                          <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
+                          <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
+                        </svg>
+                        {t('nav.reportIssue')}
                       </a>
                     </div>
                     <div className="py-1.5 border-t border-[var(--border)]">
                       <button
-                        onClick={() => { closeAll(); onLogout(); }}
+                        onClick={() => {
+                          closeAll();
+                          onLogout();
+                        }}
                         className="flex items-center gap-2.5 px-4 py-2 text-sm text-[var(--muted-foreground)] hover:text-red-500 hover:bg-red-500/5 transition-colors w-full text-left mx-1 rounded-md"
                         style={{ width: 'calc(100% - 8px)' }}
                       >
-                        <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" x2="9" y1="12" y2="12"/></svg>
-                        Logout
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          width="15"
+                          height="15"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        >
+                          <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                          <polyline points="16 17 21 12 16 7" />
+                          <line x1="21" x2="9" y1="12" y2="12" />
+                        </svg>
+                        {t('nav.logout')}
                       </button>
                     </div>
                   </div>
@@ -363,10 +539,12 @@ export default function Navbar({ theme, onToggleTheme }) {
             )}
           </div>
 
-          {/* Mobile right: theme + avatar */}
-          <div className="md:hidden flex items-center gap-2">
+          {/* Mobile right: language + theme + avatar */}
+          <div className="md:hidden flex items-center gap-1">
+            <LanguageSelector mobile />
             <button
               onClick={onToggleTheme}
+              aria-label={t('nav.toggleTheme')}
               className="w-8 h-8 flex items-center justify-center rounded-lg text-[var(--muted-foreground)] hover:bg-[var(--muted)] transition-colors text-base"
             >
               {theme === 'dark' ? '🌙' : '☀️'}
@@ -380,48 +558,66 @@ export default function Navbar({ theme, onToggleTheme }) {
       {menuOpen && (
         <div className="md:hidden border-t border-[var(--border)] bg-[var(--card)] shadow-lg">
           <div className="max-w-6xl mx-auto px-4 py-3 space-y-1">
-            <NavLink to="/" end className={mobileNavLinkClass} onClick={closeAll}>
-              Dashboard
+            <NavLink
+              to="/"
+              end
+              className={mobileNavLinkClass}
+              onClick={closeAll}
+            >
+              {t('nav.dashboard')}
             </NavLink>
 
             {/* Transactions mobile */}
             <Dropdown
-              label="Transactions"
+              label={t('nav.transactions')}
               isActive={location.pathname.startsWith('/transactions')}
               isOpen={txOpen}
-              onToggle={() => setTxOpen(v => !v)}
+              onToggle={() => setTxOpen((v) => !v)}
               mobile
             >
-              <DropdownItem to="/transactions/budget" onClick={closeAll} mobile>Budget</DropdownItem>
-              <DropdownItem to="/transactions/add" onClick={closeAll} mobile>Add Transaction</DropdownItem>
+              <DropdownItem to="/transactions/budget" onClick={closeAll} mobile>
+                {t('nav.budget')}
+              </DropdownItem>
+              <DropdownItem to="/transactions/add" onClick={closeAll} mobile>
+                {t('nav.addTransaction')}
+              </DropdownItem>
             </Dropdown>
 
             {/* Plans mobile */}
             <Dropdown
-              label="Plans"
+              label={t('nav.plans')}
               isActive={location.pathname.startsWith('/plans')}
               isOpen={plansOpen}
-              onToggle={() => setPlansOpen(v => !v)}
+              onToggle={() => setPlansOpen((v) => !v)}
               mobile
             >
-              <DropdownItem to="/plans/savings" onClick={closeAll} mobile>Savings Plans</DropdownItem>
-              <DropdownItem to="/plans/accounts" onClick={closeAll} mobile>Accounts</DropdownItem>
-              <DropdownItem to="/plans/scheduled-payments" onClick={closeAll} mobile>Scheduled Payments</DropdownItem>
+              <DropdownItem to="/plans/savings" onClick={closeAll} mobile>
+                {t('nav.savingsPlans')}
+              </DropdownItem>
+              <DropdownItem to="/plans/accounts" onClick={closeAll} mobile>
+                {t('nav.accounts')}
+              </DropdownItem>
+              <DropdownItem
+                to="/plans/scheduled-payments"
+                onClick={closeAll}
+                mobile
+              >
+                {t('nav.scheduledPayments')}
+              </DropdownItem>
             </Dropdown>
 
             {/* Graphics mobile */}
             <Dropdown
-              label="Graphics"
+              label={t('nav.graphics')}
               isActive={location.pathname.startsWith('/graphics')}
               isOpen={graphicsOpen}
-              onToggle={() => setGraphicsOpen(v => !v)}
+              onToggle={() => setGraphicsOpen((v) => !v)}
               mobile
             >
-              <DropdownItem to="/graphics/categories" onClick={closeAll} mobile>By Categories</DropdownItem>
+              <DropdownItem to="/graphics/categories" onClick={closeAll} mobile>
+                {t('nav.byCategories')}
+              </DropdownItem>
             </Dropdown>
-
-            <NavLink to="/settings" className={mobileNavLinkClass} onClick={closeAll}>Settings</NavLink>
-            <NavLink to="/profile" className={mobileNavLinkClass} onClick={closeAll}>Profile</NavLink>
 
             {isSuperAdmin && (
               <NavLink
@@ -432,11 +628,11 @@ export default function Navbar({ theme, onToggleTheme }) {
                     'flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-semibold w-full transition-all duration-150',
                     isActive
                       ? 'bg-amber-500/15 text-amber-500'
-                      : 'text-amber-500/80 hover:bg-amber-500/10 hover:text-amber-500'
+                      : 'text-amber-500/80 hover:bg-amber-500/10 hover:text-amber-500',
                   )
                 }
               >
-                <ShieldIcon /> User Manager
+                <ShieldIcon /> {t('nav.userManager')}
               </NavLink>
             )}
 
@@ -445,11 +641,57 @@ export default function Navbar({ theme, onToggleTheme }) {
                 <div className="flex items-center gap-2.5 px-3 py-2 mb-1">
                   <Avatar name={user.name} size={32} />
                   <div>
-                    <p className="text-sm font-semibold text-[var(--foreground)]">{user.name}</p>
-                    <p className="text-xs text-[var(--muted-foreground)]">{user.email}</p>
+                    <p className="text-sm font-semibold text-[var(--foreground)]">
+                      {user.name}
+                    </p>
+                    <p className="text-xs text-[var(--muted-foreground)]">
+                      {user.email}
+                    </p>
                   </div>
                 </div>
               )}
+              <NavLink
+                to="/profile"
+                className={mobileNavLinkClass}
+                onClick={closeAll}
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="15"
+                  height="15"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <circle cx="12" cy="8" r="4" />
+                  <path d="M6 20v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2" />
+                </svg>
+                {t('nav.profile')}
+              </NavLink>
+              <NavLink
+                to="/settings"
+                className={mobileNavLinkClass}
+                onClick={closeAll}
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="15"
+                  height="15"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" />
+                  <circle cx="12" cy="12" r="3" />
+                </svg>
+                {t('nav.settings')}
+              </NavLink>
               <a
                 href="https://github.com/fernandofedora/goals-client/issues/new?labels=bug,user-reported&title=%5BBUG%5D+Brief+description+of+the+error&body=%23%23+Problem+Description%0A%0A%3C!--+Describe+what+happened+--%3E%0A%0A%23%23+Steps+to+Reproduce%0A%0A1.+%0A2.+%0A3.+%0A%0A%23%23+Expected+Behavior%0A%0A%3C!--+What+did+you+expect+to+happen%3F+--%3E%0A"
                 target="_blank"
@@ -457,15 +699,45 @@ export default function Navbar({ theme, onToggleTheme }) {
                 onClick={closeAll}
                 className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:bg-[var(--muted)] w-full text-left transition-colors mb-1"
               >
-                <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
-                Report Issue
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="15"
+                  height="15"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
+                  <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
+                </svg>
+                {t('nav.reportIssue')}
               </a>
               <button
-                onClick={() => { closeAll(); onLogout(); }}
+                onClick={() => {
+                  closeAll();
+                  onLogout();
+                }}
                 className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-red-500 hover:bg-red-500/5 w-full text-left transition-colors"
               >
-                <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" x2="9" y1="12" y2="12"/></svg>
-                Logout
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="15"
+                  height="15"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                  <polyline points="16 17 21 12 16 7" />
+                  <line x1="21" x2="9" y1="12" y2="12" />
+                </svg>
+                {t('nav.logout')}
               </button>
             </div>
           </div>
