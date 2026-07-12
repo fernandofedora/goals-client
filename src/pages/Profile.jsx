@@ -100,7 +100,7 @@ function Avatar({ name, size = 'lg' }) {
   return (
     <div
       className={cn(
-        'rounded-full flex items-center justify-center font-bold select-none ring-4 ring-white dark:ring-slate-900 shadow-xl text-white',
+        'rounded-full flex items-center justify-center font-bold select-none shadow-lg text-white',
         size === 'lg' ? 'w-20 h-20 text-2xl' : 'w-10 h-10 text-sm',
       )}
       style={{
@@ -383,60 +383,54 @@ export default function Profile() {
         />
       )}
 
-      {/* ── Hero header ──────────────────────────────────────────────────── */}
+      {/* ── Identity card ──────────────────────────────────────────────────
+          Bannerless hero: the user's identity color lives only in the avatar,
+          the left accent bar and a faint atmospheric tint — no overlaps. */}
       <div className="relative rounded-2xl overflow-hidden border border-[var(--border)] shadow-sm bg-white dark:bg-slate-900">
-        {/* identity band — gradient derived from the user's avatar color */}
-        <div
-          className="relative h-28 overflow-hidden"
+        {/* left accent bar in the user's identity color */}
+        <span
+          aria-hidden
+          className="absolute left-0 top-0 bottom-0 w-1.5"
           style={{
-            background: `linear-gradient(135deg, color-mix(in srgb, ${heroColor} 70%, white) 0%, ${heroColor} 45%, color-mix(in srgb, ${heroColor} 55%, black) 100%)`,
+            background: `linear-gradient(180deg, color-mix(in srgb, ${heroColor} 70%, white), ${heroColor})`,
           }}
-        >
-          {/* decorative translucent circles */}
-          <span
-            aria-hidden
-            className="absolute -top-12 -left-8 w-44 h-44 rounded-full bg-white/10"
-          />
-          <span
-            aria-hidden
-            className="absolute -bottom-16 left-1/3 w-40 h-40 rounded-full bg-white/[0.07]"
-          />
-          {/* giant watermark initials */}
-          <span
-            aria-hidden
-            className="absolute right-4 top-1/2 -translate-y-1/2 text-[110px] font-black leading-none tracking-tighter text-white/15 select-none pointer-events-none"
+        />
+        {/* faint atmospheric tint, top-right */}
+        <span
+          aria-hidden
+          className="absolute inset-0 pointer-events-none"
+          style={{
+            background: `radial-gradient(600px circle at top right, ${heroColor}14, transparent 60%)`,
+          }}
+        />
+        <div className="relative flex items-center gap-4 px-6 py-5 flex-wrap">
+          {/* Avatar with a soft halo of the identity color */}
+          <div
+            className="p-1 rounded-full flex-shrink-0"
+            style={{ background: `${heroColor}20` }}
           >
-            {userInitials(name) || '✦'}
-          </span>
-        </div>
-        {/* avatar overlaps the banner; name/email sit fully below it */}
-        <div className="px-6 pb-5">
-          {/* Avatar pulled up into the banner (only it overlaps) */}
-          <div className="-mt-12 w-fit">
             <Avatar name={name} size="lg" />
           </div>
-          <div className="mt-3 flex items-end justify-between gap-3 flex-wrap">
-            <div className="min-w-0">
-              <h1 className="text-xl font-bold tracking-tight text-gray-900 dark:text-white leading-tight">
-                {name || t('profile.yourName')}
-              </h1>
-              <p className="text-sm text-gray-500 dark:text-gray-400 truncate">
-                {email}
-              </p>
-            </div>
-            {memberSinceShort && (
-              <span
-                className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold"
-                style={{
-                  background: `${heroColor}18`,
-                  border: `1px solid ${heroColor}33`,
-                  color: heroColor,
-                }}
-              >
-                📅 {t('profile.memberSinceChip', { date: memberSinceShort })}
-              </span>
-            )}
+          <div className="min-w-0">
+            <h1 className="text-xl font-bold tracking-tight text-gray-900 dark:text-white leading-tight">
+              {name || t('profile.yourName')}
+            </h1>
+            <p className="text-sm text-gray-500 dark:text-gray-400 truncate">
+              {email}
+            </p>
           </div>
+          {memberSinceShort && (
+            <span
+              className="sm:ml-auto inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold"
+              style={{
+                background: `${heroColor}18`,
+                border: `1px solid ${heroColor}33`,
+                color: heroColor,
+              }}
+            >
+              📅 {t('profile.memberSinceChip', { date: memberSinceShort })}
+            </span>
+          )}
         </div>
       </div>
 
