@@ -642,6 +642,7 @@
     "accountDetails": "Account Details",
     "accountDetailsSub": "Your account information",
     "memberSince": "Member Since",
+    "memberSinceChip": "Member since {{date}}",
     "lastLogin": "Last Login",
     "email": "Email",
     "securityTips": "Security Tips",

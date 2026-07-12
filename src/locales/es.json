@@ -642,6 +642,7 @@
     "accountDetails": "Detalles de la Cuenta",
     "accountDetailsSub": "La información de tu cuenta",
     "memberSince": "Miembro Desde",
+    "memberSinceChip": "Miembro desde {{date}}",
     "lastLogin": "Último Acceso",
     "email": "Correo",
     "securityTips": "Consejos de Seguridad",
