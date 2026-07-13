@@ -3,6 +3,7 @@ import { NavLink, Link, useNavigate, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { cn } from '../lib/utils';
 import { clearSession } from '../utils/session';
+import { avatarColor, userInitials } from '../utils/avatar';
 import LanguageSelector from './LanguageSelector';
 
 // ─── Chevron icon ─────────────────────────────────────────────────────────────
@@ -45,30 +46,14 @@ const ShieldIcon = () => (
 
 // ─── Avatar initials ──────────────────────────────────────────────────────────
 function Avatar({ name = '', size = 30 }) {
-  const colors = [
-    '#6366f1',
-    '#8b5cf6',
-    '#ec4899',
-    '#f59e0b',
-    '#10b981',
-    '#3b82f6',
-  ];
-  let h = 0;
-  for (let i = 0; i < name.length; i++)
-    h = (h * 31 + name.charCodeAt(i)) % colors.length;
-  const initials = name
-    .split(' ')
-    .map((p) => p[0])
-    .join('')
-    .slice(0, 2)
-    .toUpperCase();
+  const initials = userInitials(name);
   return (
     <div
       style={{
         width: size,
         height: size,
         borderRadius: '50%',
-        background: colors[h],
+        background: avatarColor(name),
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',

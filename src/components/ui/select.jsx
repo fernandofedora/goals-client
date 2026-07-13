@@ -2,6 +2,16 @@ import React from 'react';
 import * as RadixSelect from '@radix-ui/react-select';
 import { cn } from '../../lib/utils';
 
+// Flatten an <option>'s children to plain text. When children mix an emoji
+// and interpolated text (e.g. 💵 {t('cash')}) React passes an array;
+// String(array) would join with commas ("💵 ,Cash"), so join manually.
+function toText(node) {
+  if (Array.isArray(node)) return node.map(toText).join('');
+  if (React.isValidElement(node)) return toText(node.props?.children);
+  if (node == null || node === false || node === true) return '';
+  return String(node);
+}
+
 function extractOptions(children) {
   const opts = [];
   let placeholderText = null;
@@ -10,9 +20,9 @@ function extractOptions(children) {
     const value = child.props.value ?? '';
     const label = child.props.children ?? '';
     if (String(value) === '') {
-      placeholderText = String(label);
+      placeholderText = toText(label);
     }
-    opts.push({ value: String(value), label: String(label) });
+    opts.push({ value: String(value), label: toText(label) });
   });
   return { options: opts, placeholderText };
 }
