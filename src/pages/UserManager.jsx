@@ -4,6 +4,7 @@ import api from '../api';
 import { toast } from 'sonner';
 import { intlLocale } from '../utils/dateLocale';
 import { translateServerError } from '../utils/serverError';
+import { avatarColor, userInitials } from '../utils/avatar';
 
 // ─── Icons ────────────────────────────────────────────────────────────────────
 const ShieldIcon = () => (
@@ -162,32 +163,6 @@ function fmtDate(d) {
   });
 }
 
-function initials(name = '') {
-  return name
-    .split(' ')
-    .map((p) => p[0])
-    .join('')
-    .slice(0, 2)
-    .toUpperCase();
-}
-
-function avatarColor(name = '') {
-  const colors = [
-    '#6366f1',
-    '#8b5cf6',
-    '#ec4899',
-    '#f59e0b',
-    '#10b981',
-    '#3b82f6',
-    '#ef4444',
-    '#14b8a6',
-  ];
-  let h = 0;
-  for (let i = 0; i < name.length; i++)
-    h = (h * 31 + name.charCodeAt(i)) % colors.length;
-  return colors[h];
-}
-
 // ─── Sub-components ───────────────────────────────────────────────────────────
 function Avatar({ name, size = 36 }) {
   const bg = avatarColor(name);
@@ -213,7 +188,7 @@ function Avatar({ name, size = 36 }) {
           lineHeight: 1,
         }}
       >
-        {initials(name)}
+        {userInitials(name)}
       </span>
     </div>
   );

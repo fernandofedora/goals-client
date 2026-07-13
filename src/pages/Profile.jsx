@@ -7,6 +7,7 @@ import Alert from '../components/ui/alert';
 import { cn } from '../lib/utils';
 import { intlLocale } from '../utils/dateLocale';
 import { translateServerError } from '../utils/serverError';
+import { avatarColor, userInitials } from '../utils/avatar';
 
 // ── Inline field wrapper ───────────────────────────────────────────────────────
 function Field({ label, htmlFor, error, hint, children }) {
@@ -92,20 +93,19 @@ function PasswordStrength({ password }) {
 }
 
 // ── Avatar initials ───────────────────────────────────────────────────────────
+// Same identity color as the navbar avatar, with a subtle depth gradient.
 function Avatar({ name, size = 'lg' }) {
-  const initials = (name || '?')
-    .split(' ')
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((w) => w[0].toUpperCase())
-    .join('');
+  const color = avatarColor(name || '');
+  const initials = userInitials(name || '?') || '?';
   return (
     <div
       className={cn(
-        'rounded-full flex items-center justify-center font-bold select-none ring-4 ring-white dark:ring-slate-900 shadow-xl',
+        'rounded-full flex items-center justify-center font-bold select-none shadow-lg text-white',
         size === 'lg' ? 'w-20 h-20 text-2xl' : 'w-10 h-10 text-sm',
-        'bg-gradient-to-br from-indigo-500 via-violet-500 to-purple-600 text-white',
       )}
+      style={{
+        background: `linear-gradient(135deg, color-mix(in srgb, ${color} 80%, white), ${color} 60%, color-mix(in srgb, ${color} 75%, black))`,
+      }}
       aria-hidden
     >
       {initials}
@@ -114,11 +114,20 @@ function Avatar({ name, size = 'lg' }) {
 }
 
 // ── Section card ─────────────────────────────────────────────────────────────
-function Card({ icon, title, subtitle, children }) {
+function Card({ icon, title, subtitle, accent, children }) {
   return (
     <section className="bg-white dark:bg-slate-900 rounded-2xl border border-[var(--border)] shadow-sm overflow-hidden">
       <div className="px-6 pt-5 pb-4 border-b border-[var(--border)] flex items-center gap-3">
-        <span className="text-lg">{icon}</span>
+        <span
+          className="flex items-center justify-center w-9 h-9 rounded-xl text-lg flex-shrink-0"
+          style={
+            accent
+              ? { background: `${accent}18`, border: `1px solid ${accent}2e` }
+              : undefined
+          }
+        >
+          {icon}
+        </span>
         <div>
           <h2 className="text-sm font-semibold tracking-tight">{title}</h2>
           {subtitle && (
@@ -353,6 +362,15 @@ export default function Profile() {
     }
   }, []);
 
+  // Identity color — the same one the navbar avatar shows for this user.
+  const heroColor = avatarColor(name);
+  const memberSinceShort = createdAt
+    ? new Date(createdAt).toLocaleDateString(intlLocale(), {
+        month: 'short',
+        year: 'numeric',
+      })
+    : '';
+
   // ── Render ────────────────────────────────────────────────────────────────
   return (
     <div className="max-w-3xl mx-auto p-4 pb-12 space-y-5">
@@ -365,23 +383,54 @@ export default function Profile() {
         />
       )}
 
-      {/* ── Hero header ──────────────────────────────────────────────────── */}
-      <div className="relative rounded-2xl overflow-hidden border border-[var(--border)] shadow-sm">
-        {/* gradient band */}
-        <div className="h-24 bg-gradient-to-r from-indigo-600 via-violet-600 to-purple-600" />
-        {/* avatar overlapping */}
-        <div className="px-6 pb-5">
-          <div className="-mt-10 flex items-end gap-4">
+      {/* ── Identity card ──────────────────────────────────────────────────
+          Bannerless hero: the user's identity color lives only in the avatar,
+          the left accent bar and a faint atmospheric tint — no overlaps. */}
+      <div className="relative rounded-2xl overflow-hidden border border-[var(--border)] shadow-sm bg-white dark:bg-slate-900">
+        {/* left accent bar in the user's identity color */}
+        <span
+          aria-hidden
+          className="absolute left-0 top-0 bottom-0 w-1.5"
+          style={{
+            background: `linear-gradient(180deg, color-mix(in srgb, ${heroColor} 70%, white), ${heroColor})`,
+          }}
+        />
+        {/* faint atmospheric tint, top-right */}
+        <span
+          aria-hidden
+          className="absolute inset-0 pointer-events-none"
+          style={{
+            background: `radial-gradient(600px circle at top right, ${heroColor}14, transparent 60%)`,
+          }}
+        />
+        <div className="relative flex items-center gap-4 px-6 py-5 flex-wrap">
+          {/* Avatar with a soft halo of the identity color */}
+          <div
+            className="p-1 rounded-full flex-shrink-0"
+            style={{ background: `${heroColor}20` }}
+          >
             <Avatar name={name} size="lg" />
-            <div className="pb-1">
-              <h1 className="text-xl font-bold tracking-tight text-gray-900 dark:text-white leading-tight">
-                {name || t('profile.yourName')}
-              </h1>
-              <p className="text-sm text-gray-500 dark:text-gray-400">
-                {email}
-              </p>
-            </div>
           </div>
+          <div className="min-w-0">
+            <h1 className="text-xl font-bold tracking-tight text-gray-900 dark:text-white leading-tight">
+              {name || t('profile.yourName')}
+            </h1>
+            <p className="text-sm text-gray-500 dark:text-gray-400 truncate">
+              {email}
+            </p>
+          </div>
+          {memberSinceShort && (
+            <span
+              className="sm:ml-auto inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold"
+              style={{
+                background: `${heroColor}18`,
+                border: `1px solid ${heroColor}33`,
+                color: heroColor,
+              }}
+            >
+              📅 {t('profile.memberSinceChip', { date: memberSinceShort })}
+            </span>
+          )}
         </div>
       </div>
 
@@ -392,6 +441,7 @@ export default function Profile() {
           {/* Profile info */}
           <Card
             icon="✏️"
+            accent={heroColor}
             title={t('profile.profileInfo')}
             subtitle={t('profile.profileInfoSub')}
           >
@@ -485,6 +535,7 @@ export default function Profile() {
           {/* Change password */}
           <Card
             icon="🔒"
+            accent={heroColor}
             title={t('profile.changePassword')}
             subtitle={t('profile.changePasswordSub')}
           >
@@ -581,6 +632,7 @@ export default function Profile() {
         <div className="md:col-span-2 space-y-5">
           <Card
             icon="📋"
+            accent={heroColor}
             title={t('profile.accountDetails')}
             subtitle={t('profile.accountDetailsSub')}
           >
@@ -597,11 +649,20 @@ export default function Profile() {
             </div>
           </Card>
 
-          {/* Tips / security card */}
-          <div className="rounded-2xl border border-[var(--border)] bg-indigo-50 dark:bg-indigo-950/20 p-5 space-y-3">
+          {/* Tips / security card — tinted with the user's identity color */}
+          <div
+            className="rounded-2xl p-5 space-y-3"
+            style={{
+              background: `${heroColor}12`,
+              border: `1px solid ${heroColor}30`,
+            }}
+          >
             <div className="flex items-center gap-2">
               <span className="text-base">🛡️</span>
-              <h3 className="text-sm font-semibold text-indigo-800 dark:text-indigo-300">
+              <h3
+                className="text-sm font-semibold"
+                style={{ color: heroColor }}
+              >
                 {t('profile.securityTips')}
               </h3>
             </div>
@@ -610,9 +671,14 @@ export default function Profile() {
                 (tip, i) => (
                   <li
                     key={i}
-                    className="flex items-start gap-2 text-xs text-indigo-700 dark:text-indigo-400"
+                    className="flex items-start gap-2 text-xs text-gray-600 dark:text-gray-300"
                   >
-                    <span className="mt-px opacity-60">•</span>
+                    <span
+                      className="mt-px opacity-60"
+                      style={{ color: heroColor }}
+                    >
+                      •
+                    </span>
                     <span>{tip}</span>
                   </li>
                 ),
