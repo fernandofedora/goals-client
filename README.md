@@ -1,64 +1,67 @@
-# UI del Proyecto (goals-client)
+# Project UI (goals-client)
 
-Aplicación web construida con React + Vite y TailwindCSS. Consume el API en `goals-server` y ofrece Dashboard con filtros, gráficas y exportación.
+Web application built with React + Vite and TailwindCSS. It consumes the `goals-server` API and provides a Dashboard with filters, charts and exports.
 
-## Requisitos
-- Node.js 18 o 20
-- npm o yarn
+## Requirements
+- Node.js 18 or 20
+- npm or yarn
 
-## Instalación
-1. Entra a `goals-client/`.
-2. Instala dependencias: `npm install` o `yarn install`.
+## Installation
+1. Go into `goals-client/`.
+2. Install dependencies: `npm install` or `yarn install`.
 
-## Configuración de entorno
-La UI usa `VITE_API_URL` para apuntar al backend.
+## Environment configuration
+The UI uses `VITE_API_URL` to point at the backend.
 
-- Desarrollo: crea `goals-client/.env` (opcional) y/o usa el valor por defecto (`http://localhost:4000/api`).
-- Producción: define `goals-client/.env.production`:
+Important: the client appends `/api` itself (see `src/api.js`), so `VITE_API_URL` must **not** include `/api`.
+
+- Development: creating `goals-client/.env` is optional — the default (`http://localhost:4000`) already works, and the Vite dev server proxies `/api` to `http://localhost:4000`.
+- Production: define `goals-client/.env.production`:
 
 ```
-# Si UI y API comparten dominio, usa ruta relativa
-VITE_API_URL=/api
+# If the UI and the API share a domain, use a relative path
+VITE_API_URL=/
 
-# O usa una URL absoluta válida
-# VITE_API_URL=https://tu-dominio.app/api
+# Or use a valid absolute URL (without /api)
+# VITE_API_URL=https://your-domain.app
 ```
 
-Notas importantes:
-- El cliente normaliza `VITE_API_URL` (ver `src/api.js`) para evitar que el navegador construya rutas relativas incorrectas (p. ej. `https://ui-host/tu-api-host/api/...`).
-- Si la UI se sirve bajo un subpath, considera configurar `base: './'` en `vite.config.js` para assets.
+Notes:
+- Because `/api` is appended in `src/api.js`, adding it to `VITE_API_URL` produces duplicated paths such as `/api/api/...`.
+- If the UI is served under a subpath, consider setting `base: './'` in `vite.config.js` so assets resolve correctly.
 
-## Comandos
-- `npm run dev` → Desarrollo con HMR en `http://localhost:5173/` (o puerto alternativo si 5173 está ocupado).
-- `npm run build` → Genera artefactos de producción en `dist/`.
-- `npm run preview` → Sirve `dist/` localmente.
+## Commands
+- `npm run dev` → Development with HMR at `http://localhost:5173/` (or an alternative port if 5173 is taken).
+- `npm run build` → Generates production artifacts in `dist/`.
+- `npm run preview` → Serves `dist/` locally.
+- `npm run lint` → Runs ESLint over the project.
 
-## Autenticación
-- Registro y login mediante JWT.
-- El token se guarda en `localStorage` y se adjunta en cada request.
+## Authentication
+- Sign-up and login via JWT.
+- The token is stored in `localStorage` and attached to every request.
 
-## Dashboard y funcionalidades
-- Filtros: selector de período (`All Time` o mes específico) y selector de año.
-- Gráfica “Income vs Expenses”:
-  - Siempre muestra 12 meses (enero–diciembre) del `selectedYear`.
-  - Si `period = all`: agrega los datos diarios del resumen filtrando por año.
-  - Si `period` es un mes específico: carga los 12 resúmenes del año desde el backend para completar la gráfica.
-- Exportación XLSX: botón “Export XLSX” que llama a `/api/stats/export` con el período actual.
-- Budget vs Actual: muestra barra de progreso para el mes seleccionado si hay presupuesto.
-- Categorías: desglose de gastos por categoría con colores.
-- Métodos de pago: desglose cash vs tarjetas, y uso por tarjeta.
+## Dashboard and features
+- Filters: period selector (`All Time` or a specific month) and year selector.
+- "Income vs Expenses" chart:
+  - Always shows 12 months (January–December) of the `selectedYear`.
+  - If `period = all`: aggregates the summary's daily data, filtered by year.
+  - If `period` is a specific month: loads the 12 monthly summaries for the year from the backend to fill in the chart.
+- XLSX export: an "Export XLSX" button that calls `/api/stats/export` with the current period.
+- Budget vs Actual: shows a progress bar for the selected month when a budget exists.
+- Categories: expense breakdown per category, with colors.
+- Payment methods: cash vs cards breakdown, plus per-card usage.
 
-## Buenas prácticas y despliegue
-- Usa Node 18+ (ideal 20) para build y runtime.
-- Define `VITE_API_URL` de forma consistente con tu entorno:
-  - Mismo dominio: `VITE_API_URL=/api` y configura el proxy/rewrite.
-  - Dominio distinto: `VITE_API_URL=https://backend.ejemplo.com/api`.
-- Si ves URLs “combinadas” en producción, revisa:
-  - Valor de `VITE_API_URL` (que sea absoluta o `'/api'`).
-  - Servidor que aloja la UI (si sirve bajo subpath, ajusta `base`).
+## Best practices and deployment
+- Use Node 18+ (ideally 20) for both build and runtime.
+- Set `VITE_API_URL` consistently with your environment:
+  - Same domain: `VITE_API_URL=/`, and configure the proxy/rewrite.
+  - Different domain: `VITE_API_URL=https://backend.example.com`.
+- If you see "merged" URLs in production, check:
+  - The value of `VITE_API_URL` (it must be absolute or `/`, and must not end in `/api`).
+  - The server hosting the UI (if it serves under a subpath, adjust `base`).
 
-## Solución de problemas
-- Error de build en staging (Rollup/ModuleLoader):
-  - Verifica Node (>=18), que devDependencies estén instaladas en la imagen (sin `--production`).
-  - Prueba a quitar temporalmente plugins en Vite para aislar el problema.
-- API no responde: revisa CORS y que `VITE_API_URL` apunte correctamente.
+## Troubleshooting
+- Build failure in staging (Rollup/ModuleLoader):
+  - Verify Node (>=18) and that devDependencies are installed in the image (no `--production`).
+  - Try temporarily removing Vite plugins to isolate the problem.
+- API not responding: check CORS and that `VITE_API_URL` points to the right place.
