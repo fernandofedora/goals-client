@@ -236,6 +236,13 @@ export default function SavingPlan() {
     });
   }, [currentPlan]);
 
+  // reset contribution form + pagination when switching plans
+  useEffect(() => {
+    setContrForm({ amount: '', date: isoToday, note: '' });
+    setEditingContrId(null);
+    setPage(1);
+  }, [selectedPlanId, isoToday]);
+
   const onPlanField = useCallback(
     (e) =>
       setPlanForm((prev) => ({ ...prev, [e.target.name]: e.target.value })),
