@@ -236,6 +236,13 @@ export default function SavingPlan() {
     });
   }, [currentPlan]);
 
+  // reset contribution form + pagination when switching plans
+  useEffect(() => {
+    setContrForm({ amount: '', date: isoToday, note: '' });
+    setEditingContrId(null);
+    setPage(1);
+  }, [selectedPlanId, isoToday]);
+
   const onPlanField = useCallback(
     (e) =>
       setPlanForm((prev) => ({ ...prev, [e.target.name]: e.target.value })),
@@ -953,7 +960,7 @@ export default function SavingPlan() {
                           </td>
                           <td className="px-4 py-3 text-right">
                             {r.type === 'manual' ? (
-                              <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                              <div className="flex items-center justify-end gap-1">
                                 <IconButton
                                   onClick={() => {
                                     setEditingContrId(r.c.id);
