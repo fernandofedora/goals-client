@@ -289,12 +289,12 @@ export default function Navbar({ theme, onToggleTheme }) {
                 setUserMenuOpen(false);
               }}
             >
-              <DropdownItem to="/transactions/budget" onClick={closeAll}>
-                {t('nav.budget')}
-              </DropdownItem>
               <DropdownItem to="/transactions/add" onClick={closeAll}>
                 {t('nav.addTransaction')}
               </DropdownItem>
+              <DropdownItem to="/transactions/budget" onClick={closeAll}>
+                {t('nav.budget')}
+              </DropdownItem>  
             </Dropdown>
 
             <Dropdown
@@ -560,11 +560,11 @@ export default function Navbar({ theme, onToggleTheme }) {
               onToggle={() => setTxOpen((v) => !v)}
               mobile
             >
-              <DropdownItem to="/transactions/budget" onClick={closeAll} mobile>
-                {t('nav.budget')}
-              </DropdownItem>
               <DropdownItem to="/transactions/add" onClick={closeAll} mobile>
                 {t('nav.addTransaction')}
+              </DropdownItem>
+              <DropdownItem to="/transactions/budget" onClick={closeAll} mobile>
+                {t('nav.budget')}
               </DropdownItem>
             </Dropdown>
 
