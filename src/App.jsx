@@ -15,6 +15,7 @@ import SavingPlan from './pages/SavingPlan';
 import Accounts from './pages/Accounts';
 import Profile from './pages/Profile';
 import ScheduledPayments from './pages/ScheduledPayments';
+import Investments from './pages/Investments';
 import Budget from './pages/Budget';
 import AddTransaction from './pages/AddTransaction';
 import GraphicsByCategories from './pages/GraphicsByCategories';
@@ -151,6 +152,14 @@ export default function App() {
                     element={
                       <ProtectedRoute>
                         <ScheduledPayments />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/plans/investments"
+                    element={
+                      <ProtectedRoute>
+                        <Investments />
                       </ProtectedRoute>
                     }
                   />

@@ -133,6 +133,16 @@ function DropdownItem({ to, onClick, children, mobile }) {
   );
 }
 
+// ─── "Beta" tag for experimental modules ──────────────────────────────────────
+function BetaBadge() {
+  const { t } = useTranslation();
+  return (
+    <span className="ml-1 align-middle text-[9px] font-bold uppercase tracking-wider px-1 py-0.5 rounded bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300">
+      {t('nav.beta')}
+    </span>
+  );
+}
+
 // ─── Main Navbar ──────────────────────────────────────────────────────────────
 export default function Navbar({ theme, onToggleTheme }) {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -294,7 +304,7 @@ export default function Navbar({ theme, onToggleTheme }) {
               </DropdownItem>
               <DropdownItem to="/transactions/budget" onClick={closeAll}>
                 {t('nav.budget')}
-              </DropdownItem>  
+              </DropdownItem>
             </Dropdown>
 
             <Dropdown
@@ -319,6 +329,9 @@ export default function Navbar({ theme, onToggleTheme }) {
               </DropdownItem>
               <DropdownItem to="/plans/scheduled-payments" onClick={closeAll}>
                 {t('nav.scheduledPayments')}
+              </DropdownItem>
+              <DropdownItem to="/plans/investments" onClick={closeAll}>
+                {t('nav.investments')} <BetaBadge />
               </DropdownItem>
             </Dropdown>
 
@@ -588,6 +601,9 @@ export default function Navbar({ theme, onToggleTheme }) {
                 mobile
               >
                 {t('nav.scheduledPayments')}
+              </DropdownItem>
+              <DropdownItem to="/plans/investments" onClick={closeAll} mobile>
+                {t('nav.investments')} <BetaBadge />
               </DropdownItem>
             </Dropdown>
 

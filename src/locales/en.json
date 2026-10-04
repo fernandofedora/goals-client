@@ -36,7 +36,9 @@
     "toggleTheme": "Toggle theme",
     "toggleMenu": "Toggle menu",
     "language": "Language",
-    "home": "Goals - Go to home"
+    "home": "Goals - Go to home",
+    "investments": "Investments",
+    "beta": "Beta"
   },
   "settings": {
     "title": "Settings",
@@ -427,6 +429,95 @@
     "deleted": "Payment deleted",
     "deleteFailed": "Failed to delete payment"
   },
+  "investments": {
+    "title": "Investments",
+    "subtitle": "Track your stocks and ETFs and see what they are worth today in your currency.",
+    "beta": {
+      "message": "Beta module. Prices may be delayed and exchange rates are updated once a day. This is not financial advice."
+    },
+    "header": {
+      "pricesAsOf": "Prices {{time}}",
+      "stale": "Price not updated",
+      "refresh": "Refresh prices",
+      "fxAsOf": "Exchange rate as of {{date}}"
+    },
+    "search": {
+      "placeholder": "Search a stock or ETF by ticker or name…",
+      "noResults": "No stocks or ETFs found.",
+      "error": "Search failed. Please try again."
+    },
+    "assetType": {
+      "stock": "Stock",
+      "etf": "ETF",
+      "other": "Other"
+    },
+    "summary": {
+      "value": "Total value",
+      "invested": "Invested",
+      "gain": "Gain / Loss",
+      "today": "Today"
+    },
+    "table": {
+      "asset": "Asset",
+      "shares": "Shares",
+      "sharesShort": "sh.",
+      "price": "Price",
+      "value": "Value",
+      "gain": "G/L",
+      "weight": "Weight",
+      "addPurchase": "+ Buy",
+      "history": "Purchases",
+      "noPurchases": "No purchases",
+      "noPrice": "No price",
+      "fxUnavailable": "No exchange rate"
+    },
+    "empty": {
+      "title": "You don't have any investments yet",
+      "hint": "Search for a stock or ETF above to record your first purchase."
+    },
+    "purchase": {
+      "titleNew": "Record investment",
+      "titleAdd": "Add purchase",
+      "titleEdit": "Edit purchase",
+      "currentPrice": "Current price",
+      "noPrice": "No price available right now. Enter the price per share under \"Advanced\".",
+      "amount": "Amount invested",
+      "preview": "{{amount}} ≈ {{shares}} shares at {{price}}",
+      "advanced": "Advanced",
+      "advancedHint": "Optional: if your broker gave you the exact price or number of shares, enter them here.",
+      "pricePerShare": "Price per share ({{currency}})",
+      "shares": "Number of shares",
+      "date": "Purchase date",
+      "note": "Note",
+      "fxNote": "The conversion uses today's exchange rate, even if the purchase has an earlier date.",
+      "amountRequired": "Enter the amount invested.",
+      "priceRequired": "No price available; enter the price per share.",
+      "saved": "Purchase recorded",
+      "updated": "Purchase updated",
+      "saveFailed": "Could not save the purchase."
+    },
+    "history": {
+      "title": "Purchase history",
+      "empty": "This investment has no recorded purchases.",
+      "sharesAt": "{{shares}} shares at {{price}}",
+      "deleteTitle": "Delete this purchase?",
+      "deleteHint": "The investment's shares and cost will be recalculated.",
+      "deleted": "Purchase deleted",
+      "deleteFailed": "Could not delete the purchase.",
+      "loadFailed": "Could not load the history."
+    },
+    "attribution": {
+      "prices": "Market data:",
+      "fx": "Exchange rates:",
+      "disclaimer": "Not financial advice."
+    },
+    "deleteTitle": "Delete {{symbol}}?",
+    "deleteHint": "The investment and all its purchases will be deleted. This cannot be undone.",
+    "deleted": "Investment deleted",
+    "deleteFailed": "Could not delete the investment.",
+    "loadFailed": "Could not load your investments.",
+    "retry": "Retry"
+  },
   "savings": {
     "title": "Savings Plans",
     "subtitle": "Track your savings goals and contributions",
@@ -813,7 +904,17 @@
       "categoryNotAllowed": "Category not allowed.",
       "planNotFound": "Plan not found.",
       "planNotAllowed": "Plan not allowed.",
-      "contributionNotFound": "Contribution not found."
+      "contributionNotFound": "Contribution not found.",
+      "investmentSymbolRequired": "Select a stock or ETF.",
+      "investmentSymbolNotFound": "Symbol not found.",
+      "investmentNoCurrency": "This asset has no quote currency.",
+      "investmentInvalidNumbers": "Amount, price and shares must be numbers greater than 0.",
+      "investmentAmountRequired": "Enter the amount invested.",
+      "investmentNoPrice": "No price available for this asset; enter the price per share.",
+      "investmentInvalidDate": "Invalid date.",
+      "investmentFutureDate": "The date cannot be in the future.",
+      "investmentNotFound": "Investment not found.",
+      "purchaseNotFound": "Purchase not found."
     }
   }
 }

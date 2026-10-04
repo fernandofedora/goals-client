@@ -70,6 +70,20 @@ const SERVER_MESSAGE_KEYS = {
   'Plan no encontrado': 'errors.server.planNotFound',
   'Plan no permitido': 'errors.server.planNotAllowed',
   'Contribución no encontrada': 'errors.server.contributionNotFound',
+  // Investments
+  'Selecciona una acción o ETF': 'errors.server.investmentSymbolRequired',
+  'Símbolo no encontrado': 'errors.server.investmentSymbolNotFound',
+  'Este activo no tiene moneda de cotización':
+    'errors.server.investmentNoCurrency',
+  'Monto, precio y acciones deben ser números mayores que 0':
+    'errors.server.investmentInvalidNumbers',
+  'Indica el monto invertido': 'errors.server.investmentAmountRequired',
+  'No hay precio disponible para este activo; indica el precio por acción':
+    'errors.server.investmentNoPrice',
+  'Fecha inválida': 'errors.server.investmentInvalidDate',
+  'La fecha no puede ser futura': 'errors.server.investmentFutureDate',
+  'Inversión no encontrada': 'errors.server.investmentNotFound',
+  'Compra no encontrada': 'errors.server.purchaseNotFound',
 };
 
 /**
