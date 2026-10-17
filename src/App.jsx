@@ -27,6 +27,7 @@ import { CurrencyProvider } from './context/CurrencyContext';
 import { LanguageProvider } from './context/LanguageContext';
 import { isTokenExpired, clearSession } from './utils/session';
 import { currentUserId } from './utils/userStorage';
+import useInvestmentsAccess from './hooks/useInvestmentsAccess';
 
 // A locally-expired token is treated exactly like a missing one: drop the
 // stale session and route to login *before* rendering a screen that would
@@ -54,6 +55,16 @@ function SuperAdminRoute({ children }) {
     return <Navigate to="/" replace />;
   }
   return children;
+}
+
+// Investments is a closed beta (Finnhub free plan = personal use): super admins
+// and users they granted access. The API enforces it too (403).
+function InvestmentsRoute({ children }) {
+  const { hasAccess, checking } = useInvestmentsAccess();
+  if (!hasValidSession()) return <Navigate to="/login" replace />;
+  if (hasAccess) return children;
+  if (checking) return null;
+  return <Navigate to="/" replace />;
 }
 
 export default function App() {
@@ -158,9 +169,9 @@ export default function App() {
                   <Route
                     path="/plans/investments"
                     element={
-                      <ProtectedRoute>
+                      <InvestmentsRoute>
                         <Investments />
-                      </ProtectedRoute>
+                      </InvestmentsRoute>
                     }
                   />
                   <Route

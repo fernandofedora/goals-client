@@ -516,7 +516,13 @@
     "deleted": "Investment deleted",
     "deleteFailed": "Could not delete the investment.",
     "loadFailed": "Could not load your investments.",
-    "retry": "Retry"
+    "retry": "Retry",
+    "allocation": {
+      "title": "Allocation",
+      "other": "Other ({{count}})",
+      "aria": "Portfolio allocation: {{items}}"
+    },
+    "noAccess": "You don't have access to the Investments module. It is a closed beta; a Super Admin can enable it for your account."
   },
   "savings": {
     "title": "Savings Plans",
@@ -824,7 +830,11 @@
     "deleteConfirmBtn": "Yes, delete permanently",
     "deletedSuccess": "{{name}} has been permanently deleted",
     "deletionFailed": "Deletion failed",
-    "typeNameConfirm": "Type the user's full name to confirm:"
+    "typeNameConfirm": "Type the user's full name to confirm:",
+    "investmentsAccess": "Investments module (beta)",
+    "investmentsAccessDesc": "Lets this user see and use the Investments module.",
+    "investmentsAccessSuperAdmin": "Super Admins always have access.",
+    "investmentsAccessWarning": "Finnhub market data (free plan) is for personal use only. Grant access only to your own account; other people require Finnhub authorization."
   },
   "language": {
     "label": "Language",
@@ -914,7 +924,8 @@
       "investmentInvalidDate": "Invalid date.",
       "investmentFutureDate": "The date cannot be in the future.",
       "investmentNotFound": "Investment not found.",
-      "purchaseNotFound": "Purchase not found."
+      "purchaseNotFound": "Purchase not found.",
+      "investmentsNoAccess": "You don't have access to the Investments module."
     }
   }
 }

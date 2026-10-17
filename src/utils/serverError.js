@@ -84,6 +84,8 @@ const SERVER_MESSAGE_KEYS = {
   'La fecha no puede ser futura': 'errors.server.investmentFutureDate',
   'Inversión no encontrada': 'errors.server.investmentNotFound',
   'Compra no encontrada': 'errors.server.purchaseNotFound',
+  'No tienes acceso al módulo de inversiones':
+    'errors.server.investmentsNoAccess',
 };
 
 /**

@@ -5,6 +5,7 @@ import { cn } from '../lib/utils';
 import { clearSession } from '../utils/session';
 import { avatarColor, userInitials } from '../utils/avatar';
 import LanguageSelector from './LanguageSelector';
+import useInvestmentsAccess from '../hooks/useInvestmentsAccess';
 
 // ─── Chevron icon ─────────────────────────────────────────────────────────────
 const ChevronDown = ({ open }) => (
@@ -145,6 +146,7 @@ function BetaBadge() {
 
 // ─── Main Navbar ──────────────────────────────────────────────────────────────
 export default function Navbar({ theme, onToggleTheme }) {
+  const { hasAccess: canSeeInvestments } = useInvestmentsAccess();
   const [menuOpen, setMenuOpen] = useState(false);
   const [plansOpen, setPlansOpen] = useState(false);
   const [txOpen, setTxOpen] = useState(false);
@@ -330,9 +332,11 @@ export default function Navbar({ theme, onToggleTheme }) {
               <DropdownItem to="/plans/scheduled-payments" onClick={closeAll}>
                 {t('nav.scheduledPayments')}
               </DropdownItem>
-              <DropdownItem to="/plans/investments" onClick={closeAll}>
-                {t('nav.investments')} <BetaBadge />
-              </DropdownItem>
+              {canSeeInvestments && (
+                <DropdownItem to="/plans/investments" onClick={closeAll}>
+                  {t('nav.investments')} <BetaBadge />
+                </DropdownItem>
+              )}
             </Dropdown>
 
             <Dropdown
@@ -602,9 +606,11 @@ export default function Navbar({ theme, onToggleTheme }) {
               >
                 {t('nav.scheduledPayments')}
               </DropdownItem>
-              <DropdownItem to="/plans/investments" onClick={closeAll} mobile>
-                {t('nav.investments')} <BetaBadge />
-              </DropdownItem>
+              {canSeeInvestments && (
+                <DropdownItem to="/plans/investments" onClick={closeAll} mobile>
+                  {t('nav.investments')} <BetaBadge />
+                </DropdownItem>
+              )}
             </Dropdown>
 
             {/* Graphics mobile */}

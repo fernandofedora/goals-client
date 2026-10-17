@@ -562,6 +562,9 @@ function EditUserModal({ user, currentUserId, onClose, onSaved }) {
   const [email, setEmail] = useState(user.email);
   const [isActive, setIsActive] = useState(user.isActive);
   const [isSuperAdmin, setIsSuperAdmin] = useState(user.isSuperAdmin);
+  const [canAccessInvestments, setCanAccessInvestments] = useState(
+    !!user.canAccessInvestments,
+  );
   const [loading, setLoading] = useState(false);
   const [tab, setTab] = useState('general');
 
@@ -580,6 +583,10 @@ function EditUserModal({ user, currentUserId, onClose, onSaved }) {
         await api.patch(`/admin/users/${user.id}/status`, { isActive });
       if (isSuperAdmin !== user.isSuperAdmin)
         await api.patch(`/admin/users/${user.id}/promote`, { isSuperAdmin });
+      if (canAccessInvestments !== !!user.canAccessInvestments)
+        await api.patch(`/admin/users/${user.id}/investments-access`, {
+          canAccessInvestments,
+        });
 
       toast.success(t('admin.userUpdated'));
       onSaved();
@@ -897,6 +904,66 @@ function EditUserModal({ user, currentUserId, onClose, onSaved }) {
                   {t('admin.cannotModifySelf')}
                 </p>
               )}
+
+              {/* Investments module (closed beta, Finnhub personal-use license) */}
+              <div
+                style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: 10,
+                  padding: '16px',
+                  borderRadius: 12,
+                  background: 'var(--muted)',
+                  border: '1px solid var(--border)',
+                }}
+              >
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    gap: 12,
+                  }}
+                >
+                  <div>
+                    <p style={{ margin: 0, fontSize: 14, fontWeight: 700 }}>
+                      {t('admin.investmentsAccess')}
+                    </p>
+                    <p
+                      style={{
+                        margin: '2px 0 0',
+                        fontSize: 12,
+                        color: 'var(--muted-foreground)',
+                      }}
+                    >
+                      {isSuperAdmin
+                        ? t('admin.investmentsAccessSuperAdmin')
+                        : t('admin.investmentsAccessDesc')}
+                    </p>
+                  </div>
+                  <Toggle
+                    checked={isSuperAdmin || canAccessInvestments}
+                    onChange={setCanAccessInvestments}
+                    disabled={isSuperAdmin}
+                  />
+                </div>
+                {!isSuperAdmin && canAccessInvestments && (
+                  <p
+                    role="note"
+                    style={{
+                      margin: 0,
+                      fontSize: 12,
+                      color: '#b45309',
+                      background: 'rgba(245,158,11,0.08)',
+                      border: '1px solid rgba(245,158,11,0.25)',
+                      borderRadius: 8,
+                      padding: '8px 10px',
+                    }}
+                  >
+                    {t('admin.investmentsAccessWarning')}
+                  </p>
+                )}
+              </div>
             </div>
           )}
 

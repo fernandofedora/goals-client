@@ -6,6 +6,7 @@ import ConfirmDialog from '../components/ui/confirm-dialog';
 import SymbolSearch from '../components/investments/SymbolSearch';
 import PurchaseDialog from '../components/investments/PurchaseDialog';
 import PurchasesDialog from '../components/investments/PurchasesDialog';
+import AllocationBar from '../components/investments/AllocationBar';
 import {
   formatDate,
   formatMoney,
@@ -90,6 +91,8 @@ export default function Investments() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [loadError, setLoadError] = useState(false);
+  // 403: access revoked (closed beta) while the page was open
+  const [noAccess, setNoAccess] = useState(false);
   const [bannerDismissed, setBannerDismissed] = useState(
     () => getPref(BANNER_PREF) === '1',
   );
@@ -109,6 +112,10 @@ export default function Investments() {
         lastLoadRef.current = Date.now();
       } catch (err) {
         console.error(err);
+        if (err.response?.status === 403) {
+          setNoAccess(true);
+          return;
+        }
         setLoadError(true);
         if (!silent)
           toast.error(translateServerError(err, t, 'investments.loadFailed'));
@@ -299,6 +306,9 @@ export default function Investments() {
         </section>
       )}
 
+      {/* Allocation (only with 2+ priced holdings) */}
+      {!loading && <AllocationBar holdings={holdings} currency={currency} />}
+
       {/* Holdings */}
       <section className="bg-white dark:bg-slate-900 rounded-2xl border border-[var(--border)] shadow-sm overflow-hidden">
         {loading ? (
@@ -309,6 +319,12 @@ export default function Investments() {
                 className="h-10 bg-gray-100 dark:bg-slate-800 rounded-lg"
               />
             ))}
+          </div>
+        ) : noAccess ? (
+          <div className="p-8 text-center">
+            <p className="text-sm text-[var(--muted-foreground)]">
+              {t('investments.noAccess')}
+            </p>
           </div>
         ) : loadError && !data ? (
           <div className="p-8 text-center space-y-3">

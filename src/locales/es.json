@@ -516,7 +516,13 @@
     "deleted": "Inversión eliminada",
     "deleteFailed": "No se pudo eliminar la inversión.",
     "loadFailed": "No se pudieron cargar tus inversiones.",
-    "retry": "Reintentar"
+    "retry": "Reintentar",
+    "allocation": {
+      "title": "Distribución",
+      "other": "Otros ({{count}})",
+      "aria": "Distribución del portafolio: {{items}}"
+    },
+    "noAccess": "No tienes acceso al módulo de Inversiones. Es una beta cerrada; un Super Admin puede habilitarlo para tu cuenta."
   },
   "savings": {
     "title": "Planes de Ahorro",
@@ -824,7 +830,11 @@
     "deleteConfirmBtn": "Sí, eliminar permanentemente",
     "deletedSuccess": "{{name}} ha sido eliminado permanentemente",
     "deletionFailed": "Error al eliminar",
-    "typeNameConfirm": "Escribe el nombre completo del usuario para confirmar:"
+    "typeNameConfirm": "Escribe el nombre completo del usuario para confirmar:",
+    "investmentsAccess": "Módulo de Inversiones (beta)",
+    "investmentsAccessDesc": "Permite a este usuario ver y usar el módulo de Inversiones.",
+    "investmentsAccessSuperAdmin": "Los Super Admin siempre tienen acceso.",
+    "investmentsAccessWarning": "Los datos de mercado de Finnhub (plan gratis) son solo para uso personal. Dale acceso únicamente a tu propia cuenta; para otras personas se necesita autorización de Finnhub."
   },
   "language": {
     "label": "Idioma",
@@ -914,7 +924,8 @@
       "investmentInvalidDate": "Fecha inválida.",
       "investmentFutureDate": "La fecha no puede ser futura.",
       "investmentNotFound": "Inversión no encontrada.",
-      "purchaseNotFound": "Compra no encontrada."
+      "purchaseNotFound": "Compra no encontrada.",
+      "investmentsNoAccess": "No tienes acceso al módulo de Inversiones."
     }
   }
 }
