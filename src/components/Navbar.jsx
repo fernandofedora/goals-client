@@ -5,6 +5,7 @@ import { cn } from '../lib/utils';
 import { clearSession } from '../utils/session';
 import { avatarColor, userInitials } from '../utils/avatar';
 import LanguageSelector from './LanguageSelector';
+import useInvestmentsAccess from '../hooks/useInvestmentsAccess';
 
 // ─── Chevron icon ─────────────────────────────────────────────────────────────
 const ChevronDown = ({ open }) => (
@@ -133,8 +134,19 @@ function DropdownItem({ to, onClick, children, mobile }) {
   );
 }
 
+// ─── "Beta" tag for experimental modules ──────────────────────────────────────
+function BetaBadge() {
+  const { t } = useTranslation();
+  return (
+    <span className="ml-1 align-middle text-[9px] font-bold uppercase tracking-wider px-1 py-0.5 rounded bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300">
+      {t('nav.beta')}
+    </span>
+  );
+}
+
 // ─── Main Navbar ──────────────────────────────────────────────────────────────
 export default function Navbar({ theme, onToggleTheme }) {
+  const { hasAccess: canSeeInvestments } = useInvestmentsAccess();
   const [menuOpen, setMenuOpen] = useState(false);
   const [plansOpen, setPlansOpen] = useState(false);
   const [txOpen, setTxOpen] = useState(false);
@@ -294,7 +306,7 @@ export default function Navbar({ theme, onToggleTheme }) {
               </DropdownItem>
               <DropdownItem to="/transactions/budget" onClick={closeAll}>
                 {t('nav.budget')}
-              </DropdownItem>  
+              </DropdownItem>
             </Dropdown>
 
             <Dropdown
@@ -320,6 +332,11 @@ export default function Navbar({ theme, onToggleTheme }) {
               <DropdownItem to="/plans/scheduled-payments" onClick={closeAll}>
                 {t('nav.scheduledPayments')}
               </DropdownItem>
+              {canSeeInvestments && (
+                <DropdownItem to="/plans/investments" onClick={closeAll}>
+                  {t('nav.investments')} <BetaBadge />
+                </DropdownItem>
+              )}
             </Dropdown>
 
             <Dropdown
@@ -589,6 +606,11 @@ export default function Navbar({ theme, onToggleTheme }) {
               >
                 {t('nav.scheduledPayments')}
               </DropdownItem>
+              {canSeeInvestments && (
+                <DropdownItem to="/plans/investments" onClick={closeAll} mobile>
+                  {t('nav.investments')} <BetaBadge />
+                </DropdownItem>
+              )}
             </Dropdown>
 
             {/* Graphics mobile */}
