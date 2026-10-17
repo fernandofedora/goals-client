@@ -32,6 +32,16 @@ body {
   --chart-3: #f59e0b;
   --chart-4: #f43f5e;
   --chart-5: #0ea5e9;
+
+  /* Investments allocation bar: fixed categorical order, validated for
+     CVD/contrast (light vs #ffffff); "other" is a neutral fold */
+  --alloc-1: #2a78d6;
+  --alloc-2: #eb6834;
+  --alloc-3: #1baf7a;
+  --alloc-4: #eda100;
+  --alloc-5: #e87ba4;
+  --alloc-6: #008300;
+  --alloc-other: #9ca3af;
 }
 
 [data-theme="dark"] {
@@ -56,6 +66,15 @@ body {
   --chart-3: #fbbf24;
   --chart-4: #fb7185;
   --chart-5: #38bdf8;
+
+  /* Investments allocation bar (dark steps, validated vs #0f172a) */
+  --alloc-1: #3987e5;
+  --alloc-2: #d95926;
+  --alloc-3: #199e70;
+  --alloc-4: #c98500;
+  --alloc-5: #d55181;
+  --alloc-6: #008300;
+  --alloc-other: #64748b;
 }
 
 /* ── react-day-picker theme overrides ─────────────────────────────────────── */
