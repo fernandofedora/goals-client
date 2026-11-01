@@ -13,6 +13,7 @@ export default function EditTransactionDialog({
   expenseCats = [],
   incomeCats = [],
   cards = [],
+  accounts = [],
   onSave,
   onCancel,
   error,
@@ -172,6 +173,7 @@ export default function EditTransactionDialog({
                   >
                     <option value="cash">{t('transactions.cash')}</option>
                     <option value="card">{t('transactions.card')}</option>
+                    <option value="account">{t('transactions.account')}</option>
                   </Select>
                 </div>
               )}
@@ -198,6 +200,30 @@ export default function EditTransactionDialog({
                 </Select>
               </div>
             )}
+
+            {initial.type === 'expense' &&
+              initial.paymentMethod === 'account' &&
+              accounts.length > 0 && (
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-gray-700 dark:text-gray-300 block">
+                    {t('transactions.account')}
+                  </label>
+                  <Select
+                    value={initial.accountId || ''}
+                    onChange={(e) =>
+                      onSave({ ...initial, accountId: e.target.value }, true)
+                    }
+                    className="h-11 w-full"
+                  >
+                    <option value="">{t('transactions.selectAccount')}</option>
+                    {accounts.map((a) => (
+                      <option key={a.id} value={a.id}>
+                        {a.name}
+                      </option>
+                    ))}
+                  </Select>
+                </div>
+              )}
           </div>
 
           <div className="mt-8 flex justify-end gap-3">
