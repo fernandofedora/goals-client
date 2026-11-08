@@ -1,4 +1,4 @@
-@import "tailwindcss";
+@import 'tailwindcss';
 
 @custom-variant dark (&:where([data-theme=dark], [data-theme=dark] *));
 
@@ -7,6 +7,22 @@ body {
   min-height: 100vh;
   background-color: var(--background);
   color: var(--foreground);
+}
+
+/* Tailwind's preflight resets buttons to the arrow cursor; every enabled
+   control should show it can be clicked, disabled ones that it cannot. */
+@layer base {
+  button:not(:disabled),
+  [role='button']:not([aria-disabled='true']),
+  summary,
+  a[href],
+  label[for] {
+    cursor: pointer;
+  }
+  button:disabled,
+  [aria-disabled='true'] {
+    cursor: not-allowed;
+  }
 }
 
 /* shadcn-like theme variables */
@@ -44,7 +60,7 @@ body {
   --alloc-other: #9ca3af;
 }
 
-[data-theme="dark"] {
+[data-theme='dark'] {
   color-scheme: dark;
   --background: #0b0f19;
   --foreground: #e5e7eb;
@@ -91,7 +107,7 @@ body {
 }
 
 /* Dark mode range middle */
-[data-theme="dark"] .rdp-root {
+[data-theme='dark'] .rdp-root {
   --rdp-range-middle-background-color: #312e81;
   --rdp-background-color: #1e293b;
 }
@@ -123,7 +139,9 @@ body {
 /* Individual day cells */
 .rdp-root .rdp-day {
   border-radius: 0.5rem;
-  transition: background 120ms, color 120ms;
+  transition:
+    background 120ms,
+    color 120ms;
 }
 .rdp-root .rdp-day:hover:not(.rdp-selected):not(.rdp-range_middle) {
   background: var(--muted);
@@ -142,7 +160,7 @@ body {
   background: #eef2ff;
   border-radius: 0;
 }
-[data-theme="dark"] .rdp-root .rdp-range_middle {
+[data-theme='dark'] .rdp-root .rdp-range_middle {
   background: #1e1b4b;
 }
 
@@ -171,14 +189,14 @@ body {
 input:user-invalid,
 textarea:user-invalid,
 select:user-invalid,
-div:has(> select:user-invalid) > button[role="combobox"] {
+div:has(> select:user-invalid) > button[role='combobox'] {
   border-color: var(--destructive) !important;
 }
 
 input:user-invalid:focus,
 textarea:user-invalid:focus,
 select:user-invalid:focus,
-div:has(> select:user-invalid) > button[role="combobox"]:focus {
+div:has(> select:user-invalid) > button[role='combobox']:focus {
   --tw-ring-color: var(--destructive) !important;
   outline-color: var(--destructive) !important;
 }

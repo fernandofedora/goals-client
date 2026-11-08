@@ -8,31 +8,15 @@ import Switch from '../components/ui/switch';
 import DateInput from '../components/DateInput';
 import Alert from '../components/ui/alert';
 import EditTransactionDialog from '../components/ui/edit-transaction-dialog';
+import IconButton from '../components/ui/icon-button';
+import PageHeader from '../components/ui/page-header';
+import { onTransactionsChanged } from '../utils/transactionEvents';
 import { cn } from '../lib/utils';
 import { useCurrency } from '../context/CurrencyContext';
 import { getPrefJSON, setPrefJSON } from '../utils/userStorage';
 import { toast } from 'sonner';
 
 // ── Tiny helpers ──────────────────────────────────────────────────────────────
-function IconButton({ onClick, title, danger, children }) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      title={title}
-      aria-label={title}
-      className={cn(
-        'inline-flex items-center justify-center w-8 h-8 rounded-lg transition-colors flex-shrink-0',
-        danger
-          ? 'text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/40'
-          : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-slate-700',
-      )}
-    >
-      {children}
-    </button>
-  );
-}
-
 function Badge({ type }) {
   const { t } = useTranslation();
   return (
@@ -51,6 +35,48 @@ function Badge({ type }) {
   );
 }
 
+function TxRowActions({ onEdit, onHide }) {
+  const { t } = useTranslation();
+  return (
+    <div className="flex justify-end gap-1 flex-shrink-0">
+      <IconButton onClick={onEdit} title={t('accountsPage.edit')}>
+        <svg
+          width="14"
+          height="14"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          aria-hidden="true"
+        >
+          <path d="M12 20h9" />
+          <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L8 18l-4 1 1-4 11.5-11.5z" />
+        </svg>
+      </IconButton>
+      <IconButton onClick={onHide} title={t('accountsPage.hide')} danger>
+        <svg
+          width="14"
+          height="14"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          aria-hidden="true"
+        >
+          <path d="M3 6h18" />
+          <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+          <path d="M10 11v6M14 11v6" />
+          <path d="M15 6V4a2 2 0 0 0-2-2h-2a2 2 0 0 0-2 2v2" />
+        </svg>
+      </IconButton>
+    </div>
+  );
+}
+
 // Account types to unify cards + bank accounts in one list
 const ACCOUNT_CARD = 'card';
 const ACCOUNT_BANK = 'bank';
@@ -61,7 +87,7 @@ export default function Accounts() {
   const [cards, setCards] = useState([]);
   const [bankAccounts, setBankAccounts] = useState([]);
   const [categories, setCategories] = useState([]);
-  const { symbol: cs } = useCurrency();
+  const { money } = useCurrency();
 
   // ── Hidden cards & bank accounts (persisted locally) ──────────────────────
   const [hiddenCardIds, setHiddenCardIds] = useState(() =>
@@ -264,6 +290,24 @@ export default function Accounts() {
   useEffect(() => {
     loadTransactionsPage(selectedItem, txPage, txLimit);
   }, [txPage, txLimit]);
+
+  // Re-fetch after the global quick-add dialog creates a transaction.
+  useEffect(
+    () =>
+      onTransactionsChanged(() => {
+        loadBase();
+        loadTransactionsPage(selectedItem, txPage, txLimit);
+        loadSummary(selectedItem);
+      }),
+    [
+      loadBase,
+      loadTransactionsPage,
+      loadSummary,
+      selectedItem,
+      txPage,
+      txLimit,
+    ],
+  );
 
   const totalPages = Math.max(1, Math.ceil(txTotal / txLimit));
 
@@ -529,28 +573,23 @@ export default function Accounts() {
   // ── Render ────────────────────────────────────────────────────────────────
   return (
     <div className="max-w-6xl mx-auto p-5 space-y-5">
-      {/* Page header */}
-      <div className="flex items-start justify-between flex-wrap gap-3">
-        <div>
-          <h2 className="text-xl font-bold tracking-tight">
-            {t('accountsPage.title')}
-          </h2>
-          <p className="text-xs text-gray-400 mt-0.5">
-            {t('accountsPage.subtitle')}
-          </p>
-        </div>
-        <Button
-          variant="secondary"
-          onClick={() => {
-            setShowAddPanel((v) => !v);
-            setAddTab('newCard');
-          }}
-        >
-          {showAddPanel
-            ? t('accountsPage.close')
-            : t('accountsPage.addAccount')}
-        </Button>
-      </div>
+      <PageHeader
+        title={t('accountsPage.title')}
+        subtitle={t('accountsPage.subtitle')}
+        actions={
+          <Button
+            variant="secondary"
+            onClick={() => {
+              setShowAddPanel((v) => !v);
+              setAddTab('newCard');
+            }}
+          >
+            {showAddPanel
+              ? t('accountsPage.close')
+              : t('accountsPage.addAccount')}
+          </Button>
+        }
+      />
 
       {/* ── Add Account panel ─────────────────────────────────────────────── */}
       {showAddPanel && (
@@ -681,6 +720,7 @@ export default function Accounts() {
                     />
                   </div>
                   <Button
+                    variant="custom"
                     type="submit"
                     className="bg-emerald-600 hover:bg-emerald-700 text-white"
                   >
@@ -759,6 +799,7 @@ export default function Accounts() {
                   </Select>
                 </div>
                 <Button
+                  variant="custom"
                   onClick={linkBank}
                   disabled={!bankToLink}
                   className="bg-emerald-600 hover:bg-emerald-700 text-white"
@@ -912,13 +953,11 @@ export default function Accounts() {
                     {(item.kind === ACCOUNT_CARD
                       ? editingCardId !== item.id
                       : editingBankId !== item.id) && (
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setSelectedItem({ kind: item.kind, id: item.id })
-                        }
+                      // Row = select button + sibling actions (a <button> may not
+                      // contain the edit/hide buttons).
+                      <div
                         className={cn(
-                          'w-full flex items-center justify-between px-4 py-3 text-left transition-colors group',
+                          'w-full flex items-center justify-between gap-2 px-4 py-1.5 transition-colors group',
                           sel
                             ? 'bg-indigo-50 dark:bg-indigo-950/30'
                             : 'hover:bg-gray-50 dark:hover:bg-slate-800/40',
@@ -929,7 +968,14 @@ export default function Accounts() {
                             : { borderLeft: '3px solid transparent' }
                         }
                       >
-                        <div className="flex items-center gap-3 min-w-0">
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setSelectedItem({ kind: item.kind, id: item.id })
+                          }
+                          aria-pressed={sel}
+                          className="flex items-center gap-3 min-w-0 flex-1 py-1.5 text-left rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ring)]"
+                        >
                           <span className="text-base leading-none flex-shrink-0">
                             {item.emoji}
                           </span>
@@ -950,12 +996,12 @@ export default function Accounts() {
                                 ? `•••• ${item.last4}`
                                 : item.initialBalance > 0
                                   ? t('accountsPage.opens', {
-                                      amount: `${cs}${Number(item.initialBalance).toFixed(2)}`,
+                                      amount: money(item.initialBalance),
                                     })
                                   : t('accountsPage.bankAccount')}
                             </p>
                           </div>
-                        </div>
+                        </button>
                         <div className="flex gap-1 flex-shrink-0">
                           <IconButton
                             title={t('accountsPage.edit')}
@@ -1018,7 +1064,7 @@ export default function Accounts() {
                             </svg>
                           </IconButton>
                         </div>
-                      </button>
+                      </div>
                     )}
                   </li>
                 );
@@ -1090,8 +1136,7 @@ export default function Accounts() {
                     <span
                       className={cn('tabular-nums', bold && 'font-bold', color)}
                     >
-                      {cs}
-                      {value.toFixed(2)}
+                      {money(value)}
                     </span>
                   </div>
                 ))}
@@ -1242,7 +1287,51 @@ export default function Accounts() {
                 </span>
               </div>
             </div>
-            <div className="overflow-x-auto">
+            {/* ── Mobile list (< sm): the table hid Amount off-screen ── */}
+            <ul className="sm:hidden divide-y divide-[var(--border)]">
+              {txItems.map((tx) => (
+                <li key={tx.id} className="px-4 py-3 flex items-center gap-3">
+                  <div className="flex-1 min-w-0 space-y-1">
+                    {/* No type badge here: the −/+ sign on the amount says it */}
+                    <p className="font-medium text-sm text-gray-800 dark:text-gray-100 truncate">
+                      {tx.description}
+                    </p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                      {tx.date}
+                      {tx.Category?.name ? ` · ${tx.Category.name}` : ''}
+                    </p>
+                  </div>
+                  <span
+                    className={cn(
+                      'text-sm font-semibold tabular-nums whitespace-nowrap',
+                      tx.type === 'expense'
+                        ? 'text-rose-600 dark:text-rose-400'
+                        : 'text-emerald-600 dark:text-emerald-400',
+                    )}
+                  >
+                    {tx.type === 'expense' ? '−' : '+'}
+                    {money(tx.amount)}
+                  </span>
+                  <TxRowActions
+                    onEdit={() => startEditTx(tx)}
+                    onHide={() => deleteTransaction(tx.id)}
+                  />
+                </li>
+              ))}
+              {txItems.length === 0 && (
+                <li className="py-12 px-4 text-center text-sm text-gray-500 dark:text-gray-400">
+                  <p>{t('accountsPage.noTransactions')}</p>
+                  <p className="text-xs mt-1">
+                    {selectedItem
+                      ? t('accountsPage.addFirstAbove')
+                      : t('accountsPage.selectFromLeft')}
+                  </p>
+                </li>
+              )}
+            </ul>
+
+            {/* ── Table (≥ sm) ── */}
+            <div className="hidden sm:block overflow-x-auto">
               <table className="min-w-full text-sm">
                 <thead>
                   <tr className="bg-gray-50 dark:bg-slate-800/50 border-b border-[var(--border)]">
@@ -1290,51 +1379,13 @@ export default function Accounts() {
                         )}
                       >
                         {tx.type === 'expense' ? '−' : '+'}
-                        {cs}
-                        {Number(tx.amount).toFixed(2)}
+                        {money(tx.amount)}
                       </td>
                       <td className="px-4 py-3 text-right">
-                        <div className="flex justify-end gap-1">
-                          <IconButton
-                            onClick={() => startEditTx(tx)}
-                            title={t('accountsPage.edit')}
-                          >
-                            <svg
-                              width="14"
-                              height="14"
-                              viewBox="0 0 24 24"
-                              fill="none"
-                              stroke="currentColor"
-                              strokeWidth="2"
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                            >
-                              <path d="M12 20h9" />
-                              <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L8 18l-4 1 1-4 11.5-11.5z" />
-                            </svg>
-                          </IconButton>
-                          <IconButton
-                            onClick={() => deleteTransaction(tx.id)}
-                            title={t('accountsPage.hide')}
-                            danger
-                          >
-                            <svg
-                              width="14"
-                              height="14"
-                              viewBox="0 0 24 24"
-                              fill="none"
-                              stroke="currentColor"
-                              strokeWidth="2"
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                            >
-                              <path d="M3 6h18" />
-                              <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
-                              <path d="M10 11v6M14 11v6" />
-                              <path d="M15 6V4a2 2 0 0 0-2-2h-2a2 2 0 0 0-2 2v2" />
-                            </svg>
-                          </IconButton>
-                        </div>
+                        <TxRowActions
+                          onEdit={() => startEditTx(tx)}
+                          onHide={() => deleteTransaction(tx.id)}
+                        />
                       </td>
                     </tr>
                   ))}
@@ -1388,7 +1439,7 @@ export default function Accounts() {
                     key={label}
                     onClick={action}
                     disabled={disabled}
-                    className="w-7 h-7 rounded-lg border border-[var(--border)] text-sm font-medium transition-colors disabled:opacity-30 hover:bg-gray-100 dark:hover:bg-slate-800"
+                    className="size-11 sm:size-7 rounded-lg border border-[var(--border)] text-sm font-medium transition-colors disabled:opacity-30 hover:bg-gray-100 dark:hover:bg-slate-800"
                   >
                     {label}
                   </button>

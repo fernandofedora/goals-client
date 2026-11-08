@@ -69,7 +69,7 @@ const Select = React.forwardRef(({ className, children, value = '', onChange, pl
         <RadixSelect.Trigger
           ref={ref}
           className={cn(
-            'inline-flex items-center justify-between rounded-md border px-3 py-2 text-sm w-full',
+            'inline-flex items-center justify-between rounded-md border px-3 py-2 text-sm w-full min-h-11 sm:min-h-0 cursor-pointer',
             'border-[var(--border)] bg-[var(--background)] text-[var(--foreground)]',
             'focus:outline-none focus:ring-2 focus:ring-[var(--ring)]',
             'disabled:cursor-not-allowed disabled:opacity-50'

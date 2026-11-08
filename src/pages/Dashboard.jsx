@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useTranslation, Trans } from 'react-i18next';
-import Button from '../components/ui/button';
+import PageHeader from '../components/ui/page-header';
+import { cn } from '../lib/utils';
 import api from '../api';
 import Select from '../components/ui/select';
 import DateRangePicker from '../components/ui/date-range-picker';
@@ -27,6 +27,9 @@ import {
   ChartLegend,
 } from '../components/ui/chart';
 import { useCurrency } from '../context/CurrencyContext';
+import { useIsMobile } from '../hooks/useMediaQuery';
+import { compactNumber } from '../utils/format';
+import { onTransactionsChanged } from '../utils/transactionEvents';
 import { getPref, setPref } from '../utils/userStorage';
 import { intlLocale } from '../utils/dateLocale';
 
@@ -35,10 +38,35 @@ import { intlLocale } from '../utils/dateLocale';
 // Custom active-sector Pie shape (shadcn donut style)
 // renderActiveShape is now defined inside the component to use dynamic symbol
 
+// Full class names (not `bg-${color}-50`): Tailwind only generates classes it
+// can find literally in the source, so interpolated ones rendered unstyled.
+const STAT_TONES = {
+  emerald: {
+    box: 'bg-emerald-50 border-emerald-100',
+    label: 'text-emerald-700 dark:text-emerald-400',
+    value: 'text-emerald-700',
+  },
+  rose: {
+    box: 'bg-rose-50 border-rose-100',
+    label: 'text-rose-700 dark:text-rose-400',
+    value: 'text-rose-700',
+  },
+  indigo: {
+    box: 'bg-indigo-50 border-indigo-100',
+    label: 'text-indigo-700 dark:text-indigo-400',
+    value: 'text-indigo-700',
+  },
+  amber: {
+    box: 'bg-amber-50 border-amber-100',
+    label: 'text-amber-800 dark:text-amber-400',
+    value: 'text-amber-800',
+  },
+};
+
 export default function Dashboard() {
-  const navigate = useNavigate();
   const { t } = useTranslation();
-  const { symbol: cs } = useCurrency();
+  const { symbol: cs, money, privacyMode } = useCurrency();
+  const isMobile = useIsMobile();
 
   const periodOptions = useMemo(
     () => [
@@ -60,7 +88,7 @@ export default function Dashboard() {
     [t],
   );
 
-  const currencyFormatter = (v) => `${cs}${Number(v ?? 0).toFixed(2)}`;
+  const currencyFormatter = money;
 
   const renderActiveShape = (props) => {
     const {
@@ -130,6 +158,7 @@ export default function Dashboard() {
     to: undefined,
   });
   const [summary, setSummary] = useState(null);
+  const [refreshTick, setRefreshTick] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [cards, setCards] = useState([]);
@@ -164,13 +193,7 @@ export default function Dashboard() {
   // Helper: format a Date to 'YYYY-MM-DD' for the API
   const toISODate = (d) => (d ? d.toISOString().slice(0, 10) : null);
 
-  const formatCurrency = (value) => {
-    try {
-      return `${cs}${Number(value || 0).toFixed(2)}`;
-    } catch {
-      return `${cs}${Number(value || 0).toFixed(2)}`;
-    }
-  };
+  const formatCurrency = money;
 
   const yearOptions = useMemo(() => {
     const currentYear = new Date().getFullYear();
@@ -294,7 +317,13 @@ export default function Dashboard() {
     };
 
     loadData();
-  }, [period, selectedYear, filterMode, dateRange]);
+  }, [period, selectedYear, filterMode, dateRange, refreshTick]);
+
+  // Re-fetch after the global quick-add dialog creates a transaction.
+  useEffect(
+    () => onTransactionsChanged(() => setRefreshTick((n) => n + 1)),
+    [],
+  );
 
   const barData = useMemo(() => {
     const monthLabels = Array.from({ length: 12 }, (_, i) =>
@@ -526,15 +555,15 @@ export default function Dashboard() {
               </p>
               <p className="text-[11px] text-gray-400">
                 {t('dashboard.bankOpens', {
-                  amount: `${cs}${Number(acc.initialBalance || 0).toFixed(2)}`,
+                  amount: money(acc.initialBalance),
                 })}
                 &ensp;·&ensp;
                 {t('dashboard.bankIncome', {
-                  amount: `${cs}${acc.income.toFixed(2)}`,
+                  amount: money(acc.income),
                 })}
                 &ensp;·&ensp;
                 {t('dashboard.bankExpenses', {
-                  amount: `${cs}${acc.expense.toFixed(2)}`,
+                  amount: money(acc.expense),
                 })}
               </p>
             </div>
@@ -548,8 +577,7 @@ export default function Dashboard() {
               }`}
             >
               {isNeg ? '−' : '+'}
-              {cs}
-              {Math.abs(acc.current).toFixed(2)}
+              {money(Math.abs(acc.current))}
             </span>
           </div>
         </div>
@@ -614,17 +642,26 @@ export default function Dashboard() {
         ].map(({ label, value, color, isCount }) => (
           <div
             key={label}
-            className={`rounded-xl p-4 bg-${color}-50 dark:bg-slate-800 border border-${color}-100 dark:border-slate-700/60`}
+            className={cn(
+              'rounded-xl p-4 dark:bg-slate-800 border dark:border-slate-700/60',
+              STAT_TONES[color].box,
+            )}
           >
             <p
-              className={`text-xs font-medium text-${color}-600 dark:text-${color}-400 uppercase tracking-widest mb-1`}
+              className={cn(
+                'text-xs font-medium uppercase tracking-widest mb-1',
+                STAT_TONES[color].label,
+              )}
             >
               {label}
             </p>
             <p
-              className={`text-2xl font-bold text-${color}-700 dark:text-slate-100 tabular-nums`}
+              className={cn(
+                'text-xl sm:text-2xl font-bold dark:text-slate-100 tabular-nums',
+                STAT_TONES[color].value,
+              )}
             >
-              {isCount ? value : `${cs}${Number(value).toFixed(2)}`}
+              {isCount ? value : money(value)}
             </p>
           </div>
         ))}
@@ -634,10 +671,9 @@ export default function Dashboard() {
               {t('dashboard.allTimeBalance')}
             </p>
             <p className="text-2xl font-bold text-slate-700 dark:text-slate-100 tabular-nums">
-              {cs}
-              {(
-                allTimeSummary.totals.income - allTimeSummary.totals.expense
-              ).toFixed(2)}
+              {money(
+                allTimeSummary.totals.income - allTimeSummary.totals.expense,
+              )}
             </p>
           </div>
         )}
@@ -647,25 +683,24 @@ export default function Dashboard() {
 
   return (
     <div className="max-w-6xl mx-auto p-4 space-y-5">
-      {/* ── Header / Overview ── */}
+      <PageHeader
+        title={t('nav.dashboard')}
+        subtitle={t('dashboard.pageSubtitle')}
+      />
+
+      {/* ── Overview ── (creating a transaction lives in the global
+          "+ Transacción" button now, so it is not repeated here) */}
       <div className="bg-white dark:bg-slate-900 rounded-2xl border border-[var(--border)] shadow-sm p-5">
         <div className="flex justify-between items-center mb-4 gap-3 flex-wrap">
           <h2 className="text-xl font-bold tracking-tight">
             {t('dashboard.overview')}
           </h2>
           <div className="flex items-center gap-2 flex-wrap">
-            <Button
-              onClick={() => navigate('/transactions/add')}
-              variant="primary"
-            >
-              {t('dashboard.newTransaction')}
-            </Button>
-
             {/* ── Filter mode toggle ── */}
             <div className="flex rounded-lg border border-[var(--border)] overflow-hidden text-sm font-medium">
               <button
                 onClick={() => setFilterMode('period')}
-                className={`px-3 py-2 transition-colors ${
+                className={`min-h-11 sm:min-h-0 px-3 py-2 transition-colors ${
                   filterMode === 'period'
                     ? 'bg-indigo-600 text-white'
                     : 'bg-white dark:bg-slate-800 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-slate-700'
@@ -675,7 +710,7 @@ export default function Dashboard() {
               </button>
               <button
                 onClick={() => setFilterMode('range')}
-                className={`px-3 py-2 transition-colors border-l border-[var(--border)] ${
+                className={`min-h-11 sm:min-h-0 px-3 py-2 transition-colors border-l border-[var(--border)] ${
                   filterMode === 'range'
                     ? 'bg-indigo-600 text-white'
                     : 'bg-white dark:bg-slate-800 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-slate-700'
@@ -714,7 +749,7 @@ export default function Dashboard() {
 
             <button
               onClick={onExport}
-              className="px-3 py-2 text-sm rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 font-medium transition-colors"
+              className="min-h-11 sm:min-h-0 px-3 py-2 text-sm rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 font-medium transition-colors"
             >
               {t('dashboard.exportXlsx')}
             </button>
@@ -748,7 +783,11 @@ export default function Dashboard() {
         )}
         {!loading && (
           <ChartContainer config={barChartConfig} style={{ height: 280 }}>
-            <BarChart data={barData} barGap={3} barCategoryGap="30%">
+            <BarChart
+              data={barData}
+              barGap={isMobile ? 1 : 3}
+              barCategoryGap={isMobile ? '12%' : '30%'}
+            >
               <CartesianGrid
                 vertical={false}
                 strokeDasharray="3 3"
@@ -765,9 +804,10 @@ export default function Dashboard() {
               <YAxis
                 axisLine={false}
                 tickLine={false}
-                tick={{ fontSize: 11, fill: '#9ca3af' }}
+                tick={privacyMode ? false : { fontSize: 11, fill: '#6b7280' }}
+                width={privacyMode ? 8 : isMobile ? 44 : 60}
                 tickFormatter={(v) =>
-                  `${cs}${v >= 1000 ? `${(v / 1000).toFixed(0)}k` : v}`
+                  privacyMode ? '' : `${cs}${compactNumber(v)}`
                 }
               />
               <ChartTooltip
@@ -778,10 +818,7 @@ export default function Dashboard() {
                 }}
                 content={
                   <ChartTooltipContent
-                    formatter={(v, name) => [
-                      `${cs}${Number(v).toFixed(2)}`,
-                      name,
-                    ]}
+                    formatter={(v, name) => [money(v), name]}
                     indicator="square"
                   />
                 }
@@ -863,8 +900,7 @@ export default function Dashboard() {
                       <div className="flex items-center gap-3 text-right">
                         <span className="text-gray-400 text-xs">{pct}%</span>
                         <span className="font-semibold text-gray-800 dark:text-gray-100 tabular-nums">
-                          {cs}
-                          {c.amount.toFixed(2)}
+                          {money(c.amount)}
                         </span>
                       </div>
                     </li>
@@ -931,8 +967,7 @@ export default function Dashboard() {
                       <div className="flex items-center gap-3 text-right">
                         <span className="text-gray-400 text-xs">{pct}%</span>
                         <span className="font-semibold text-gray-800 dark:text-gray-100 tabular-nums">
-                          {cs}
-                          {c.amount.toFixed(2)}
+                          {money(c.amount)}
                         </span>
                       </div>
                     </li>
@@ -944,8 +979,13 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* ── Budget vs Actual (with Monthly / Category toggle) ── */}
-      <div className="bg-white dark:bg-slate-900 rounded-2xl border border-[var(--border)] shadow-sm p-5">
+      {/* ── Budget vs Actual (with Monthly / Category toggle) ──
+          Hidden on phones until a month is picked: it only says "select a month". */}
+      <div
+        className={`bg-white dark:bg-slate-900 rounded-2xl border border-[var(--border)] shadow-sm p-5 ${
+          isMobile && !isMonthSelected ? 'hidden' : ''
+        }`}
+      >
         {/* Header + toggle */}
         <div className="flex items-center justify-between mb-4 gap-3 flex-wrap">
           <div>
@@ -1001,15 +1041,13 @@ export default function Dashboard() {
                   <span className="text-gray-500 dark:text-gray-400">
                     {t('dashboard.budgetLabel')}{' '}
                     <span className="font-semibold text-gray-800 dark:text-white">
-                      {cs}
-                      {budgetProgress.budget.toFixed(2)}
+                      {money(budgetProgress.budget)}
                     </span>
                   </span>
                   <span className="text-gray-500 dark:text-gray-400">
                     {t('dashboard.spent')}{' '}
                     <span className="font-semibold text-rose-600">
-                      {cs}
-                      {budgetProgress.actual.toFixed(2)}
+                      {money(budgetProgress.actual)}
                     </span>
                   </span>
                   <span className="text-gray-500 dark:text-gray-400">
@@ -1017,8 +1055,7 @@ export default function Dashboard() {
                     <span
                       className={`font-semibold ${budgetProgress.remaining < 0 ? 'text-rose-600' : 'text-emerald-600'}`}
                     >
-                      {cs}
-                      {budgetProgress.remaining.toFixed(2)}
+                      {money(budgetProgress.remaining)}
                     </span>
                   </span>
                 </div>
@@ -1108,13 +1145,11 @@ export default function Dashboard() {
                         </div>
                         <div className="flex items-center gap-3 text-right">
                           <span className="text-gray-500 dark:text-gray-400 tabular-nums">
-                            {cs}
-                            {spent.toFixed(2)}{' '}
+                            {money(spent)}{' '}
                             <span className="text-gray-300 dark:text-gray-600">
                               /
                             </span>{' '}
-                            {cs}
-                            {budget.toFixed(2)}
+                            {money(budget)}
                           </span>
                           <span
                             className={`text-xs font-semibold tabular-nums ${
@@ -1123,10 +1158,10 @@ export default function Dashboard() {
                           >
                             {isOver
                               ? t('dashboard.overBy', {
-                                  amount: `${cs}${Math.abs(remaining).toFixed(2)}`,
+                                  amount: money(Math.abs(remaining)),
                                 })
                               : t('dashboard.leftAmount', {
-                                  amount: `${cs}${remaining.toFixed(2)}`,
+                                  amount: money(remaining),
                                 })}
                           </span>
                         </div>
@@ -1159,8 +1194,12 @@ export default function Dashboard() {
 
       {/* ── Saldo + Payment Methods + Card Usage ── */}
       <div className="grid md:grid-cols-3 gap-5">
-        {/* Saldo Inicial vs Final */}
-        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-[var(--border)] shadow-sm p-5">
+        {/* Saldo Inicial vs Final (hidden on phones for "all time": nothing to compare) */}
+        <div
+          className={`bg-white dark:bg-slate-900 rounded-2xl border border-[var(--border)] shadow-sm p-5 ${
+            isMobile && period === 'all' ? 'hidden' : ''
+          }`}
+        >
           <h3 className="text-base font-semibold mb-1">
             {t('dashboard.monthlyBalance')}
           </h3>
@@ -1275,8 +1314,7 @@ export default function Dashboard() {
                       className="text-lg font-bold tabular-nums"
                       style={{ color }}
                     >
-                      {cs}
-                      {amount.toFixed(2)}
+                      {money(amount)}
                     </p>
                   </div>
                 </div>
@@ -1288,8 +1326,7 @@ export default function Dashboard() {
             <div className="text-right text-xs text-gray-400 pt-1">
               {t('dashboard.totalSpent')}{' '}
               <span className="font-semibold text-gray-700 dark:text-gray-200">
-                {cs}
-                {paymentTotals.total.toFixed(2)}
+                {money(paymentTotals.total)}
               </span>
             </div>
           </div>
@@ -1333,8 +1370,7 @@ export default function Dashboard() {
                     className="text-lg font-bold tabular-nums"
                     style={{ color: c.color }}
                   >
-                    {cs}
-                    {c.amount.toFixed(2)}
+                    {money(c.amount)}
                   </p>
                 </div>
               ))}
@@ -1367,8 +1403,7 @@ export default function Dashboard() {
                       : 'text-rose-500 dark:text-rose-400'
                   }`}
                 >
-                  {cs}
-                  {bankNetWorth.toFixed(2)}
+                  {money(bankNetWorth)}
                 </span>
               </div>
             )}
@@ -1417,8 +1452,7 @@ export default function Dashboard() {
                     : 'text-rose-500 dark:text-rose-400'
                 }`}
               >
-                {cs}
-                {isolatedNetWorth.toFixed(2)}
+                {money(isolatedNetWorth)}
               </span>
             </div>
           </div>

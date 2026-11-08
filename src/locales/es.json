@@ -38,7 +38,11 @@
     "language": "Idioma",
     "home": "Goals - Ir al inicio",
     "investments": "Inversiones",
-    "beta": "Beta"
+    "beta": "Beta",
+    "newTransaction": "Transacción",
+    "newTransactionAria": "Nueva transacción (atajo: N)",
+    "hideAmounts": "Ocultar montos",
+    "showAmounts": "Mostrar montos"
   },
   "settings": {
     "title": "Ajustes",
@@ -265,7 +269,8 @@
     "amountPositive": "El monto debe ser mayor que 0",
     "selectAccountError": "Por favor selecciona una cuenta",
     "selectCardError": "Por favor selecciona una tarjeta para pagos con tarjeta",
-    "saveFailed": "No se pudieron guardar los cambios"
+    "saveFailed": "No se pudieron guardar los cambios",
+    "pageSubtitle": "Registra gastos e ingresos y revisa tu historial."
   },
   "budget": {
     "title": "Presupuesto Mensual",
@@ -359,7 +364,8 @@
     "isolatedAccounts": "Cuentas aisladas",
     "doNotIntegrate": "No integrar",
     "isolatedSub": "No se incluyen en los totales generales ni en los gráficos",
-    "subtotal": "Subtotal"
+    "subtotal": "Subtotal",
+    "pageSubtitle": "Tus ingresos, gastos y saldos del periodo que elijas."
   },
   "scheduledPayments": {
     "title": "Pagos Programados",
@@ -927,5 +933,11 @@
       "purchaseNotFound": "Compra no encontrada.",
       "investmentsNoAccess": "No tienes acceso al módulo de Inversiones."
     }
+  },
+  "quickAdd": {
+    "title": "Nueva transacción",
+    "saveAndAddAnother": "Guardar y agregar otra",
+    "loading": "Cargando categorías y cuentas…",
+    "loadFailed": "No pudimos cargar tus categorías y cuentas. Cierra y vuelve a intentarlo."
   }
 }

@@ -38,7 +38,11 @@
     "language": "Language",
     "home": "Goals - Go to home",
     "investments": "Investments",
-    "beta": "Beta"
+    "beta": "Beta",
+    "newTransaction": "Transaction",
+    "newTransactionAria": "New transaction (shortcut: N)",
+    "hideAmounts": "Hide amounts",
+    "showAmounts": "Show amounts"
   },
   "settings": {
     "title": "Settings",
@@ -265,7 +269,8 @@
     "amountPositive": "Amount must be greater than 0",
     "selectAccountError": "Please select an account",
     "selectCardError": "Please select a card for card payments",
-    "saveFailed": "Failed to save changes"
+    "saveFailed": "Failed to save changes",
+    "pageSubtitle": "Log expenses and income, and review your history."
   },
   "budget": {
     "title": "Monthly Budget",
@@ -359,7 +364,8 @@
     "isolatedAccounts": "Isolated accounts",
     "doNotIntegrate": "Do not integrate",
     "isolatedSub": "Not included in general totals or charts",
-    "subtotal": "Subtotal"
+    "subtotal": "Subtotal",
+    "pageSubtitle": "Your income, spending and balances for the period you pick."
   },
   "scheduledPayments": {
     "title": "Scheduled Payments",
@@ -927,5 +933,11 @@
       "purchaseNotFound": "Purchase not found.",
       "investmentsNoAccess": "You don't have access to the Investments module."
     }
+  },
+  "quickAdd": {
+    "title": "New transaction",
+    "saveAndAddAnother": "Save and add another",
+    "loading": "Loading categories and accounts…",
+    "loadFailed": "We could not load your categories and accounts. Close and try again."
   }
 }

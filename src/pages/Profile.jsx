@@ -213,7 +213,7 @@ function PasswordInput({
       <button
         type="button"
         onClick={() => setShow((v) => !v)}
-        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+        className="absolute right-0 top-1/2 -translate-y-1/2 size-11 sm:size-10 flex items-center justify-center text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 transition-colors"
         tabIndex={-1}
         aria-label={
           show ? t('profile.hidePassword') : t('profile.showPassword')
@@ -520,6 +520,7 @@ export default function Profile() {
 
               <div className="pt-1">
                 <Button
+                  variant="custom"
                   type="submit"
                   disabled={submittingProfile}
                   className="w-full sm:w-auto bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-6"
@@ -615,6 +616,7 @@ export default function Profile() {
 
               <div className="pt-1">
                 <Button
+                  variant="custom"
                   type="submit"
                   disabled={submittingPassword}
                   className="w-full sm:w-auto bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-6"

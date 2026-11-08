@@ -20,6 +20,8 @@ import {
   setPrefJSON,
 } from '../utils/userStorage';
 import { intlLocale } from '../utils/dateLocale';
+import { useIsMobile } from '../hooks/useMediaQuery';
+import PageHeader from '../components/ui/page-header';
 import { translateServerError } from '../utils/serverError';
 
 const toISODate = (d) => (d ? d.toISOString().slice(0, 10) : null);
@@ -43,7 +45,8 @@ function readJSONArray(key) {
 
 export default function GraphicsByCategories() {
   const { t } = useTranslation();
-  const { symbol: cs } = useCurrency();
+  const { money } = useCurrency();
+  const isMobile = useIsMobile();
 
   const PERIOD_OPTIONS = useMemo(
     () => [
@@ -252,19 +255,10 @@ export default function GraphicsByCategories() {
 
   return (
     <div className="max-w-6xl mx-auto p-4 space-y-5">
-      {/* ── Header ─────────────────────────────────────────── */}
-      <div className="bg-white dark:bg-slate-900 rounded-2xl border border-[var(--border)] shadow-sm p-5">
-        <div className="flex items-start justify-between gap-3 flex-wrap">
-          <div>
-            <h2 className="text-xl font-bold tracking-tight">
-              {t('graphics.title')}
-            </h2>
-            <p className="text-xs text-gray-400 mt-0.5">
-              {t('graphics.subtitle')}
-            </p>
-          </div>
-        </div>
-      </div>
+      <PageHeader
+        title={t('graphics.title')}
+        subtitle={t('graphics.subtitle')}
+      />
 
       {/* ── Filters ───────────────────────────────────────── */}
       <div className="bg-white dark:bg-slate-900 rounded-2xl border border-[var(--border)] shadow-sm p-5 space-y-4">
@@ -310,7 +304,7 @@ export default function GraphicsByCategories() {
           <div className="flex rounded-lg border border-[var(--border)] overflow-hidden text-sm font-medium">
             <button
               onClick={() => setFilterMode('period')}
-              className={`px-3 py-2 transition-colors ${
+              className={`min-h-11 sm:min-h-0 px-3 py-2 transition-colors ${
                 filterMode === 'period'
                   ? 'bg-indigo-600 text-white'
                   : 'bg-white dark:bg-slate-800 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-slate-700'
@@ -320,7 +314,7 @@ export default function GraphicsByCategories() {
             </button>
             <button
               onClick={() => setFilterMode('range')}
-              className={`px-3 py-2 transition-colors border-l border-[var(--border)] ${
+              className={`min-h-11 sm:min-h-0 px-3 py-2 transition-colors border-l border-[var(--border)] ${
                 filterMode === 'range'
                   ? 'bg-indigo-600 text-white'
                   : 'bg-white dark:bg-slate-800 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-slate-700'
@@ -424,6 +418,7 @@ export default function GraphicsByCategories() {
                 tickLine={false}
                 axisLine={false}
                 tickMargin={8}
+                minTickGap={isMobile ? 16 : 5}
                 tickFormatter={(v) => formatTick(v, data.granularity)}
               />
               <ChartTooltip
@@ -431,7 +426,7 @@ export default function GraphicsByCategories() {
                 content={
                   <ChartTooltipContent
                     indicator="line"
-                    formatter={(v) => `${cs}${Number(v ?? 0).toFixed(2)}`}
+                    formatter={(v) => money(v)}
                     labelFormatter={(label) => {
                       if (!label) return '';
                       if (data.granularity === 'day') {
@@ -456,7 +451,8 @@ export default function GraphicsByCategories() {
                     key={c.id}
                     dataKey={`cat_${c.id}`}
                     name={c.name}
-                    type="natural"
+                    // monotone never overshoots below 0 like "natural" did
+                    type="monotone"
                     stroke={color}
                     strokeWidth={2}
                     dot={{ fill: color, stroke: color, r: 3 }}

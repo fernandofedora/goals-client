@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 import { intlLocale } from '../utils/dateLocale';
 import { translateServerError } from '../utils/serverError';
 import { avatarColor, userInitials } from '../utils/avatar';
+import PageHeader from '../components/ui/page-header';
 
 // ─── Icons ────────────────────────────────────────────────────────────────────
 const ShieldIcon = () => (
@@ -1129,41 +1130,11 @@ export default function UserManager() {
 
   return (
     <div style={{ maxWidth: 1100, margin: '0 auto' }}>
-      {/* ── Header ───────────────────────────────────── */}
-      <div style={{ marginBottom: 28 }}>
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 12,
-            marginBottom: 6,
-          }}
-        >
-          <span style={{ color: '#f59e0b' }}>
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="28"
-              height="28"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-            </svg>
-          </span>
-          <h1 style={{ margin: 0, fontSize: 26, fontWeight: 800 }}>
-            {t('admin.title')}
-          </h1>
-        </div>
-        <p
-          style={{ margin: 0, color: 'var(--muted-foreground)', fontSize: 14 }}
-        >
-          {t('admin.usersRegistered', { count: total })}
-        </p>
-      </div>
+      <PageHeader
+        className="mb-7"
+        title={t('admin.title')}
+        subtitle={t('admin.usersRegistered', { count: total })}
+      />
 
       {/* ── Toolbar ──────────────────────────────────── */}
       <div

@@ -96,7 +96,10 @@ export default function App() {
             {!hideNavbar && (
               <Navbar theme={theme} onToggleTheme={toggleTheme} />
             )}
-            <div className="max-w-6xl mx-auto px-4 py-6">
+            {/* Extra bottom room on phones so the floating "+" never covers the last row */}
+            <div
+              className={`max-w-6xl mx-auto px-4 py-6 ${hideNavbar ? '' : 'pb-24 md:pb-6'}`}
+            >
               <ErrorBoundary key={location.pathname}>
                 <Routes>
                   <Route path="/login" element={<Login />} />

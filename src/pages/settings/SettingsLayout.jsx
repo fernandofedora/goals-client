@@ -1,6 +1,7 @@
 import { NavLink, Outlet } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { cn } from '../../lib/utils';
+import PageHeader from '../../components/ui/page-header';
 
 const SECTIONS = [
   {
@@ -88,9 +89,11 @@ const SECTIONS = [
   },
 ];
 
+// Phones: 4 equal tabs (icon over label) so none is cut off at the edge.
+// md+: vertical sidebar rows.
 const sideLinkClass = ({ isActive }) =>
   cn(
-    'flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-150 whitespace-nowrap',
+    'flex flex-col md:flex-row items-center justify-center md:justify-start gap-1 md:gap-2.5 min-h-11 px-1 md:px-3 py-1.5 md:py-2 rounded-lg text-xs md:text-sm leading-tight font-medium text-center md:text-left transition-all duration-150 md:whitespace-nowrap',
     isActive
       ? 'bg-[var(--muted)] text-[var(--foreground)] shadow-sm'
       : 'text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:bg-[var(--muted)]',
@@ -100,18 +103,17 @@ export default function SettingsLayout() {
   const { t } = useTranslation();
   return (
     <div className="max-w-5xl mx-auto p-4">
-      <div className="mb-5">
-        <h1 className="text-2xl font-semibold tracking-tight">
-          {t('settings.title')}
-        </h1>
-        <p className="text-sm text-gray-400 mt-0.5">{t('settings.subtitle')}</p>
-      </div>
+      <PageHeader
+        className="mb-5"
+        title={t('settings.title')}
+        subtitle={t('settings.subtitle')}
+      />
 
       <div className="flex flex-col md:flex-row gap-5 items-start">
         {/* ── Section nav: vertical sidebar on desktop, pill row on mobile ── */}
         <aside className="w-full md:w-48 shrink-0 md:sticky md:top-20">
           <nav
-            className="flex md:flex-col gap-1 overflow-x-auto md:overflow-visible pb-1 md:pb-0"
+            className="grid grid-cols-4 md:flex md:flex-col gap-1"
             aria-label={t('settings.sections')}
           >
             {SECTIONS.map((s) => (

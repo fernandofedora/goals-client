@@ -1,13 +1,14 @@
 import { useEffect, useState, useMemo, useCallback } from 'react';
-import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import api from '../api';
-import DateInput from '../components/DateInput';
 import Input from '../components/ui/input';
-import Button from '../components/ui/button';
 import Select from '../components/ui/select';
 import EditTransactionDialog from '../components/ui/edit-transaction-dialog';
 import ConfirmDialog from '../components/ui/confirm-dialog';
+import IconButton from '../components/ui/icon-button';
+import PageHeader from '../components/ui/page-header';
+import TransactionForm, { Field } from '../components/TransactionForm';
+import { onTransactionsChanged } from '../utils/transactionEvents';
 import { toast } from 'sonner';
 import { cn } from '../lib/utils';
 import { useCurrency } from '../context/CurrencyContext';
@@ -16,41 +17,6 @@ import { intlLocale } from '../utils/dateLocale';
 
 const PAGE_SIZE_OPTIONS = [10, 25, 50, 100];
 const DEFAULT_PAGE_SIZE = 25;
-
-// ── Inline Field wrapper ──────────────────────────────────────────────────────
-function Field({ label, labelRight, children }) {
-  return (
-    <div className="flex flex-col gap-1.5">
-      <div className="flex items-center justify-between">
-        <label className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-widest">
-          {label}
-        </label>
-        {labelRight && labelRight}
-      </div>
-      {children}
-    </div>
-  );
-}
-
-// ── Small icon buttons ────────────────────────────────────────────────────────
-function IconButton({ onClick, title, danger, children }) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      title={title}
-      aria-label={title}
-      className={cn(
-        'inline-flex items-center justify-center w-8 h-8 rounded-lg transition-colors',
-        danger
-          ? 'text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/40'
-          : 'text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-slate-700',
-      )}
-    >
-      {children}
-    </button>
-  );
-}
 
 // ── Badge ─────────────────────────────────────────────────────────────────────
 function Badge({ type }) {
@@ -78,10 +44,9 @@ export default function AddTransaction() {
   const [accounts, setAccounts] = useState([]);
   const [transactions, setTransactions] = useState([]);
   const [typeFilter, setTypeFilter] = useState('all');
-  const [txMode, setTxMode] = useState('expense');
   const [paymentFilter, setPaymentFilter] = useState('all');
   const [categoryFilter, setCategoryFilter] = useState('');
-  const { symbol: cs } = useCurrency();
+  const { money } = useCurrency();
 
   const now = new Date();
   const [monthFilter, setMonthFilter] = useState(
@@ -95,24 +60,6 @@ export default function AddTransaction() {
   );
 
   const [deleteTargetId, setDeleteTargetId] = useState(null);
-
-  const [expense, setExpense] = useState({
-    description: '',
-    categoryId: '',
-    amount: '',
-    date: '',
-    method: 'cash',
-    cardId: '',
-    accountId: '',
-  });
-  const [income, setIncome] = useState({
-    description: '',
-    categoryId: '',
-    amount: '',
-    date: '',
-    incomeMethod: 'cash',
-    accountId: '',
-  });
 
   const [editingTxId, setEditingTxId] = useState(null);
   const [editTxData, setEditTxData] = useState({
@@ -159,66 +106,10 @@ export default function AddTransaction() {
     load();
   }, [load]);
 
+  // Rows added from the global quick-add dialog show up without a reload.
+  useEffect(() => onTransactionsChanged(load), [load]);
+
   // ── CRUD handlers ─────────────────────────────────────────────────────────
-  const addExpense = async (e) => {
-    e.preventDefault();
-    try {
-      const expPayload = {
-        ...expense,
-        type: 'expense',
-        paymentMethod: expense.method,
-        amount: parseFloat(expense.amount || 0),
-        accountId:
-          expense.method === 'account' ? expense.accountId || null : null,
-        cardId: expense.method === 'card' ? expense.cardId || null : null,
-      };
-      await api.post('/transactions', expPayload);
-      setExpense({
-        description: '',
-        categoryId: '',
-        amount: '',
-        date: '',
-        method: 'cash',
-        cardId: '',
-        accountId: '',
-      });
-      e.target.reset(); // Clear native browser validation state (removes :user-invalid)
-      toast.success(t('addTransaction.expenseAdded'));
-      load();
-    } catch {
-      toast.error(t('addTransaction.addExpenseFailed'));
-    }
-  };
-
-  const addIncome = async (e) => {
-    e.preventDefault();
-    try {
-      const paymentMethod =
-        income.incomeMethod === 'account' ? 'account' : 'cash';
-      const payload = {
-        ...income,
-        type: 'income',
-        amount: parseFloat(income.amount || 0),
-        paymentMethod,
-      };
-      if (income.incomeMethod === 'cash') payload.accountId = null;
-      await api.post('/transactions', payload);
-      setIncome({
-        description: '',
-        categoryId: '',
-        amount: '',
-        date: '',
-        incomeMethod: 'cash',
-        accountId: '',
-      });
-      e.target.reset(); // Clear native browser validation state (removes :user-invalid)
-      toast.success(t('addTransaction.incomeAdded'));
-      load();
-    } catch {
-      toast.error(t('addTransaction.addIncomeFailed'));
-    }
-  };
-
   const startEditTx = (tx) => {
     setEditingTxId(tx.id);
     const resolvedMethod =
@@ -408,6 +299,11 @@ export default function AddTransaction() {
         onCancel={() => setDeleteTargetId(null)}
       />
 
+      <PageHeader
+        title={t('nav.transactions')}
+        subtitle={t('addTransaction.pageSubtitle')}
+      />
+
       {/* ── Add Transaction Card ──────────────────────────────────────────── */}
       <section className="bg-white dark:bg-slate-900 rounded-2xl border border-[var(--border)] shadow-sm overflow-hidden">
         {/* Header */}
@@ -420,295 +316,12 @@ export default function AddTransaction() {
           </p>
         </div>
 
-        {/* Tab switcher */}
-        <div className="px-5 pt-4">
-          <div className="inline-flex rounded-xl border border-[var(--border)] bg-[var(--muted)] p-1 gap-1">
-            {['expense', 'income'].map((mode) => (
-              <button
-                key={mode}
-                type="button"
-                onClick={() => setTxMode(mode)}
-                className={cn(
-                  'px-5 py-1.5 text-sm font-medium rounded-lg transition-all duration-150',
-                  txMode === mode
-                    ? mode === 'expense'
-                      ? 'bg-rose-600 text-white shadow-sm'
-                      : 'bg-emerald-600 text-white shadow-sm'
-                    : 'text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200',
-                )}
-              >
-                {mode === 'expense' ? (
-                  <span className="inline-flex items-center gap-1.5">
-                    {/* Minus circle icon */}
-                    <svg
-                      width="15"
-                      height="15"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2.5"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    >
-                      <circle cx="12" cy="12" r="10" />
-                      <line x1="8" y1="12" x2="16" y2="12" />
-                    </svg>
-                    {t('transactions.expense')}
-                  </span>
-                ) : (
-                  <span className="inline-flex items-center gap-1.5">
-                    {/* Plus circle icon */}
-                    <svg
-                      width="15"
-                      height="15"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2.5"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    >
-                      <circle cx="12" cy="12" r="10" />
-                      <line x1="12" y1="8" x2="12" y2="16" />
-                      <line x1="8" y1="12" x2="16" y2="12" />
-                    </svg>
-                    {t('transactions.income')}
-                  </span>
-                )}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Form */}
-        <form
-          className="p-5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"
-          onSubmit={(e) =>
-            txMode === 'expense' ? addExpense(e) : addIncome(e)
-          }
-        >
-          {/* Description – full width */}
-          <div className="sm:col-span-2 lg:col-span-3">
-            <Field label={t('transactions.description')}>
-              <Input
-                className="w-full"
-                placeholder={
-                  txMode === 'expense'
-                    ? t('addTransaction.descExpensePlaceholder')
-                    : t('addTransaction.descIncomePlaceholder')
-                }
-                value={
-                  txMode === 'expense'
-                    ? expense.description
-                    : income.description
-                }
-                onChange={(e) =>
-                  txMode === 'expense'
-                    ? setExpense((v) => ({ ...v, description: e.target.value }))
-                    : setIncome((v) => ({ ...v, description: e.target.value }))
-                }
-                required
-              />
-            </Field>
-          </div>
-
-          {/* Amount */}
-          <Field label={t('addTransaction.amountLabel', { symbol: cs })}>
-            <Input
-              type="number"
-              step="0.01"
-              placeholder="0.00"
-              value={txMode === 'expense' ? expense.amount : income.amount}
-              onChange={(e) =>
-                txMode === 'expense'
-                  ? setExpense((v) => ({ ...v, amount: e.target.value }))
-                  : setIncome((v) => ({ ...v, amount: e.target.value }))
-              }
-              required
-            />
-          </Field>
-
-          {/* Date */}
-          <Field label={t('transactions.date')}>
-            <DateInput
-              value={txMode === 'expense' ? expense.date : income.date}
-              onChange={(e) =>
-                txMode === 'expense'
-                  ? setExpense((v) => ({ ...v, date: e.target.value }))
-                  : setIncome((v) => ({ ...v, date: e.target.value }))
-              }
-              required
-              placeholder={t('addTransaction.pickDate')}
-            />
-          </Field>
-
-          {/* Category */}
-          <Field
-            label={t('transactions.category')}
-            labelRight={
-              <Link
-                to="/settings"
-                className="text-[11px] font-medium text-indigo-500 hover:text-indigo-600 dark:text-indigo-400 dark:hover:text-indigo-300 transition-colors"
-              >
-                {t('addTransaction.newCategory')}
-              </Link>
-            }
-          >
-            <Select
-              value={
-                txMode === 'expense' ? expense.categoryId : income.categoryId
-              }
-              onChange={(e) =>
-                txMode === 'expense'
-                  ? setExpense((v) => ({ ...v, categoryId: e.target.value }))
-                  : setIncome((v) => ({ ...v, categoryId: e.target.value }))
-              }
-              required
-            >
-              <option value="">{t('addTransaction.selectCategory')}</option>
-              {(txMode === 'expense' ? expenseCats : incomeCats).map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.name}
-                </option>
-              ))}
-            </Select>
-          </Field>
-
-          {/* Expense-only: 3-way payment picker + conditional card or account picker */}
-          {txMode === 'expense' && (
-            <>
-              <Field label={t('transactions.paymentMethod')}>
-                <div className="inline-flex rounded-lg border border-[var(--border)] bg-[var(--muted)] p-0.5 gap-0.5">
-                  {[
-                    { val: 'cash', icon: '💵', label: t('transactions.cash') },
-                    { val: 'card', icon: '💳', label: t('transactions.card') },
-                    {
-                      val: 'account',
-                      icon: '🏦',
-                      label: t('transactions.account'),
-                    },
-                  ].map((opt) => (
-                    <button
-                      key={opt.val}
-                      type="button"
-                      onClick={() =>
-                        setExpense((v) => ({
-                          ...v,
-                          method: opt.val,
-                          cardId: '',
-                          accountId: '',
-                        }))
-                      }
-                      className={cn(
-                        'flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-all duration-150 whitespace-nowrap',
-                        expense.method === opt.val
-                          ? 'bg-white dark:bg-slate-700 text-gray-900 dark:text-white shadow-sm'
-                          : 'text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200',
-                      )}
-                    >
-                      <span>{opt.icon}</span>
-                      <span>{opt.label}</span>
-                    </button>
-                  ))}
-                </div>
-              </Field>
-              {expense.method === 'card' && (
-                <Field label={t('addTransaction.creditCard')}>
-                  <Select
-                    value={expense.cardId}
-                    onChange={(e) =>
-                      setExpense((v) => ({ ...v, cardId: e.target.value }))
-                    }
-                    required
-                  >
-                    <option value="">{t('addTransaction.selectCard')}</option>
-                    {cards.map((card) => (
-                      <option key={card.id} value={card.id}>
-                        {card.name}
-                      </option>
-                    ))}
-                  </Select>
-                </Field>
-              )}
-              {expense.method === 'account' && (
-                <Field label={t('addTransaction.bankAccount')}>
-                  <Select
-                    value={expense.accountId}
-                    onChange={(e) =>
-                      setExpense((v) => ({ ...v, accountId: e.target.value }))
-                    }
-                    required
-                  >
-                    <option value="">
-                      {t('addTransaction.selectAccount')}
-                    </option>
-                    {accounts.map((acc) => (
-                      <option key={acc.id} value={acc.id}>
-                        {acc.name}
-                      </option>
-                    ))}
-                  </Select>
-                </Field>
-              )}
-            </>
-          )}
-
-          {/* Income-only: method + account */}
-          {txMode === 'income' && (
-            <>
-              <Field label={t('addTransaction.incomeMethod')}>
-                <Select
-                  value={income.incomeMethod}
-                  onChange={(e) =>
-                    setIncome((v) => ({ ...v, incomeMethod: e.target.value }))
-                  }
-                >
-                  <option value="cash">💵 {t('transactions.cash')}</option>
-                  <option value="account">
-                    🏦 {t('transactions.account')}
-                  </option>
-                </Select>
-              </Field>
-              {income.incomeMethod === 'account' && (
-                <Field label={t('transactions.account')}>
-                  <Select
-                    value={income.accountId}
-                    onChange={(e) =>
-                      setIncome((v) => ({ ...v, accountId: e.target.value }))
-                    }
-                    required
-                  >
-                    <option value="">
-                      {t('addTransaction.selectAccount')}
-                    </option>
-                    {accounts.map((acc) => (
-                      <option key={acc.id} value={acc.id}>
-                        {acc.name}
-                      </option>
-                    ))}
-                  </Select>
-                </Field>
-              )}
-            </>
-          )}
-
-          {/* Submit – full width */}
-          <div className="sm:col-span-2 lg:col-span-3 flex justify-end pt-1">
-            <Button
-              type="submit"
-              className={cn(
-                'w-full sm:w-auto px-8 font-semibold',
-                txMode === 'expense'
-                  ? 'bg-rose-600 hover:bg-rose-700 text-white'
-                  : 'bg-emerald-600 hover:bg-emerald-700 text-white',
-              )}
-            >
-              {txMode === 'expense'
-                ? t('addTransaction.addExpense')
-                : t('addTransaction.addIncome')}
-            </Button>
-          </div>
-        </form>
+        <TransactionForm
+          categories={categories}
+          cards={cards}
+          accounts={accounts}
+          onCreated={load}
+        />
       </section>
 
       {/* ── Transaction History ───────────────────────────────────────────── */}
@@ -741,8 +354,7 @@ export default function AddTransaction() {
                   <line x1="12" y1="8" x2="12" y2="16" />
                   <line x1="8" y1="12" x2="16" y2="12" />
                 </svg>
-                {cs}
-                {summaryTotals.income.toFixed(2)}
+                {money(summaryTotals.income)}
               </span>
               <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400">
                 <svg
@@ -758,8 +370,7 @@ export default function AddTransaction() {
                   <circle cx="12" cy="12" r="10" />
                   <line x1="8" y1="12" x2="16" y2="12" />
                 </svg>
-                {cs}
-                {summaryTotals.expense.toFixed(2)}
+                {money(summaryTotals.expense)}
               </span>
               <span
                 className={cn(
@@ -769,8 +380,7 @@ export default function AddTransaction() {
                     : 'bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400',
                 )}
               >
-                = {cs}
-                {summaryTotals.net.toFixed(2)}
+                = {money(summaryTotals.net)}
               </span>
             </div>
           </div>
@@ -922,8 +532,7 @@ export default function AddTransaction() {
                           )}
                         >
                           {tx.type === 'expense' ? '−' : '+'}
-                          {cs}
-                          {parseFloat(tx.amount ?? 0).toFixed(2)}
+                          {money(tx.amount)}
                         </span>
                         <span>{tx.date}</span>
                         {methodPill}
@@ -1041,8 +650,7 @@ export default function AddTransaction() {
                         )}
                       >
                         {tx.type === 'expense' ? '−' : '+'}
-                        {cs}
-                        {parseFloat(tx.amount ?? 0).toFixed(2)}
+                        {money(tx.amount)}
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap text-gray-500 dark:text-gray-400 text-xs">
                         {tx.date}
@@ -1159,7 +767,7 @@ export default function AddTransaction() {
                     onClick={() => setPage((p) => Math.max(1, p - 1))}
                     disabled={safePage === 1}
                     aria-label={t('addTransaction.previousPage')}
-                    className="inline-flex items-center justify-center w-8 h-8 rounded-lg border border-[var(--border)] bg-white dark:bg-slate-800 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                    className="inline-flex items-center justify-center size-11 sm:size-8 rounded-lg border border-[var(--border)] bg-white dark:bg-slate-800 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
                   >
                     <svg
                       width="14"
@@ -1189,7 +797,7 @@ export default function AddTransaction() {
                     onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                     disabled={safePage === totalPages}
                     aria-label={t('addTransaction.nextPage')}
-                    className="inline-flex items-center justify-center w-8 h-8 rounded-lg border border-[var(--border)] bg-white dark:bg-slate-800 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                    className="inline-flex items-center justify-center size-11 sm:size-8 rounded-lg border border-[var(--border)] bg-white dark:bg-slate-800 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
                   >
                     <svg
                       width="14"

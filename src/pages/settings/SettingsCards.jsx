@@ -265,7 +265,8 @@ export default function SettingsCards() {
                           type="button"
                           onClick={() => startEditCard(card)}
                           title={t('settings.cards.editCard')}
-                          className="inline-flex items-center justify-center w-8 h-8 rounded-lg transition-colors text-white/80 hover:bg-white/20"
+                          aria-label={t('settings.cards.editCard')}
+                          className="inline-flex items-center justify-center size-11 sm:size-8 rounded-lg transition-colors cursor-pointer text-white/80 hover:bg-white/20 active:bg-white/30"
                         >
                           <EditIcon />
                         </button>
@@ -273,7 +274,8 @@ export default function SettingsCards() {
                           type="button"
                           onClick={() => setDeleteCardId(card.id)}
                           title={t('settings.cards.deleteCard')}
-                          className="inline-flex items-center justify-center w-8 h-8 rounded-lg transition-colors text-white/80 hover:bg-white/20"
+                          aria-label={t('settings.cards.deleteCard')}
+                          className="inline-flex items-center justify-center size-11 sm:size-8 rounded-lg transition-colors cursor-pointer text-white/80 hover:bg-white/20 active:bg-white/30"
                         >
                           <TrashIcon />
                         </button>

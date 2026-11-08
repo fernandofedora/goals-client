@@ -94,7 +94,10 @@ export default function LanguageSelector({ mobile = false }) {
         aria-expanded={open}
         aria-label={t('nav.language')}
         title={t('nav.language')}
-        className="w-8 h-8 flex items-center justify-center rounded-lg text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:bg-[var(--muted)] transition-colors"
+        className={cn(
+          'flex items-center justify-center rounded-lg text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:bg-[var(--muted)] transition-colors cursor-pointer',
+          mobile ? 'size-11' : 'size-8',
+        )}
       >
         <GlobeIcon />
       </button>

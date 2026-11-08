@@ -1,6 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import Input from '../ui/input';
 import Select from '../ui/select';
+import IconButton from '../ui/icon-button';
 import { cn } from '../../lib/utils';
 import { useCurrency } from '../../context/CurrencyContext';
 
@@ -17,24 +18,7 @@ export function Field({ label, children }) {
 }
 
 // ── Icon button ───────────────────────────────────────────────────────────────
-export function IconButton({ onClick, title, danger, children }) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      title={title}
-      aria-label={title}
-      className={cn(
-        'inline-flex items-center justify-center w-8 h-8 rounded-lg transition-colors',
-        danger
-          ? 'text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/40'
-          : 'text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-slate-700',
-      )}
-    >
-      {children}
-    </button>
-  );
-}
+export { IconButton };
 
 // ── SVG icons ─────────────────────────────────────────────────────────────────
 export const EditIcon = () => (
@@ -121,7 +105,7 @@ export function CatRow({
   setDeleteCatId,
 }) {
   const { t } = useTranslation();
-  const { symbol: cs } = useCurrency();
+  const { symbol: cs, money, privacyMode } = useCurrency();
   return (
     <li className="px-5 py-3 flex items-center justify-between gap-3">
       {editingCatId === cat.id ? (
@@ -200,8 +184,9 @@ export function CatRow({
             </span>
             {cat.monthlyBudget != null && (
               <span className="text-[11px] font-semibold px-1.5 py-0.5 rounded bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 border border-indigo-100 dark:border-indigo-800">
-                {cs}
-                {Number(cat.monthlyBudget).toFixed(0)}
+                {privacyMode
+                  ? money(cat.monthlyBudget)
+                  : `${cs}${Number(cat.monthlyBudget).toFixed(0)}`}
                 {t('settings.categories.perMonth')}
               </span>
             )}

@@ -17,6 +17,8 @@ import {
   gainClass,
 } from '../components/investments/format';
 import { cn } from '../lib/utils';
+import PageHeader from '../components/ui/page-header';
+import { useCurrency } from '../context/CurrencyContext';
 import { getPref, setPref } from '../utils/userStorage';
 import { translateServerError } from '../utils/serverError';
 
@@ -176,6 +178,10 @@ export default function Investments() {
     if (returnTo) setHistoryHolding(returnTo);
   };
 
+  // The investments formatters read the privacy flag directly; subscribing to
+  // the context makes this page re-render when it is toggled.
+  useCurrency();
+
   const holdings = data?.holdings || [];
   const totals = data?.totals;
   const currency = data?.currency;
@@ -211,20 +217,15 @@ export default function Investments() {
         </div>
       )}
 
-      {/* Header + search */}
-      <section className="bg-white dark:bg-slate-900 rounded-2xl border border-[var(--border)] shadow-sm">
-        <div className="px-5 pt-5 pb-4 border-b border-[var(--border)] flex items-start justify-between gap-4 flex-wrap">
-          <div>
-            <h1 className="text-base font-semibold tracking-tight flex items-center gap-2">
-              {t('investments.title')}
-              <span className="text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300">
-                {t('nav.beta')}
-              </span>
-            </h1>
-            <p className="text-xs text-gray-400 mt-0.5">
-              {t('investments.subtitle')}
-            </p>
-          </div>
+      <PageHeader
+        title={t('investments.title')}
+        badge={
+          <span className="text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300">
+            {t('nav.beta')}
+          </span>
+        }
+        subtitle={t('investments.subtitle')}
+        actions={
           <div className="text-xs text-[var(--muted-foreground)] sm:text-right space-y-0.5">
             <div className="flex items-center gap-2 sm:justify-end">
               {data?.quotedAt && (
@@ -272,7 +273,11 @@ export default function Investments() {
               </p>
             )}
           </div>
-        </div>
+        }
+      />
+
+      {/* Search */}
+      <section className="bg-white dark:bg-slate-900 rounded-2xl border border-[var(--border)] shadow-sm">
         <div className="px-5 py-4">
           <SymbolSearch
             onSelect={(sym) => setPurchaseDialog({ mode: 'new', asset: sym })}

@@ -29,7 +29,7 @@ export default function DateInput({
     <div className="relative group">
       <input
         className={cn(
-          'flex h-10 w-full rounded-md border px-3 py-2 text-sm',
+          'flex h-11 sm:h-10 w-full rounded-md border px-3 py-2 text-sm',
           'border-[var(--border)] bg-[var(--background)] text-[var(--foreground)]',
           'focus:outline-none focus:ring-2 focus:ring-[var(--ring)]',
           'disabled:cursor-not-allowed disabled:opacity-50',
@@ -53,25 +53,12 @@ export default function DateInput({
         id={id}
       />
 
-      {/* Placeholder overlay — hidden as soon as the input is focused */}
+      {/* Placeholder overlay — hidden as soon as the input is focused.
+          Text only: the browser already draws its own calendar icon, a second
+          one here showed two icons side by side. */}
       {isEmpty && (
-        <span className="pointer-events-none absolute inset-y-0 left-3 right-3 flex items-center justify-between text-sm text-[var(--muted-foreground)] group-focus-within:hidden [&_svg]:text-[var(--foreground)] [&_svg]:opacity-60">
-          <span>{placeholderText}</span>
-          <svg
-            width="16"
-            height="16"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
-            <line x1="16" y1="2" x2="16" y2="6" />
-            <line x1="8" y1="2" x2="8" y2="6" />
-            <line x1="3" y1="10" x2="21" y2="10" />
-          </svg>
+        <span className="pointer-events-none absolute inset-y-0 left-3 right-10 flex items-center text-sm text-[var(--muted-foreground)] group-focus-within:hidden truncate">
+          {placeholderText}
         </span>
       )}
     </div>

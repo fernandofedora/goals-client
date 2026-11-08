@@ -5,6 +5,8 @@ import Button from '../components/ui/button';
 import Input from '../components/ui/input';
 import Select from '../components/ui/select';
 import ConfirmDialog from '../components/ui/confirm-dialog';
+import IconButton from '../components/ui/icon-button';
+import PageHeader from '../components/ui/page-header';
 import { toast } from 'sonner';
 import DateInput from '../components/DateInput';
 import { formatAmount } from '../utils/format';
@@ -22,25 +24,6 @@ function Field({ label, children }) {
       </label>
       {children}
     </div>
-  );
-}
-
-function IconButton({ onClick, title, danger, children }) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      title={title}
-      aria-label={title}
-      className={cn(
-        'inline-flex items-center justify-center w-8 h-8 rounded-lg transition-colors',
-        danger
-          ? 'text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/40'
-          : 'text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-slate-700',
-      )}
-    >
-      {children}
-    </button>
   );
 }
 
@@ -149,6 +132,32 @@ export default function SavingPlan() {
   const isoToday = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
   const { symbol: cs } = useCurrency();
   const fmt = (v) => formatAmount(v, { currencySymbol: cs });
+
+  // Edit / delete for a manual contribution (shared by the mobile list and the table).
+  const renderContrActions = (r) => (
+    <div className="flex items-center justify-end gap-1 flex-shrink-0">
+      <IconButton
+        onClick={() => {
+          setEditingContrId(r.c.id);
+          setContrForm({
+            amount: String(r.c.amount),
+            date: r.c.date,
+            note: r.c.note || '',
+          });
+        }}
+        title={t('savings.editContribution')}
+      >
+        <EditIcon />
+      </IconButton>
+      <IconButton
+        onClick={() => setConfirm({ open: true, id: r.c.id })}
+        title={t('savings.deleteContribution')}
+        danger
+      >
+        <TrashIcon />
+      </IconButton>
+    </div>
+  );
 
   const [categories, setCategories] = useState([]);
   const [plans, setPlans] = useState([]);
@@ -448,35 +457,35 @@ export default function SavingPlan() {
         onConfirm={deletePlan}
       />
 
-      {/* ── Page header ──────────────────────────────────────────────────── */}
-      <div className="flex items-start justify-between gap-4 flex-wrap">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">
-            {t('savings.title')}
-          </h1>
-          <p className="text-sm text-gray-400 mt-0.5">
-            {t('savings.subtitle')}
-          </p>
-        </div>
-        <Button
-          variant={showNewPlan ? 'outline' : 'secondary'}
-          onClick={() => {
-            if (showNewPlan) {
-              setShowNewPlan(false);
-              const savedId = getPref('savingPlan.selectedPlanId');
-              const chosen =
-                plans.find((x) => String(x.id) === String(savedId)) || plans[0];
-              if (chosen) setSelectedPlanId(String(chosen.id));
-            } else {
-              setShowNewPlan(true);
-              setSelectedPlanId('');
-              setPlanForm({ name: '', targetAmount: '', linkedCategoryId: '' });
-            }
-          }}
-        >
-          {showNewPlan ? t('savings.cancel') : t('savings.newPlan')}
-        </Button>
-      </div>
+      <PageHeader
+        title={t('savings.title')}
+        subtitle={t('savings.subtitle')}
+        actions={
+          <Button
+            variant={showNewPlan ? 'outline' : 'secondary'}
+            onClick={() => {
+              if (showNewPlan) {
+                setShowNewPlan(false);
+                const savedId = getPref('savingPlan.selectedPlanId');
+                const chosen =
+                  plans.find((x) => String(x.id) === String(savedId)) ||
+                  plans[0];
+                if (chosen) setSelectedPlanId(String(chosen.id));
+              } else {
+                setShowNewPlan(true);
+                setSelectedPlanId('');
+                setPlanForm({
+                  name: '',
+                  targetAmount: '',
+                  linkedCategoryId: '',
+                });
+              }
+            }}
+          >
+            {showNewPlan ? t('savings.cancel') : t('savings.newPlan')}
+          </Button>
+        }
+      />
 
       {/* ── New plan form ─────────────────────────────────────────────────── */}
       {showNewPlan && (
@@ -524,6 +533,7 @@ export default function SavingPlan() {
             </div>
             <div className="mt-4 flex justify-end">
               <Button
+                variant="custom"
                 type="submit"
                 disabled={loading}
                 className="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-6"
@@ -757,6 +767,7 @@ export default function SavingPlan() {
                 </Field>
                 <div className="flex gap-2 pt-1">
                   <Button
+                    variant="custom"
                     type="submit"
                     disabled={loading}
                     className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold"
@@ -826,6 +837,7 @@ export default function SavingPlan() {
                   {editingContrId ? (
                     <>
                       <Button
+                        variant="custom"
                         type="submit"
                         disabled={loading}
                         className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold"
@@ -850,6 +862,7 @@ export default function SavingPlan() {
                     </>
                   ) : (
                     <Button
+                      variant="custom"
                       type="submit"
                       disabled={loading}
                       className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold"
@@ -893,7 +906,43 @@ export default function SavingPlan() {
                 </div>
               </div>
 
-              <div className="overflow-x-auto">
+              {/* Mobile list (< sm): the table pushed Amount off-screen */}
+              {rows.length > 0 && (
+                <ul className="sm:hidden divide-y divide-[var(--border)]">
+                  {paginated.map((r) => (
+                    <li
+                      key={r.key}
+                      className="px-4 py-3 flex items-center gap-3"
+                    >
+                      <div className="flex-1 min-w-0 space-y-1">
+                        <p
+                          className="text-sm font-medium text-gray-800 dark:text-gray-100 truncate"
+                          title={r.desc}
+                        >
+                          {r.desc}
+                        </p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 tabular-nums">
+                          {r.date} ·{' '}
+                          {r.type === 'auto'
+                            ? t('savings.auto')
+                            : t('savings.manual')}
+                        </p>
+                      </div>
+                      <span className="text-sm font-semibold tabular-nums whitespace-nowrap text-emerald-600 dark:text-emerald-400">
+                        +{fmt(r.amount)}
+                      </span>
+                      {r.type === 'manual' && renderContrActions(r)}
+                    </li>
+                  ))}
+                </ul>
+              )}
+
+              <div
+                className={cn(
+                  'overflow-x-auto',
+                  rows.length > 0 && 'hidden sm:block',
+                )}
+              >
                 {rows.length === 0 ? (
                   <div className="flex flex-col items-center justify-center py-14 gap-2 text-center">
                     <span className="text-3xl opacity-30">📭</span>
@@ -960,30 +1009,7 @@ export default function SavingPlan() {
                           </td>
                           <td className="px-4 py-3 text-right">
                             {r.type === 'manual' ? (
-                              <div className="flex items-center justify-end gap-1">
-                                <IconButton
-                                  onClick={() => {
-                                    setEditingContrId(r.c.id);
-                                    setContrForm({
-                                      amount: String(r.c.amount),
-                                      date: r.c.date,
-                                      note: r.c.note || '',
-                                    });
-                                  }}
-                                  title={t('savings.editContribution')}
-                                >
-                                  <EditIcon />
-                                </IconButton>
-                                <IconButton
-                                  onClick={() =>
-                                    setConfirm({ open: true, id: r.c.id })
-                                  }
-                                  title={t('savings.deleteContribution')}
-                                  danger
-                                >
-                                  <TrashIcon />
-                                </IconButton>
-                              </div>
+                              renderContrActions(r)
                             ) : (
                               <span className="text-gray-300 dark:text-gray-600 text-xs">
                                 —
@@ -1006,7 +1032,7 @@ export default function SavingPlan() {
                     <button
                       onClick={() => setPage((p) => Math.max(1, p - 1))}
                       disabled={page <= 1}
-                      className="px-3 py-1.5 text-xs rounded-lg border border-[var(--border)] text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-800 disabled:opacity-40 font-medium"
+                      className="min-h-11 sm:min-h-0 px-3 py-1.5 text-xs rounded-lg border border-[var(--border)] text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-800 disabled:opacity-40 font-medium"
                     >
                       {t('savings.prev')}
                     </button>
@@ -1015,7 +1041,7 @@ export default function SavingPlan() {
                         setPage((p) => Math.min(totalPages, p + 1))
                       }
                       disabled={page >= totalPages}
-                      className="px-3 py-1.5 text-xs rounded-lg border border-[var(--border)] text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-800 disabled:opacity-40 font-medium"
+                      className="min-h-11 sm:min-h-0 px-3 py-1.5 text-xs rounded-lg border border-[var(--border)] text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-800 disabled:opacity-40 font-medium"
                     >
                       {t('savings.next')}
                     </button>

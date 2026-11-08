@@ -6,6 +6,68 @@ import { clearSession } from '../utils/session';
 import { avatarColor, userInitials } from '../utils/avatar';
 import LanguageSelector from './LanguageSelector';
 import useInvestmentsAccess from '../hooks/useInvestmentsAccess';
+import { useCurrency } from '../context/CurrencyContext';
+import QuickAddTransaction from './QuickAddTransaction';
+
+// ─── Privacy (eye) icons ──────────────────────────────────────────────────────
+const EyeIcon = () => (
+  <svg
+    width="18"
+    height="18"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    aria-hidden="true"
+  >
+    <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z" />
+    <circle cx="12" cy="12" r="3" />
+  </svg>
+);
+
+const EyeOffIcon = () => (
+  <svg
+    width="18"
+    height="18"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    aria-hidden="true"
+  >
+    <path d="M10.6 5.1A10.4 10.4 0 0 1 12 5c6.5 0 10 7 10 7a17.6 17.6 0 0 1-2.4 3.4" />
+    <path d="M6.6 6.6C3.9 8.4 2 12 2 12s3.5 7 10 7a9.7 9.7 0 0 0 5.4-1.6" />
+    <path d="M9.9 9.9a3 3 0 0 0 4.2 4.2" />
+    <line x1="2" y1="2" x2="22" y2="22" />
+  </svg>
+);
+
+const PlusIcon = ({ size = 16 }) => (
+  <svg
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2.5"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    aria-hidden="true"
+  >
+    <line x1="12" y1="5" x2="12" y2="19" />
+    <line x1="5" y1="12" x2="19" y2="12" />
+  </svg>
+);
+
+// Typing targets where a bare "n" must stay a letter, not open quick-add.
+const isTypingTarget = (el) =>
+  el?.isContentEditable ||
+  ['INPUT', 'TEXTAREA', 'SELECT'].includes(el?.tagName) ||
+  el?.closest?.('[role="dialog"], [role="listbox"], [role="menu"]');
 
 // ─── Chevron icon ─────────────────────────────────────────────────────────────
 const ChevronDown = ({ open }) => (
@@ -85,8 +147,8 @@ function Dropdown({ label, isActive, isOpen, onToggle, children, mobile }) {
         aria-haspopup="menu"
         aria-expanded={isOpen}
         className={cn(
-          'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-150',
-          mobile && 'w-full justify-between',
+          'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-150 cursor-pointer',
+          mobile && 'w-full justify-between min-h-11',
           isActive
             ? 'bg-[var(--muted)] text-[var(--foreground)] shadow-sm'
             : 'text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:bg-[var(--muted)]',
@@ -122,7 +184,7 @@ function DropdownItem({ to, onClick, children, mobile }) {
       className={({ isActive }) =>
         cn(
           'block px-4 py-2 text-sm transition-colors duration-100 rounded-md mx-1',
-          mobile && 'px-3 py-1.5',
+          mobile && 'px-3 py-1.5 min-h-11 flex items-center',
           isActive
             ? 'bg-[var(--muted)] text-[var(--foreground)] font-semibold'
             : 'text-[var(--muted-foreground)] hover:bg-[var(--muted)] hover:text-[var(--foreground)]',
@@ -152,6 +214,8 @@ export default function Navbar({ theme, onToggleTheme }) {
   const [txOpen, setTxOpen] = useState(false);
   const [graphicsOpen, setGraphicsOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [quickAddOpen, setQuickAddOpen] = useState(false);
+  const { privacyMode, togglePrivacy } = useCurrency();
   const navRef = useRef(null);
   const navigate = useNavigate();
   const location = useLocation();
@@ -178,6 +242,19 @@ export default function Navbar({ theme, onToggleTheme }) {
     };
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
+  }, []);
+
+  // `N` opens quick-add from anywhere (ignored while typing or inside a dialog/menu)
+  useEffect(() => {
+    const handler = (e) => {
+      if (e.key !== 'n' && e.key !== 'N') return;
+      if (e.ctrlKey || e.metaKey || e.altKey || e.repeat) return;
+      if (isTypingTarget(e.target)) return;
+      e.preventDefault();
+      setQuickAddOpen(true);
+    };
+    document.addEventListener('keydown', handler);
+    return () => document.removeEventListener('keydown', handler);
   }, []);
 
   // Close submenus on route change
@@ -215,541 +292,612 @@ export default function Navbar({ theme, onToggleTheme }) {
 
   const mobileNavLinkClass = ({ isActive }) =>
     cn(
-      'flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-150 w-full',
+      'flex items-center gap-2 min-h-11 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-150 w-full',
       isActive
         ? 'bg-[var(--muted)] text-[var(--foreground)] font-semibold'
         : 'text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:bg-[var(--muted)]',
     );
 
-  return (
-    <nav
-      ref={navRef}
-      className="sticky top-0 z-50 border-b border-[var(--border)]"
-      style={{
-        background: 'color-mix(in srgb, var(--card) 85%, transparent)',
-        backdropFilter: 'blur(12px)',
-        WebkitBackdropFilter: 'blur(12px)',
-      }}
+  const privacyButton = (
+    <button
+      type="button"
+      onClick={togglePrivacy}
+      aria-pressed={privacyMode}
+      aria-label={privacyMode ? t('nav.showAmounts') : t('nav.hideAmounts')}
+      title={privacyMode ? t('nav.showAmounts') : t('nav.hideAmounts')}
+      className={cn(
+        'size-11 md:size-8 flex items-center justify-center rounded-lg transition-colors cursor-pointer',
+        privacyMode
+          ? 'bg-[var(--muted)] text-[var(--foreground)]'
+          : 'text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:bg-[var(--muted)]',
+      )}
     >
-      <div className="max-w-6xl mx-auto px-4">
-        <div className="flex items-center justify-between h-14 gap-4">
-          {/* ── Left: Brand ──────────────────────────────── */}
-          <div className="flex items-center gap-5 shrink-0">
-            {/* Mobile hamburger */}
-            <button
-              className="md:hidden p-1.5 -ml-1 rounded-lg text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:bg-[var(--muted)] transition-colors"
-              onClick={() => setMenuOpen(!menuOpen)}
-              aria-label={t('nav.toggleMenu')}
-            >
-              {menuOpen ? (
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="20"
-                  height="20"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <path d="M18 6 6 18" />
-                  <path d="m6 6 12 12" />
-                </svg>
-              ) : (
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="20"
-                  height="20"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <line x1="4" x2="20" y1="6" y2="6" />
-                  <line x1="4" x2="20" y1="12" y2="12" />
-                  <line x1="4" x2="20" y1="18" y2="18" />
-                </svg>
-              )}
-            </button>
+      {privacyMode ? <EyeOffIcon /> : <EyeIcon />}
+    </button>
+  );
 
-            <Link
-              to="/"
-              aria-label={t('nav.home')}
-              className="font-bold text-base text-[var(--foreground)] tracking-tight leading-tight hover:opacity-80 transition-opacity"
-            >
-              Goals
-            </Link>
-          </div>
-
-          {/* ── Center: Desktop Navigation ────────────────── */}
-          <div className="hidden md:flex items-center gap-1">
-            <NavLink to="/" end className={navLinkClass} onClick={closeAll}>
-              {t('nav.dashboard')}
-            </NavLink>
-
-            <Dropdown
-              label={t('nav.transactions')}
-              isActive={location.pathname.startsWith('/transactions')}
-              isOpen={txOpen}
-              onToggle={() => {
-                setTxOpen((v) => !v);
-                setPlansOpen(false);
-                setGraphicsOpen(false);
-                setUserMenuOpen(false);
-              }}
-            >
-              <DropdownItem to="/transactions/add" onClick={closeAll}>
-                {t('nav.addTransaction')}
-              </DropdownItem>
-              <DropdownItem to="/transactions/budget" onClick={closeAll}>
-                {t('nav.budget')}
-              </DropdownItem>
-            </Dropdown>
-
-            <Dropdown
-              label={t('nav.plans')}
-              isActive={
-                location.pathname.startsWith('/plans') ||
-                location.pathname === '/saving-plan'
-              }
-              isOpen={plansOpen}
-              onToggle={() => {
-                setPlansOpen((v) => !v);
-                setTxOpen(false);
-                setGraphicsOpen(false);
-                setUserMenuOpen(false);
-              }}
-            >
-              <DropdownItem to="/plans/savings" onClick={closeAll}>
-                {t('nav.savingsPlans')}
-              </DropdownItem>
-              <DropdownItem to="/plans/accounts" onClick={closeAll}>
-                {t('nav.accounts')}
-              </DropdownItem>
-              <DropdownItem to="/plans/scheduled-payments" onClick={closeAll}>
-                {t('nav.scheduledPayments')}
-              </DropdownItem>
-              {canSeeInvestments && (
-                <DropdownItem to="/plans/investments" onClick={closeAll}>
-                  {t('nav.investments')} <BetaBadge />
-                </DropdownItem>
-              )}
-            </Dropdown>
-
-            <Dropdown
-              label={t('nav.graphics')}
-              isActive={location.pathname.startsWith('/graphics')}
-              isOpen={graphicsOpen}
-              onToggle={() => {
-                setGraphicsOpen((v) => !v);
-                setTxOpen(false);
-                setPlansOpen(false);
-                setUserMenuOpen(false);
-              }}
-            >
-              <DropdownItem to="/graphics/categories" onClick={closeAll}>
-                {t('nav.byCategories')}
-              </DropdownItem>
-            </Dropdown>
-
-            {/* Super Admin badge */}
-            {isSuperAdmin && (
-              <NavLink
-                to="/admin/users"
-                onClick={closeAll}
-                className={({ isActive }) =>
-                  cn(
-                    'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-semibold transition-all duration-150',
-                    isActive
-                      ? 'bg-amber-500/20 text-amber-500 shadow-sm shadow-amber-500/10'
-                      : 'text-amber-500/80 hover:text-amber-500 hover:bg-amber-500/10',
-                  )
-                }
+  return (
+    <>
+      <nav
+        ref={navRef}
+        className="sticky top-0 z-50 border-b border-[var(--border)]"
+        style={{
+          background: 'color-mix(in srgb, var(--card) 85%, transparent)',
+          backdropFilter: 'blur(12px)',
+          WebkitBackdropFilter: 'blur(12px)',
+        }}
+      >
+        <div className="max-w-6xl mx-auto px-4">
+          <div className="flex items-center justify-between h-14 gap-4">
+            {/* ── Left: Brand ──────────────────────────────── */}
+            <div className="flex items-center gap-5 shrink-0">
+              {/* Mobile hamburger */}
+              <button
+                type="button"
+                className="md:hidden size-11 -ml-2.5 flex items-center justify-center rounded-lg text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:bg-[var(--muted)] transition-colors cursor-pointer"
+                onClick={() => setMenuOpen(!menuOpen)}
+                aria-label={t('nav.toggleMenu')}
+                aria-expanded={menuOpen}
               >
-                <ShieldIcon />
-                Users
+                {menuOpen ? (
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="20"
+                    height="20"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <path d="M18 6 6 18" />
+                    <path d="m6 6 12 12" />
+                  </svg>
+                ) : (
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="20"
+                    height="20"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <line x1="4" x2="20" y1="6" y2="6" />
+                    <line x1="4" x2="20" y1="12" y2="12" />
+                    <line x1="4" x2="20" y1="18" y2="18" />
+                  </svg>
+                )}
+              </button>
+
+              <Link
+                to="/"
+                aria-label={t('nav.home')}
+                className="inline-flex items-center min-h-11 min-w-11 px-1 -mx-1 font-bold text-base text-[var(--foreground)] tracking-tight leading-tight hover:opacity-80 transition-opacity"
+              >
+                Goals
+              </Link>
+            </div>
+
+            {/* ── Center: Desktop Navigation ────────────────── */}
+            <div className="hidden md:flex items-center gap-1">
+              <NavLink to="/" end className={navLinkClass} onClick={closeAll}>
+                {t('nav.dashboard')}
               </NavLink>
-            )}
-          </div>
 
-          {/* ── Right: User area ──────────────────────────── */}
-          <div className="hidden md:flex items-center gap-2 shrink-0">
-            {/* Language selector */}
-            <LanguageSelector />
+              <Dropdown
+                label={t('nav.transactions')}
+                isActive={location.pathname.startsWith('/transactions')}
+                isOpen={txOpen}
+                onToggle={() => {
+                  setTxOpen((v) => !v);
+                  setPlansOpen(false);
+                  setGraphicsOpen(false);
+                  setUserMenuOpen(false);
+                }}
+              >
+                <DropdownItem to="/transactions/add" onClick={closeAll}>
+                  {t('nav.addTransaction')}
+                </DropdownItem>
+                <DropdownItem to="/transactions/budget" onClick={closeAll}>
+                  {t('nav.budget')}
+                </DropdownItem>
+              </Dropdown>
 
-            {/* Theme toggle */}
-            <button
-              onClick={onToggleTheme}
-              aria-label={t('nav.toggleTheme')}
-              className="w-8 h-8 flex items-center justify-center rounded-lg text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:bg-[var(--muted)] transition-colors text-base"
-            >
-              {theme === 'dark' ? '🌙' : '☀️'}
-            </button>
+              <Dropdown
+                label={t('nav.plans')}
+                isActive={
+                  location.pathname.startsWith('/plans') ||
+                  location.pathname === '/saving-plan'
+                }
+                isOpen={plansOpen}
+                onToggle={() => {
+                  setPlansOpen((v) => !v);
+                  setTxOpen(false);
+                  setGraphicsOpen(false);
+                  setUserMenuOpen(false);
+                }}
+              >
+                <DropdownItem to="/plans/savings" onClick={closeAll}>
+                  {t('nav.savingsPlans')}
+                </DropdownItem>
+                <DropdownItem to="/plans/accounts" onClick={closeAll}>
+                  {t('nav.accounts')}
+                </DropdownItem>
+                <DropdownItem to="/plans/scheduled-payments" onClick={closeAll}>
+                  {t('nav.scheduledPayments')}
+                </DropdownItem>
+                {canSeeInvestments && (
+                  <DropdownItem to="/plans/investments" onClick={closeAll}>
+                    {t('nav.investments')} <BetaBadge />
+                  </DropdownItem>
+                )}
+              </Dropdown>
 
-            {/* Divider */}
-            <div className="w-px h-5 bg-[var(--border)]" />
+              <Dropdown
+                label={t('nav.graphics')}
+                isActive={location.pathname.startsWith('/graphics')}
+                isOpen={graphicsOpen}
+                onToggle={() => {
+                  setGraphicsOpen((v) => !v);
+                  setTxOpen(false);
+                  setPlansOpen(false);
+                  setUserMenuOpen(false);
+                }}
+              >
+                <DropdownItem to="/graphics/categories" onClick={closeAll}>
+                  {t('nav.byCategories')}
+                </DropdownItem>
+              </Dropdown>
 
-            {/* User dropdown */}
-            {user && (
-              <div className="relative">
-                <button
-                  onClick={() => {
-                    setUserMenuOpen((v) => !v);
-                    setPlansOpen(false);
-                    setTxOpen(false);
-                  }}
-                  className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-[var(--muted)] transition-colors group"
+              {/* Super Admin badge */}
+              {isSuperAdmin && (
+                <NavLink
+                  to="/admin/users"
+                  onClick={closeAll}
+                  className={({ isActive }) =>
+                    cn(
+                      'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-semibold transition-all duration-150',
+                      isActive
+                        ? 'bg-amber-500/20 text-amber-500 shadow-sm shadow-amber-500/10'
+                        : 'text-amber-500/80 hover:text-amber-500 hover:bg-amber-500/10',
+                    )
+                  }
                 >
-                  <Avatar name={user.name} size={28} />
-                  <span className="text-sm font-medium text-[var(--foreground)] max-w-[90px] truncate">
-                    {user.name}
-                  </span>
-                  <ChevronDown open={userMenuOpen} />
-                </button>
+                  <ShieldIcon />
+                  Users
+                </NavLink>
+              )}
+            </div>
 
-                {userMenuOpen && (
-                  <div className="absolute top-full right-0 mt-2 w-52 rounded-xl border border-[var(--border)] bg-[var(--card)] shadow-xl z-50 overflow-hidden">
-                    {/* User info header */}
-                    <div className="px-4 py-3 border-b border-[var(--border)]">
-                      <p className="text-xs font-semibold text-[var(--foreground)] truncate">
-                        {user.name}
-                      </p>
-                      <p className="text-xs text-[var(--muted-foreground)] truncate mt-0.5">
-                        {user.email}
-                      </p>
-                      {isSuperAdmin && (
-                        <span className="inline-flex items-center gap-1 mt-1.5 text-amber-500 text-xs font-semibold">
-                          <ShieldIcon /> {t('nav.superAdmin')}
-                        </span>
-                      )}
-                    </div>
-                    <div className="py-1.5">
-                      <NavLink
-                        to="/profile"
-                        onClick={closeAll}
-                        className={() =>
-                          'flex items-center gap-2.5 px-4 py-2 text-sm text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:bg-[var(--muted)] transition-colors mx-1 rounded-md'
-                        }
-                      >
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          width="15"
-                          height="15"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        >
-                          <circle cx="12" cy="8" r="4" />
-                          <path d="M6 20v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2" />
-                        </svg>
-                        {t('nav.profile')}
-                      </NavLink>
-                      <NavLink
-                        to="/settings"
-                        onClick={closeAll}
-                        className={() =>
-                          'flex items-center gap-2.5 px-4 py-2 text-sm text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:bg-[var(--muted)] transition-colors mx-1 rounded-md'
-                        }
-                      >
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          width="15"
-                          height="15"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        >
-                          <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" />
-                          <circle cx="12" cy="12" r="3" />
-                        </svg>
-                        {t('nav.settings')}
-                      </NavLink>
-                      {isSuperAdmin && (
+            {/* ── Right: User area ──────────────────────────── */}
+            <div className="hidden md:flex items-center gap-2 shrink-0">
+              <button
+                type="button"
+                onClick={() => setQuickAddOpen(true)}
+                title={t('nav.newTransactionAria')}
+                aria-label={t('nav.newTransactionAria')}
+                aria-keyshortcuts="N"
+                className="inline-flex items-center gap-1.5 h-8 px-3 rounded-lg text-sm font-medium bg-[var(--foreground)] text-[var(--background)] hover:opacity-85 active:opacity-75 transition-opacity cursor-pointer"
+              >
+                <PlusIcon size={14} />
+                <span className="hidden lg:inline">
+                  {t('nav.newTransaction')}
+                </span>
+              </button>
+
+              {privacyButton}
+
+              {/* Language selector */}
+              <LanguageSelector />
+
+              {/* Theme toggle */}
+              <button
+                onClick={onToggleTheme}
+                aria-label={t('nav.toggleTheme')}
+                className="w-8 h-8 flex items-center justify-center rounded-lg text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:bg-[var(--muted)] transition-colors text-base"
+              >
+                {theme === 'dark' ? '🌙' : '☀️'}
+              </button>
+
+              {/* Divider */}
+              <div className="w-px h-5 bg-[var(--border)]" />
+
+              {/* User dropdown */}
+              {user && (
+                <div className="relative">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setUserMenuOpen((v) => !v);
+                      setPlansOpen(false);
+                      setTxOpen(false);
+                    }}
+                    aria-label={user.name}
+                    aria-haspopup="menu"
+                    aria-expanded={userMenuOpen}
+                    className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-[var(--muted)] transition-colors group"
+                  >
+                    <Avatar name={user.name} size={28} />
+                    <span className="hidden lg:inline text-sm font-medium text-[var(--foreground)] max-w-[90px] truncate">
+                      {user.name}
+                    </span>
+                    <ChevronDown open={userMenuOpen} />
+                  </button>
+
+                  {userMenuOpen && (
+                    <div className="absolute top-full right-0 mt-2 w-52 rounded-xl border border-[var(--border)] bg-[var(--card)] shadow-xl z-50 overflow-hidden">
+                      {/* User info header */}
+                      <div className="px-4 py-3 border-b border-[var(--border)]">
+                        <p className="text-xs font-semibold text-[var(--foreground)] truncate">
+                          {user.name}
+                        </p>
+                        <p className="text-xs text-[var(--muted-foreground)] truncate mt-0.5">
+                          {user.email}
+                        </p>
+                        {isSuperAdmin && (
+                          <span className="inline-flex items-center gap-1 mt-1.5 text-amber-500 text-xs font-semibold">
+                            <ShieldIcon /> {t('nav.superAdmin')}
+                          </span>
+                        )}
+                      </div>
+                      <div className="py-1.5">
                         <NavLink
-                          to="/admin/users"
+                          to="/profile"
                           onClick={closeAll}
                           className={() =>
-                            'flex items-center gap-2.5 px-4 py-2 text-sm text-amber-500 hover:bg-amber-500/10 transition-colors mx-1 rounded-md font-medium'
+                            'flex items-center gap-2.5 px-4 py-2 text-sm text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:bg-[var(--muted)] transition-colors mx-1 rounded-md'
                           }
                         >
-                          <ShieldIcon /> {t('nav.userManager')}
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            width="15"
+                            height="15"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          >
+                            <circle cx="12" cy="8" r="4" />
+                            <path d="M6 20v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2" />
+                          </svg>
+                          {t('nav.profile')}
                         </NavLink>
-                      )}
-                      <a
-                        href="https://github.com/fernandofedora/goals-client/issues/new?labels=bug,user-reported&title=%5BBUG%5D+Brief+description+of+the+error&body=%23%23+Problem+Description%0A%0A%3C!--+Describe+what+happened+--%3E%0A%0A%23%23+Steps+to+Reproduce%0A%0A1.+%0A2.+%0A3.+%0A%0A%23%23+Expected+Behavior%0A%0A%3C!--+What+did+you+expect+to+happen%3F+--%3E%0A"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        onClick={closeAll}
-                        className="flex items-center gap-2.5 px-4 py-2 text-sm text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:bg-[var(--muted)] transition-colors mx-1 rounded-md mt-1"
-                      >
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          width="15"
-                          height="15"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
+                        <NavLink
+                          to="/settings"
+                          onClick={closeAll}
+                          className={() =>
+                            'flex items-center gap-2.5 px-4 py-2 text-sm text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:bg-[var(--muted)] transition-colors mx-1 rounded-md'
+                          }
                         >
-                          <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
-                          <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
-                        </svg>
-                        {t('nav.reportIssue')}
-                      </a>
-                    </div>
-                    <div className="py-1.5 border-t border-[var(--border)]">
-                      <button
-                        onClick={() => {
-                          closeAll();
-                          onLogout();
-                        }}
-                        className="flex items-center gap-2.5 px-4 py-2 text-sm text-[var(--muted-foreground)] hover:text-red-500 hover:bg-red-500/5 transition-colors w-full text-left mx-1 rounded-md"
-                        style={{ width: 'calc(100% - 8px)' }}
-                      >
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          width="15"
-                          height="15"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            width="15"
+                            height="15"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          >
+                            <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" />
+                            <circle cx="12" cy="12" r="3" />
+                          </svg>
+                          {t('nav.settings')}
+                        </NavLink>
+                        {isSuperAdmin && (
+                          <NavLink
+                            to="/admin/users"
+                            onClick={closeAll}
+                            className={() =>
+                              'flex items-center gap-2.5 px-4 py-2 text-sm text-amber-500 hover:bg-amber-500/10 transition-colors mx-1 rounded-md font-medium'
+                            }
+                          >
+                            <ShieldIcon /> {t('nav.userManager')}
+                          </NavLink>
+                        )}
+                        <a
+                          href="https://github.com/fernandofedora/goals-client/issues/new?labels=bug,user-reported&title=%5BBUG%5D+Brief+description+of+the+error&body=%23%23+Problem+Description%0A%0A%3C!--+Describe+what+happened+--%3E%0A%0A%23%23+Steps+to+Reproduce%0A%0A1.+%0A2.+%0A3.+%0A%0A%23%23+Expected+Behavior%0A%0A%3C!--+What+did+you+expect+to+happen%3F+--%3E%0A"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          onClick={closeAll}
+                          className="flex items-center gap-2.5 px-4 py-2 text-sm text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:bg-[var(--muted)] transition-colors mx-1 rounded-md mt-1"
                         >
-                          <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
-                          <polyline points="16 17 21 12 16 7" />
-                          <line x1="21" x2="9" y1="12" y2="12" />
-                        </svg>
-                        {t('nav.logout')}
-                      </button>
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            width="15"
+                            height="15"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          >
+                            <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
+                            <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
+                          </svg>
+                          {t('nav.reportIssue')}
+                        </a>
+                      </div>
+                      <div className="py-1.5 border-t border-[var(--border)]">
+                        <button
+                          onClick={() => {
+                            closeAll();
+                            onLogout();
+                          }}
+                          className="flex items-center gap-2.5 px-4 py-2 text-sm text-[var(--muted-foreground)] hover:text-red-500 hover:bg-red-500/5 transition-colors w-full text-left mx-1 rounded-md"
+                          style={{ width: 'calc(100% - 8px)' }}
+                        >
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            width="15"
+                            height="15"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          >
+                            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                            <polyline points="16 17 21 12 16 7" />
+                            <line x1="21" x2="9" y1="12" y2="12" />
+                          </svg>
+                          {t('nav.logout')}
+                        </button>
+                      </div>
                     </div>
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-
-          {/* Mobile right: language + theme + avatar */}
-          <div className="md:hidden flex items-center gap-1">
-            <LanguageSelector mobile />
-            <button
-              onClick={onToggleTheme}
-              aria-label={t('nav.toggleTheme')}
-              className="w-8 h-8 flex items-center justify-center rounded-lg text-[var(--muted-foreground)] hover:bg-[var(--muted)] transition-colors text-base"
-            >
-              {theme === 'dark' ? '🌙' : '☀️'}
-            </button>
-            {user && <Avatar name={user.name} size={30} />}
-          </div>
-        </div>
-      </div>
-
-      {/* ── Mobile Menu ───────────────────────────────────── */}
-      {menuOpen && (
-        <div className="md:hidden border-t border-[var(--border)] bg-[var(--card)] shadow-lg">
-          <div className="max-w-6xl mx-auto px-4 py-3 space-y-1">
-            <NavLink
-              to="/"
-              end
-              className={mobileNavLinkClass}
-              onClick={closeAll}
-            >
-              {t('nav.dashboard')}
-            </NavLink>
-
-            {/* Transactions mobile */}
-            <Dropdown
-              label={t('nav.transactions')}
-              isActive={location.pathname.startsWith('/transactions')}
-              isOpen={txOpen}
-              onToggle={() => setTxOpen((v) => !v)}
-              mobile
-            >
-              <DropdownItem to="/transactions/add" onClick={closeAll} mobile>
-                {t('nav.addTransaction')}
-              </DropdownItem>
-              <DropdownItem to="/transactions/budget" onClick={closeAll} mobile>
-                {t('nav.budget')}
-              </DropdownItem>
-            </Dropdown>
-
-            {/* Plans mobile */}
-            <Dropdown
-              label={t('nav.plans')}
-              isActive={location.pathname.startsWith('/plans')}
-              isOpen={plansOpen}
-              onToggle={() => setPlansOpen((v) => !v)}
-              mobile
-            >
-              <DropdownItem to="/plans/savings" onClick={closeAll} mobile>
-                {t('nav.savingsPlans')}
-              </DropdownItem>
-              <DropdownItem to="/plans/accounts" onClick={closeAll} mobile>
-                {t('nav.accounts')}
-              </DropdownItem>
-              <DropdownItem
-                to="/plans/scheduled-payments"
-                onClick={closeAll}
-                mobile
-              >
-                {t('nav.scheduledPayments')}
-              </DropdownItem>
-              {canSeeInvestments && (
-                <DropdownItem to="/plans/investments" onClick={closeAll} mobile>
-                  {t('nav.investments')} <BetaBadge />
-                </DropdownItem>
-              )}
-            </Dropdown>
-
-            {/* Graphics mobile */}
-            <Dropdown
-              label={t('nav.graphics')}
-              isActive={location.pathname.startsWith('/graphics')}
-              isOpen={graphicsOpen}
-              onToggle={() => setGraphicsOpen((v) => !v)}
-              mobile
-            >
-              <DropdownItem to="/graphics/categories" onClick={closeAll} mobile>
-                {t('nav.byCategories')}
-              </DropdownItem>
-            </Dropdown>
-
-            {isSuperAdmin && (
-              <NavLink
-                to="/admin/users"
-                onClick={closeAll}
-                className={({ isActive }) =>
-                  cn(
-                    'flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-semibold w-full transition-all duration-150',
-                    isActive
-                      ? 'bg-amber-500/15 text-amber-500'
-                      : 'text-amber-500/80 hover:bg-amber-500/10 hover:text-amber-500',
-                  )
-                }
-              >
-                <ShieldIcon /> {t('nav.userManager')}
-              </NavLink>
-            )}
-
-            <div className="pt-2 pb-1 border-t border-[var(--border)] mt-2">
-              {user && (
-                <div className="flex items-center gap-2.5 px-3 py-2 mb-1">
-                  <Avatar name={user.name} size={32} />
-                  <div>
-                    <p className="text-sm font-semibold text-[var(--foreground)]">
-                      {user.name}
-                    </p>
-                    <p className="text-xs text-[var(--muted-foreground)]">
-                      {user.email}
-                    </p>
-                  </div>
+                  )}
                 </div>
               )}
-              <NavLink
-                to="/profile"
-                className={mobileNavLinkClass}
-                onClick={closeAll}
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="15"
-                  height="15"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <circle cx="12" cy="8" r="4" />
-                  <path d="M6 20v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2" />
-                </svg>
-                {t('nav.profile')}
-              </NavLink>
-              <NavLink
-                to="/settings"
-                className={mobileNavLinkClass}
-                onClick={closeAll}
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="15"
-                  height="15"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" />
-                  <circle cx="12" cy="12" r="3" />
-                </svg>
-                {t('nav.settings')}
-              </NavLink>
-              <a
-                href="https://github.com/fernandofedora/goals-client/issues/new?labels=bug,user-reported&title=%5BBUG%5D+Brief+description+of+the+error&body=%23%23+Problem+Description%0A%0A%3C!--+Describe+what+happened+--%3E%0A%0A%23%23+Steps+to+Reproduce%0A%0A1.+%0A2.+%0A3.+%0A%0A%23%23+Expected+Behavior%0A%0A%3C!--+What+did+you+expect+to+happen%3F+--%3E%0A"
-                target="_blank"
-                rel="noopener noreferrer"
-                onClick={closeAll}
-                className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:bg-[var(--muted)] w-full text-left transition-colors mb-1"
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="15"
-                  height="15"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
-                  <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
-                </svg>
-                {t('nav.reportIssue')}
-              </a>
+            </div>
+
+            {/* Mobile right: language + theme + avatar */}
+            <div className="md:hidden flex items-center gap-0.5 -mr-2.5">
+              {privacyButton}
+              <LanguageSelector mobile />
               <button
-                onClick={() => {
-                  closeAll();
-                  onLogout();
-                }}
-                className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-red-500 hover:bg-red-500/5 w-full text-left transition-colors"
+                type="button"
+                onClick={onToggleTheme}
+                aria-label={t('nav.toggleTheme')}
+                className="size-11 flex items-center justify-center rounded-lg text-[var(--muted-foreground)] hover:bg-[var(--muted)] transition-colors text-base cursor-pointer"
               >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="15"
-                  height="15"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
-                  <polyline points="16 17 21 12 16 7" />
-                  <line x1="21" x2="9" y1="12" y2="12" />
-                </svg>
-                {t('nav.logout')}
+                {theme === 'dark' ? '🌙' : '☀️'}
               </button>
+              {user && <Avatar name={user.name} size={30} />}
             </div>
           </div>
         </div>
+
+        {/* ── Mobile Menu ───────────────────────────────────── */}
+        {menuOpen && (
+          <div className="md:hidden border-t border-[var(--border)] bg-[var(--card)] shadow-lg">
+            <div className="max-w-6xl mx-auto px-4 py-3 space-y-1">
+              <NavLink
+                to="/"
+                end
+                className={mobileNavLinkClass}
+                onClick={closeAll}
+              >
+                {t('nav.dashboard')}
+              </NavLink>
+
+              {/* Transactions mobile */}
+              <Dropdown
+                label={t('nav.transactions')}
+                isActive={location.pathname.startsWith('/transactions')}
+                isOpen={txOpen}
+                onToggle={() => setTxOpen((v) => !v)}
+                mobile
+              >
+                <DropdownItem to="/transactions/add" onClick={closeAll} mobile>
+                  {t('nav.addTransaction')}
+                </DropdownItem>
+                <DropdownItem
+                  to="/transactions/budget"
+                  onClick={closeAll}
+                  mobile
+                >
+                  {t('nav.budget')}
+                </DropdownItem>
+              </Dropdown>
+
+              {/* Plans mobile */}
+              <Dropdown
+                label={t('nav.plans')}
+                isActive={location.pathname.startsWith('/plans')}
+                isOpen={plansOpen}
+                onToggle={() => setPlansOpen((v) => !v)}
+                mobile
+              >
+                <DropdownItem to="/plans/savings" onClick={closeAll} mobile>
+                  {t('nav.savingsPlans')}
+                </DropdownItem>
+                <DropdownItem to="/plans/accounts" onClick={closeAll} mobile>
+                  {t('nav.accounts')}
+                </DropdownItem>
+                <DropdownItem
+                  to="/plans/scheduled-payments"
+                  onClick={closeAll}
+                  mobile
+                >
+                  {t('nav.scheduledPayments')}
+                </DropdownItem>
+                {canSeeInvestments && (
+                  <DropdownItem
+                    to="/plans/investments"
+                    onClick={closeAll}
+                    mobile
+                  >
+                    {t('nav.investments')} <BetaBadge />
+                  </DropdownItem>
+                )}
+              </Dropdown>
+
+              {/* Graphics mobile */}
+              <Dropdown
+                label={t('nav.graphics')}
+                isActive={location.pathname.startsWith('/graphics')}
+                isOpen={graphicsOpen}
+                onToggle={() => setGraphicsOpen((v) => !v)}
+                mobile
+              >
+                <DropdownItem
+                  to="/graphics/categories"
+                  onClick={closeAll}
+                  mobile
+                >
+                  {t('nav.byCategories')}
+                </DropdownItem>
+              </Dropdown>
+
+              {isSuperAdmin && (
+                <NavLink
+                  to="/admin/users"
+                  onClick={closeAll}
+                  className={({ isActive }) =>
+                    cn(
+                      'flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-semibold w-full transition-all duration-150',
+                      isActive
+                        ? 'bg-amber-500/15 text-amber-500'
+                        : 'text-amber-500/80 hover:bg-amber-500/10 hover:text-amber-500',
+                    )
+                  }
+                >
+                  <ShieldIcon /> {t('nav.userManager')}
+                </NavLink>
+              )}
+
+              <div className="pt-2 pb-1 border-t border-[var(--border)] mt-2">
+                {user && (
+                  <div className="flex items-center gap-2.5 px-3 py-2 mb-1">
+                    <Avatar name={user.name} size={32} />
+                    <div>
+                      <p className="text-sm font-semibold text-[var(--foreground)]">
+                        {user.name}
+                      </p>
+                      <p className="text-xs text-[var(--muted-foreground)]">
+                        {user.email}
+                      </p>
+                    </div>
+                  </div>
+                )}
+                <NavLink
+                  to="/profile"
+                  className={mobileNavLinkClass}
+                  onClick={closeAll}
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="15"
+                    height="15"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <circle cx="12" cy="8" r="4" />
+                    <path d="M6 20v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2" />
+                  </svg>
+                  {t('nav.profile')}
+                </NavLink>
+                <NavLink
+                  to="/settings"
+                  className={mobileNavLinkClass}
+                  onClick={closeAll}
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="15"
+                    height="15"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" />
+                    <circle cx="12" cy="12" r="3" />
+                  </svg>
+                  {t('nav.settings')}
+                </NavLink>
+                <a
+                  href="https://github.com/fernandofedora/goals-client/issues/new?labels=bug,user-reported&title=%5BBUG%5D+Brief+description+of+the+error&body=%23%23+Problem+Description%0A%0A%3C!--+Describe+what+happened+--%3E%0A%0A%23%23+Steps+to+Reproduce%0A%0A1.+%0A2.+%0A3.+%0A%0A%23%23+Expected+Behavior%0A%0A%3C!--+What+did+you+expect+to+happen%3F+--%3E%0A"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={closeAll}
+                  className="flex items-center gap-2 min-h-11 px-3 py-2 rounded-lg text-sm text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:bg-[var(--muted)] w-full text-left transition-colors mb-1"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="15"
+                    height="15"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
+                    <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
+                  </svg>
+                  {t('nav.reportIssue')}
+                </a>
+                <button
+                  onClick={() => {
+                    closeAll();
+                    onLogout();
+                  }}
+                  className="flex items-center gap-2 min-h-11 px-3 py-2 rounded-lg text-sm text-red-600 dark:text-red-400 hover:bg-red-500/5 w-full text-left transition-colors cursor-pointer"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="15"
+                    height="15"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                    <polyline points="16 17 21 12 16 7" />
+                    <line x1="21" x2="9" y1="12" y2="12" />
+                  </svg>
+                  {t('nav.logout')}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </nav>
+
+      {/* Mobile quick-add: thumb-reach floating button. Lives outside <nav>
+        because the nav's backdrop-filter would trap position:fixed. */}
+      {user && (
+        <button
+          type="button"
+          onClick={() => setQuickAddOpen(true)}
+          aria-label={t('nav.newTransactionAria')}
+          className="md:hidden fixed right-4 bottom-[max(1rem,env(safe-area-inset-bottom))] z-40 size-14 rounded-full flex items-center justify-center bg-[var(--foreground)] text-[var(--background)] shadow-lg active:scale-95 transition-transform cursor-pointer"
+        >
+          <PlusIcon size={24} />
+        </button>
       )}
-    </nav>
+
+      <QuickAddTransaction open={quickAddOpen} onOpenChange={setQuickAddOpen} />
+    </>
   );
 }

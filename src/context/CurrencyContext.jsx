@@ -1,6 +1,14 @@
-import { createContext, useContext, useState, useCallback, useMemo, useEffect } from 'react';
+import {
+  createContext,
+  useContext,
+  useState,
+  useCallback,
+  useMemo,
+  useEffect,
+} from 'react';
 import api from '../api';
 import { getPref, setPref } from '../utils/userStorage';
+import { PRIVACY_MASK, setPrivacyFlag } from '../utils/privacy';
 
 /**
  * Comprehensive world currencies list – display-only, no exchange rates.
@@ -168,13 +176,16 @@ export const ALL_CURRENCIES = [
  * Subset of ALL_CURRENCIES for the most commonly used ones.
  */
 export const POPULAR_CODES = ['USD', 'EUR', 'GBP', 'NIO', 'MXN', 'COP'];
-export const POPULAR_CURRENCIES = POPULAR_CODES.map(c => ALL_CURRENCIES.find(x => x.code === c));
+export const POPULAR_CURRENCIES = POPULAR_CODES.map((c) =>
+  ALL_CURRENCIES.find((x) => x.code === c),
+);
 
 // Build a Map for O(1) lookups (js-set-map-lookups)
-const currencyMap = new Map(ALL_CURRENCIES.map(c => [c.code, c]));
+const currencyMap = new Map(ALL_CURRENCIES.map((c) => [c.code, c]));
 
 const PREF_KEY = 'currency';
 const DEFAULT_CODE = 'USD';
+const PRIVACY_KEY = 'privacyMode';
 
 function getInitialCurrency() {
   // Per-user preference (scoped by the active account); falls back to USD.
@@ -187,6 +198,31 @@ const CurrencyContext = createContext(null);
 export function CurrencyProvider({ children }) {
   // Read from localStorage synchronously to avoid FOUC (rerender-lazy-state-init)
   const [currency, setCurrencyState] = useState(getInitialCurrency);
+
+  // Privacy mode hides every amount (per user, UI only: exports are unaffected).
+  // The module flag is updated in the same tick so pure formatters agree with
+  // the React state on the very next render.
+  const [privacyMode, setPrivacyModeState] = useState(() => {
+    const on = getPref(PRIVACY_KEY) === '1';
+    setPrivacyFlag(on);
+    return on;
+  });
+
+  const togglePrivacy = useCallback(() => {
+    const next = !privacyMode;
+    setPrivacyFlag(next);
+    setPref(PRIVACY_KEY, next ? '1' : '0');
+    setPrivacyModeState(next);
+  }, [privacyMode]);
+
+  // "$1234.50" with the user's symbol, or the mask while privacy mode is on.
+  const money = useCallback(
+    (value) =>
+      privacyMode
+        ? PRIVACY_MASK
+        : `${currency.symbol}${(Number(value) || 0).toFixed(2)}`,
+    [privacyMode, currency.symbol],
+  );
 
   // Persist to localStorage + server whenever the user changes it (rerender-functional-setstate)
   const setCurrency = useCallback(async (code) => {
@@ -211,8 +247,9 @@ export function CurrencyProvider({ children }) {
   useEffect(() => {
     const token = localStorage.getItem('token');
     if (!token) return; // not logged in yet
-    api.get('/user/me')
-      .then(res => {
+    api
+      .get('/user/me')
+      .then((res) => {
         const serverCode = res.data?.currency || DEFAULT_CODE;
         if (serverCode !== currency.code) {
           const match = currencyMap.get(serverCode);
@@ -222,16 +259,24 @@ export function CurrencyProvider({ children }) {
           }
         }
       })
-      .catch(() => { /* ignore — fall back to the cached preference */ });
+      .catch(() => {
+        /* ignore — fall back to the cached preference */
+      });
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Stable context value to avoid unnecessary re-renders (rerender-memo)
-  const value = useMemo(() => ({
-    currency,       // { code, symbol, name }
-    symbol: currency.symbol,
-    code: currency.code,
-    setCurrency,
-  }), [currency, setCurrency]);
+  const value = useMemo(
+    () => ({
+      currency, // { code, symbol, name }
+      symbol: currency.symbol,
+      code: currency.code,
+      setCurrency,
+      privacyMode,
+      togglePrivacy,
+      money,
+    }),
+    [currency, setCurrency, privacyMode, togglePrivacy, money],
+  );
 
   return (
     <CurrencyContext.Provider value={value}>
@@ -241,12 +286,14 @@ export function CurrencyProvider({ children }) {
 }
 
 /**
- * useCurrency() — returns { symbol, code, currency, setCurrency }
+ * useCurrency() — returns { symbol, code, currency, setCurrency,
+ *                           privacyMode, togglePrivacy, money }
  * Example: const { symbol } = useCurrency();
  *          <span>{symbol}{amount.toFixed(2)}</span>
  */
 export function useCurrency() {
   const ctx = useContext(CurrencyContext);
-  if (!ctx) throw new Error('useCurrency must be used within a CurrencyProvider');
+  if (!ctx)
+    throw new Error('useCurrency must be used within a CurrencyProvider');
   return ctx;
 }
