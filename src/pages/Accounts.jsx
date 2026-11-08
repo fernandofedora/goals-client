@@ -10,6 +10,7 @@ import Alert from '../components/ui/alert';
 import EditTransactionDialog from '../components/ui/edit-transaction-dialog';
 import IconButton from '../components/ui/icon-button';
 import PageHeader from '../components/ui/page-header';
+import AccountBalanceCards from '../components/AccountBalanceCards';
 import { onTransactionsChanged } from '../utils/transactionEvents';
 import { cn } from '../lib/utils';
 import { useCurrency } from '../context/CurrencyContext';
@@ -87,6 +88,7 @@ export default function Accounts() {
   const [cards, setCards] = useState([]);
   const [bankAccounts, setBankAccounts] = useState([]);
   const [categories, setCategories] = useState([]);
+  const [historyTick, setHistoryTick] = useState(0);
   const { money } = useCurrency();
 
   // ── Hidden cards & bank accounts (persisted locally) ──────────────────────
@@ -216,6 +218,7 @@ export default function Accounts() {
     setCards(cardsRes.data);
     setCategories(catsRes.data);
     setBankAccounts(accRes.data);
+    setHistoryTick((n) => n + 1);
 
     // Auto-select first visible item if nothing selected
     const currentHidden = getPrefJSON('accounts.hiddenCardIds', []);
@@ -458,6 +461,7 @@ export default function Accounts() {
       setAddError('');
       loadTransactionsPage(selectedItem, 1, txLimit);
       loadSummary(selectedItem);
+      setHistoryTick((n) => n + 1);
       setTxPage(1);
       toast.success(
         txMode === 'income'
@@ -478,6 +482,7 @@ export default function Accounts() {
       await api.delete(`/transactions/${id}`);
       loadTransactionsPage(selectedItem, txPage, txLimit);
       loadSummary(selectedItem);
+      setHistoryTick((n) => n + 1);
       toast.success(t('accountsPage.txDeleted'));
     } catch {
       toast.error(t('accountsPage.txDeleteFailed'));
@@ -530,6 +535,7 @@ export default function Accounts() {
       cancelEditTx();
       loadTransactionsPage(selectedItem, txPage, txLimit);
       loadSummary(selectedItem);
+      setHistoryTick((n) => n + 1);
       toast.success(t('accountsPage.changesSaved'));
     } catch {
       toast.error(t('accountsPage.txSaveFailed'));
@@ -557,6 +563,11 @@ export default function Accounts() {
 
   const isSelected = (kind, id) =>
     selectedItem?.kind === kind && selectedItem?.id === id;
+
+  const showAccountDetails = (account) => {
+    setSelectedItem({ kind: ACCOUNT_BANK, id: account.id });
+    document.getElementById('account-transactions')?.scrollIntoView();
+  };
 
   // ── Tab config for Add Account panel ─────────────────────────────────────
   const addTabs = [
@@ -811,6 +822,12 @@ export default function Accounts() {
           </div>
         </section>
       )}
+
+      <AccountBalanceCards
+        accounts={visibleBankAccounts}
+        refreshKey={historyTick}
+        onDetails={showAccountDetails}
+      />
 
       {/* ── Main grid ─────────────────────────────────────────────────────── */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
@@ -1266,7 +1283,10 @@ export default function Accounts() {
           </div>
 
           {/* Transaction history */}
-          <div className="bg-white dark:bg-slate-900 rounded-2xl border border-[var(--border)] shadow-sm overflow-hidden">
+          <div
+            id="account-transactions"
+            className="scroll-mt-20 bg-white dark:bg-slate-900 rounded-2xl border border-[var(--border)] shadow-sm overflow-hidden"
+          >
             <div className="px-5 py-3 border-b border-[var(--border)] flex items-center justify-between gap-3">
               <h3 className="text-sm font-semibold tracking-tight">
                 {t('accountsPage.transactions')}

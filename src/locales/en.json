@@ -14,7 +14,8 @@
     "none": "None",
     "yes": "Yes",
     "no": "No",
-    "active": "Active"
+    "active": "Active",
+    "retry": "Retry"
   },
   "nav": {
     "dashboard": "Dashboard",
@@ -696,7 +697,13 @@
     "txDeleted": "Transaction deleted",
     "txDeleteFailed": "Failed to delete transaction",
     "changesSaved": "Changes saved",
-    "txSaveFailed": "Failed to save transaction"
+    "txSaveFailed": "Failed to save transaction",
+    "balanceCards": "Your account balances",
+    "vsLastMonth": "{{amount}} vs last month",
+    "noChangeVsLastMonth": "No change vs last month",
+    "details": "View transactions",
+    "historyFailed": "We could not load the history of your accounts.",
+    "sparklineLabel": "Balance of {{name}} over the last 12 months"
   },
   "graphics": {
     "allTime": "All Time",

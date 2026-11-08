@@ -14,7 +14,8 @@
     "none": "Ninguno",
     "yes": "Sí",
     "no": "No",
-    "active": "Activo"
+    "active": "Activo",
+    "retry": "Reintentar"
   },
   "nav": {
     "dashboard": "Inicio",
@@ -696,7 +697,13 @@
     "txDeleted": "Transacción eliminada",
     "txDeleteFailed": "No se pudo eliminar la transacción",
     "changesSaved": "Cambios guardados",
-    "txSaveFailed": "No se pudo guardar la transacción"
+    "txSaveFailed": "No se pudo guardar la transacción",
+    "balanceCards": "Saldo de tus cuentas",
+    "vsLastMonth": "{{amount}} vs mes pasado",
+    "noChangeVsLastMonth": "Sin cambios vs mes pasado",
+    "details": "Ver transacciones",
+    "historyFailed": "No pudimos cargar la evolución de tus cuentas.",
+    "sparklineLabel": "Evolución del saldo de {{name}} en los últimos 12 meses"
   },
   "graphics": {
     "allTime": "Todo el tiempo",
