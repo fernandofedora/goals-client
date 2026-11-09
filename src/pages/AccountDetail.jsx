@@ -17,7 +17,7 @@ import {
 import { signedMoney } from '../utils/format';
 import { cn } from '../lib/utils';
 import { useCurrency } from '../context/CurrencyContext';
-import useHiddenAccounts from '../hooks/useHiddenAccounts';
+import { setAccountHidden } from '../utils/hiddenAccounts';
 import { onTransactionsChanged } from '../utils/transactionEvents';
 
 const EditIcon = () => (
@@ -92,7 +92,6 @@ export default function AccountDetail() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { money } = useCurrency();
-  const { hide, isHidden } = useHiddenAccounts();
 
   const [item, setItem] = useState(undefined); // undefined = loading, null = missing
   const [row, setRow] = useState(null);
@@ -238,10 +237,18 @@ export default function AccountDetail() {
     }
   };
 
-  const confirmHide = () => {
+  const confirmHide = async () => {
     setHideOpen(false);
-    hide(kind, id);
-    navigate('/plans/accounts');
+    try {
+      await setAccountHidden(kind, id, true);
+      navigate('/plans/accounts');
+    } catch {
+      toast.error(
+        isCard
+          ? t('accountsPage.cardUpdateFailed')
+          : t('accountsPage.accountUpdateFailed'),
+      );
+    }
   };
 
   if (failed && item === undefined) {
@@ -274,7 +281,7 @@ export default function AccountDetail() {
     );
   }
 
-  if (item === null || isHidden(kind, id)) {
+  if (item === null || item.isHidden) {
     return (
       <div className="max-w-6xl mx-auto p-4 space-y-4">
         <BackLink />

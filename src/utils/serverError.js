@@ -46,7 +46,6 @@ const SERVER_MESSAGE_KEYS = {
   'Token y contraseña requeridos': 'errors.server.tokenAndPasswordRequired',
   'Token inválido o expirado': 'errors.server.invalidOrExpiredToken',
   'Contraseña actualizada correctamente.': 'errors.server.passwordUpdated',
-  'Invalid bootstrap secret': 'errors.server.invalidBootstrapSecret',
   'User not found': 'errors.server.userNotFound',
   // User profile / password
   'Current password required to change email':

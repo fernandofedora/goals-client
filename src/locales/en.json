@@ -949,7 +949,6 @@
       "tokenAndPasswordRequired": "Token and password required.",
       "invalidOrExpiredToken": "Invalid or expired token.",
       "passwordUpdated": "Password updated successfully.",
-      "invalidBootstrapSecret": "Invalid bootstrap secret.",
       "userNotFound": "User not found.",
       "currentPasswordRequiredEmail": "Current password required to change email.",
       "invalidCurrentPassword": "Invalid current password.",

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { toast } from 'sonner';
 import api from '../api';
 import Button from '../components/ui/button';
 import PageHeader from '../components/ui/page-header';
@@ -12,7 +13,10 @@ import {
 } from '../components/accounts/AccountCharts';
 import { signedMoney } from '../utils/format';
 import { useCurrency } from '../context/CurrencyContext';
-import useHiddenAccounts from '../hooks/useHiddenAccounts';
+import {
+  migrateLocalHidden,
+  setAccountHidden,
+} from '../utils/hiddenAccounts';
 import { onTransactionsChanged } from '../utils/transactionEvents';
 
 function OverviewCard({ kind, item, row }) {
@@ -101,7 +105,6 @@ function Section({ title, kind, items, rows }) {
 export default function Accounts() {
   const { t } = useTranslation();
   const { money } = useCurrency();
-  const { isHidden, restore } = useHiddenAccounts();
 
   const [cards, setCards] = useState(null);
   const [bankAccounts, setBankAccounts] = useState(null);
@@ -119,6 +122,7 @@ export default function Accounts() {
         api.get('/accounts/history', { params: { months: 12 } }),
         api.get('/cards/history', { params: { months: 12 } }),
       ]);
+      await migrateLocalHidden(cardsRes.data, accRes.data);
       setCards(cardsRes.data);
       setBankAccounts(accRes.data);
       setBankRows(new Map(bankHist.data.map((r) => [r.accountId, r])));
@@ -134,23 +138,23 @@ export default function Accounts() {
   useEffect(() => onTransactionsChanged(load), [load]);
 
   const visibleBanks = useMemo(
-    () => (bankAccounts || []).filter((a) => !isHidden('bank', a.id)),
-    [bankAccounts, isHidden],
+    () => (bankAccounts || []).filter((a) => !a.isHidden),
+    [bankAccounts],
   );
   const visibleCards = useMemo(
-    () => (cards || []).filter((c) => !isHidden('card', c.id)),
-    [cards, isHidden],
+    () => (cards || []).filter((c) => !c.isHidden),
+    [cards],
   );
   const hiddenItems = useMemo(
     () => [
       ...(bankAccounts || [])
-        .filter((a) => isHidden('bank', a.id))
+        .filter((a) => a.isHidden)
         .map((a) => ({ ...a, kind: 'bank' })),
       ...(cards || [])
-        .filter((c) => isHidden('card', c.id))
+        .filter((c) => c.isHidden)
         .map((c) => ({ ...c, kind: 'card' })),
     ],
-    [bankAccounts, cards, isHidden],
+    [bankAccounts, cards],
   );
 
   // Same rule as the Dashboard's net worth: every integrated account counts.
@@ -162,6 +166,16 @@ export default function Accounts() {
     (sum, a) => sum + (bankRows?.get(a.id)?.balance || 0),
     0,
   );
+
+  const onRestore = async (kind, id) => {
+    try {
+      await setAccountHidden(kind, id, false);
+      if (hiddenItems.length === 1) setDialog(null);
+      load();
+    } catch {
+      toast.error(t('accountsPage.accountUpdateFailed'));
+    }
+  };
 
   const loaded = cards !== null && bankAccounts !== null;
   const isEmpty = loaded && visibleBanks.length + visibleCards.length === 0;
@@ -249,10 +263,7 @@ export default function Accounts() {
         onOpenChange={(o) => !o && setDialog(null)}
         initialTab={dialog || 'bank'}
         hiddenItems={hiddenItems}
-        onRestore={(kind, id) => {
-          restore(kind, id);
-          if (hiddenItems.length === 1) setDialog(null);
-        }}
+        onRestore={onRestore}
         onCreated={load}
       />
     </div>

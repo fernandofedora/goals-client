@@ -949,7 +949,6 @@
       "tokenAndPasswordRequired": "Token y contraseña requeridos.",
       "invalidOrExpiredToken": "Token inválido o expirado.",
       "passwordUpdated": "Contraseña actualizada correctamente.",
-      "invalidBootstrapSecret": "Secreto de arranque inválido.",
       "userNotFound": "Usuario no encontrado.",
       "currentPasswordRequiredEmail": "Se requiere la contraseña actual para cambiar el correo.",
       "invalidCurrentPassword": "Contraseña actual incorrecta.",
