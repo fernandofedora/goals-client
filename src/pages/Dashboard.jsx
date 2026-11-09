@@ -82,7 +82,7 @@ export default function Dashboard() {
 
   const barChartConfig = useMemo(
     () => ({
-      income: { label: t('dashboard.barIncome'), color: '#10b981' },
+      income: { label: t('dashboard.barIncome'), color: '#059669' },
       expense: { label: t('dashboard.barExpenses'), color: '#f43f5e' },
     }),
     [t],
@@ -475,10 +475,10 @@ export default function Dashboard() {
   );
 
   const categoryColors = [
-    '#6366f1',
+    '#059669',
     '#f43f5e',
     '#f59e0b',
-    '#10b981',
+    '#059669',
     '#3b82f6',
     '#8b5cf6',
     '#ec4899',
@@ -545,7 +545,7 @@ export default function Dashboard() {
           <div className="flex items-center gap-3 min-w-0">
             <div
               className="flex-shrink-0 w-9 h-9 rounded-xl flex items-center justify-center text-white text-sm font-bold shadow-sm"
-              style={{ background: acc.color || '#10b981' }}
+              style={{ background: acc.color || '#059669' }}
             >
               {acc.name.charAt(0).toUpperCase()}
             </div>
@@ -979,13 +979,8 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* ── Budget vs Actual (with Monthly / Category toggle) ──
-          Hidden on phones until a month is picked: it only says "select a month". */}
-      <div
-        className={`bg-white dark:bg-slate-900 rounded-2xl border border-[var(--border)] shadow-sm p-5 ${
-          isMobile && !isMonthSelected ? 'hidden' : ''
-        }`}
-      >
+      {/* ── Budget vs Actual (with Monthly / Category toggle) ── */}
+      <div className="bg-white dark:bg-slate-900 rounded-2xl border border-[var(--border)] shadow-sm p-5">
         {/* Header + toggle */}
         <div className="flex items-center justify-between mb-4 gap-3 flex-wrap">
           <div>
@@ -1194,12 +1189,8 @@ export default function Dashboard() {
 
       {/* ── Saldo + Payment Methods + Card Usage ── */}
       <div className="grid md:grid-cols-3 gap-5">
-        {/* Saldo Inicial vs Final (hidden on phones for "all time": nothing to compare) */}
-        <div
-          className={`bg-white dark:bg-slate-900 rounded-2xl border border-[var(--border)] shadow-sm p-5 ${
-            isMobile && period === 'all' ? 'hidden' : ''
-          }`}
-        >
+        {/* Saldo Inicial vs Final */}
+        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-[var(--border)] shadow-sm p-5">
           <h3 className="text-base font-semibold mb-1">
             {t('dashboard.monthlyBalance')}
           </h3>
@@ -1221,7 +1212,7 @@ export default function Dashboard() {
                   key: 'opening',
                   label: t('dashboard.opening'),
                   value: initialBalance,
-                  color: '#6366f1',
+                  color: '#059669',
                 },
                 {
                   key: 'closing',
@@ -1276,7 +1267,7 @@ export default function Dashboard() {
                 label: t('dashboard.cash'),
                 amount: paymentTotals.cash,
                 pct: paymentTotals.cashPct,
-                color: '#10b981',
+                color: '#059669',
                 icon: '💵',
               },
               {

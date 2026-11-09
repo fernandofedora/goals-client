@@ -43,7 +43,15 @@
     "newTransaction": "Transacción",
     "newTransactionAria": "Nueva transacción (atajo: N)",
     "hideAmounts": "Ocultar montos",
-    "showAmounts": "Mostrar montos"
+    "showAmounts": "Mostrar montos",
+    "savings": "Ahorro",
+    "more": "Más",
+    "main": "Navegación principal",
+    "theme": "Tema",
+    "themeLight": "Claro",
+    "themeDark": "Oscuro",
+    "collapseSidebar": "Colapsar menú",
+    "expandSidebar": "Expandir menú"
   },
   "settings": {
     "title": "Ajustes",

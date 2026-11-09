@@ -43,7 +43,15 @@
     "newTransaction": "Transaction",
     "newTransactionAria": "New transaction (shortcut: N)",
     "hideAmounts": "Hide amounts",
-    "showAmounts": "Show amounts"
+    "showAmounts": "Show amounts",
+    "savings": "Savings",
+    "more": "More",
+    "main": "Main navigation",
+    "theme": "Theme",
+    "themeLight": "Light",
+    "themeDark": "Dark",
+    "collapseSidebar": "Collapse menu",
+    "expandSidebar": "Expand menu"
   },
   "settings": {
     "title": "Settings",

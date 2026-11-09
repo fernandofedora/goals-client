@@ -34,12 +34,12 @@ function ProgressRing({ pct, size = 120, stroke = 10 }) {
   const filled = (circ * Math.min(pct, 100)) / 100;
   const color =
     pct >= 100
-      ? '#10b981'
+      ? '#059669'
       : pct >= 75
-        ? '#6366f1'
+        ? '#059669'
         : pct >= 40
-          ? '#6366f1'
-          : '#6366f1';
+          ? '#059669'
+          : '#059669';
 
   return (
     <svg

@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
-import Navbar from './components/Navbar';
+import AppShell from './components/AppShell';
 import ErrorBoundary from './components/ErrorBoundary';
 import Login from './pages/Login';
 import Register from './pages/Register';
@@ -67,6 +67,11 @@ function InvestmentsRoute({ children }) {
   return <Navigate to="/" replace />;
 }
 
+// Login, register and similar pages have no navigation.
+function PublicFrame({ children }) {
+  return <div className="max-w-6xl mx-auto px-4 py-6">{children}</div>;
+}
+
 export default function App() {
   const location = useLocation();
   const hideNavbar = [
@@ -76,6 +81,7 @@ export default function App() {
     '/verify-email',
   ].some((path) => location.pathname.startsWith(path));
   const { theme, toggleTheme } = useTheme();
+  const Frame = hideNavbar ? PublicFrame : AppShell;
 
   // Re-key the CurrencyProvider by the authenticated identity. App re-renders on
   // every navigation (useLocation), and login/logout always navigate, so when
@@ -93,13 +99,7 @@ export default function App() {
       <CurrencyProvider key={authUserId}>
         <LanguageProvider>
           <div className="min-h-screen bg-[var(--background)] text-[var(--foreground)]">
-            {!hideNavbar && (
-              <Navbar theme={theme} onToggleTheme={toggleTheme} />
-            )}
-            {/* Extra bottom room on phones so the floating "+" never covers the last row */}
-            <div
-              className={`max-w-6xl mx-auto px-4 py-6 ${hideNavbar ? '' : 'pb-24 md:pb-6'}`}
-            >
+            <Frame theme={theme} onToggleTheme={toggleTheme}>
               <ErrorBoundary key={location.pathname}>
                 <Routes>
                   <Route path="/login" element={<Login />} />
@@ -225,7 +225,7 @@ export default function App() {
                   <Route path="*" element={<Navigate to="/" replace />} />
                 </Routes>
               </ErrorBoundary>
-            </div>
+            </Frame>
           </div>
         </LanguageProvider>
       </CurrencyProvider>
