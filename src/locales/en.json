@@ -711,7 +711,37 @@
     "noChangeVsLastMonth": "No change vs last month",
     "details": "View transactions",
     "historyFailed": "We could not load the history of your accounts.",
-    "sparklineLabel": "Balance of {{name}} over the last 12 months"
+    "sparklineLabel": "Balance of {{name}} over the last 12 months",
+    "overviewSubtitle": "Your money in banks and cards, at a glance.",
+    "addAccountTitle": "Add account",
+    "totalBalance": "Total balance",
+    "totalNote_one": "Adds up 1 account",
+    "totalNote_other": "Adds up {{count}} accounts",
+    "isolatedNote_one": "1 isolated not included",
+    "isolatedNote_other": "{{count}} isolated not included",
+    "banksSection": "Bank accounts",
+    "cardsSection": "Credit cards",
+    "spentThisMonth": "Spent this month",
+    "hiddenLink_one": "1 hidden account · View and link",
+    "hiddenLink_other": "{{count}} hidden accounts · View and link",
+    "tabBankShort": "Bank account",
+    "tabCardShort": "Credit card",
+    "tabLinkShort": "Link hidden",
+    "createAccount": "Create account",
+    "createCard": "Create card",
+    "linkAction": "Link",
+    "typeBank": "Bank account",
+    "typeCard": "Credit card",
+    "currentBalance": "Current balance",
+    "summaryTitle": "Summary",
+    "movements": "Transactions",
+    "searchMovements": "Search transactions",
+    "noSearchResults": "No transaction matches your search.",
+    "noMovements": "This account has no transactions yet.",
+    "noMovementsHint": "Use the + Transaction button to record the first one.",
+    "notInList": "This account is not on your list.",
+    "editAccountTitle": "Edit account",
+    "editCardTitle": "Edit card"
   },
   "graphics": {
     "allTime": "All Time",
@@ -953,6 +983,7 @@
     "title": "New transaction",
     "saveAndAddAnother": "Save and add another",
     "loading": "Loading categories and accounts…",
-    "loadFailed": "We could not load your categories and accounts. Close and try again."
+    "loadFailed": "We could not load your categories and accounts. Close and try again.",
+    "titleFor": "New transaction · {{name}}"
   }
 }

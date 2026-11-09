@@ -13,6 +13,7 @@ import SettingsCategories from './pages/settings/SettingsCategories';
 import SettingsCards from './pages/settings/SettingsCards';
 import SavingPlan from './pages/SavingPlan';
 import Accounts from './pages/Accounts';
+import AccountDetail from './pages/AccountDetail';
 import Profile from './pages/Profile';
 import ScheduledPayments from './pages/ScheduledPayments';
 import Investments from './pages/Investments';
@@ -158,6 +159,14 @@ export default function App() {
                     element={
                       <ProtectedRoute>
                         <Accounts />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/plans/accounts/:kind/:id"
+                    element={
+                      <ProtectedRoute>
+                        <AccountDetail />
                       </ProtectedRoute>
                     }
                   />

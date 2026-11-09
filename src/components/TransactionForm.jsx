@@ -15,23 +15,28 @@ const todayISO = () => {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 };
 
-const emptyExpense = (date = '') => ({
+const emptyExpense = (date = '', account = null) => ({
   description: '',
   categoryId: '',
   amount: '',
   date,
-  method: 'cash',
-  cardId: '',
-  accountId: '',
+  method:
+    account?.kind === 'card'
+      ? 'card'
+      : account?.kind === 'bank'
+        ? 'account'
+        : 'cash',
+  cardId: account?.kind === 'card' ? String(account.id) : '',
+  accountId: account?.kind === 'bank' ? String(account.id) : '',
 });
 
-const emptyIncome = (date = '') => ({
+const emptyIncome = (date = '', account = null) => ({
   description: '',
   categoryId: '',
   amount: '',
   date,
-  incomeMethod: 'cash',
-  accountId: '',
+  incomeMethod: account?.kind === 'bank' ? 'account' : 'cash',
+  accountId: account?.kind === 'bank' ? String(account.id) : '',
 });
 
 export function Field({ label, labelRight, htmlFor, children }) {
@@ -95,6 +100,7 @@ const PlusCircle = () => (
  *                    another" so several entries can go in without reopening.
  *
  * onCreated({ addAnother }) runs after a successful POST.
+ * account ({ kind: 'bank' | 'card', id }) preselects where the money moves.
  */
 export default function TransactionForm({
   categories = [],
@@ -102,6 +108,7 @@ export default function TransactionForm({
   accounts = [],
   onCreated,
   variant = 'page',
+  account = null,
 }) {
   const { t } = useTranslation();
   const { symbol: cs } = useCurrency();
@@ -112,8 +119,12 @@ export default function TransactionForm({
   const addAnotherRef = useRef(false);
 
   const [txMode, setTxMode] = useState('expense');
-  const [expense, setExpense] = useState(() => emptyExpense(initialDate));
-  const [income, setIncome] = useState(() => emptyIncome(initialDate));
+  const [expense, setExpense] = useState(() =>
+    emptyExpense(initialDate, account),
+  );
+  const [income, setIncome] = useState(() =>
+    emptyIncome(initialDate, account),
+  );
   const [submitting, setSubmitting] = useState(false);
 
   const expenseCats = categories.filter((c) => c.type === 'expense');
@@ -142,6 +153,7 @@ export default function TransactionForm({
       paymentMethod: income.incomeMethod === 'account' ? 'account' : 'cash',
     };
     if (income.incomeMethod === 'cash') payload.accountId = null;
+    if (account?.kind === 'card') payload.cardId = account.id;
     return payload;
   };
 
@@ -157,14 +169,14 @@ export default function TransactionForm({
         // Keep the payment method between entries: people log several
         // purchases with the same card in a row.
         setExpense((v) => ({
-          ...emptyExpense(initialDate),
+          ...emptyExpense(initialDate, account),
           ...(addAnother
             ? { method: v.method, cardId: v.cardId, accountId: v.accountId }
             : {}),
         }));
         toast.success(t('addTransaction.expenseAdded'));
       } else {
-        setIncome(emptyIncome(initialDate));
+        setIncome(emptyIncome(initialDate, account));
         toast.success(t('addTransaction.incomeAdded'));
       }
       form.reset(); // Clear native browser validation state (removes :user-invalid)
@@ -390,7 +402,7 @@ export default function TransactionForm({
         )}
 
         {/* Income-only: method + account */}
-        {txMode === 'income' && (
+        {txMode === 'income' && account?.kind !== 'card' && (
           <>
             <Field label={t('addTransaction.incomeMethod')}>
               <Select

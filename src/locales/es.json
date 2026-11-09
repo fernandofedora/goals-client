@@ -711,7 +711,37 @@
     "noChangeVsLastMonth": "Sin cambios vs mes pasado",
     "details": "Ver transacciones",
     "historyFailed": "No pudimos cargar la evolución de tus cuentas.",
-    "sparklineLabel": "Evolución del saldo de {{name}} en los últimos 12 meses"
+    "sparklineLabel": "Evolución del saldo de {{name}} en los últimos 12 meses",
+    "overviewSubtitle": "Tu dinero en bancos y tarjetas, de un vistazo.",
+    "addAccountTitle": "Agregar cuenta",
+    "totalBalance": "Saldo total",
+    "totalNote_one": "Suma 1 cuenta",
+    "totalNote_other": "Suma {{count}} cuentas",
+    "isolatedNote_one": "1 aislada no se incluye",
+    "isolatedNote_other": "{{count}} aisladas no se incluyen",
+    "banksSection": "Cuentas bancarias",
+    "cardsSection": "Tarjetas de crédito",
+    "spentThisMonth": "Gastado este mes",
+    "hiddenLink_one": "1 cuenta oculta · Ver y vincular",
+    "hiddenLink_other": "{{count}} cuentas ocultas · Ver y vincular",
+    "tabBankShort": "Cuenta bancaria",
+    "tabCardShort": "Tarjeta de crédito",
+    "tabLinkShort": "Vincular oculta",
+    "createAccount": "Crear cuenta",
+    "createCard": "Crear tarjeta",
+    "linkAction": "Vincular",
+    "typeBank": "Cuenta bancaria",
+    "typeCard": "Tarjeta de crédito",
+    "currentBalance": "Saldo actual",
+    "summaryTitle": "Resumen",
+    "movements": "Movimientos",
+    "searchMovements": "Buscar movimiento",
+    "noSearchResults": "Ningún movimiento coincide con tu búsqueda.",
+    "noMovements": "Esta cuenta aún no tiene movimientos.",
+    "noMovementsHint": "Usa el botón + Transacción para registrar el primero.",
+    "notInList": "Esta cuenta no está en tu lista.",
+    "editAccountTitle": "Editar cuenta",
+    "editCardTitle": "Editar tarjeta"
   },
   "graphics": {
     "allTime": "Todo el tiempo",
@@ -953,6 +983,7 @@
     "title": "Nueva transacción",
     "saveAndAddAnother": "Guardar y agregar otra",
     "loading": "Cargando categorías y cuentas…",
-    "loadFailed": "No pudimos cargar tus categorías y cuentas. Cierra y vuelve a intentarlo."
+    "loadFailed": "No pudimos cargar tus categorías y cuentas. Cierra y vuelve a intentarlo.",
+    "titleFor": "Nueva transacción · {{name}}"
   }
 }

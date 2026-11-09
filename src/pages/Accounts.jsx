@@ -1,1488 +1,259 @@
-import { useEffect, useMemo, useState, useCallback } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import api from '../api';
-import Input from '../components/ui/input';
 import Button from '../components/ui/button';
-import Select from '../components/ui/select';
-import Switch from '../components/ui/switch';
-import DateInput from '../components/DateInput';
-import Alert from '../components/ui/alert';
-import EditTransactionDialog from '../components/ui/edit-transaction-dialog';
-import IconButton from '../components/ui/icon-button';
 import PageHeader from '../components/ui/page-header';
-import AccountBalanceCards from '../components/AccountBalanceCards';
-import { onTransactionsChanged } from '../utils/transactionEvents';
-import { cn } from '../lib/utils';
+import NavIcon from '../components/NavIcon';
+import { AddAccountDialog } from '../components/accounts/AccountDialogs';
+import {
+  AccountDelta,
+  AccountTrend,
+} from '../components/accounts/AccountCharts';
+import { signedMoney } from '../utils/format';
 import { useCurrency } from '../context/CurrencyContext';
-import { getPrefJSON, setPrefJSON } from '../utils/userStorage';
-import { toast } from 'sonner';
+import useHiddenAccounts from '../hooks/useHiddenAccounts';
+import { onTransactionsChanged } from '../utils/transactionEvents';
 
-// ── Tiny helpers ──────────────────────────────────────────────────────────────
-function Badge({ type }) {
+function OverviewCard({ kind, item, row }) {
   const { t } = useTranslation();
+  const { money } = useCurrency();
+  const isCard = kind === 'card';
   return (
-    <span
-      className={cn(
-        'inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider',
-        type === 'expense'
-          ? 'bg-rose-100 text-rose-600 dark:bg-rose-950/50 dark:text-rose-400'
-          : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-400',
-      )}
+    <Link
+      to={`/plans/accounts/${kind}/${item.id}`}
+      className="group flex flex-col gap-2 p-4 rounded-2xl border border-[var(--border)] bg-[var(--card)] shadow-sm hover:border-[var(--ring)] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ring)]"
     >
-      {type === 'expense'
-        ? t('transactions.expense')
-        : t('transactions.income')}
-    </span>
+      <div className="flex items-center gap-2 min-w-0">
+        <span
+          className="size-2.5 rounded-full flex-shrink-0"
+          style={{ background: item.color }}
+        />
+        <h3 className="flex-1 min-w-0 text-sm font-semibold text-[var(--foreground)] truncate">
+          {item.name}
+        </h3>
+        {item.isExcludedFromTotals && (
+          <span className="flex-shrink-0 px-2 py-0.5 rounded-full text-[11px] font-bold bg-amber-100 text-amber-800 dark:bg-amber-950/50 dark:text-amber-400">
+            {t('accountsPage.isolated')}
+          </span>
+        )}
+        <svg
+          width="18"
+          height="18"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          aria-hidden="true"
+          className="flex-shrink-0 text-[var(--muted-foreground)] group-hover:translate-x-0.5 transition-transform"
+        >
+          <path d="m9 18 6-6-6-6" />
+        </svg>
+      </div>
+      {isCard && (
+        <p className="text-xs text-[var(--muted-foreground)]">
+          •••• {item.last4} · {t('accountsPage.spentThisMonth')}
+        </p>
+      )}
+      {row ? (
+        <>
+          <p className="text-2xl font-bold tabular-nums text-[var(--foreground)]">
+            {isCard
+              ? money(row.spentThisMonth)
+              : signedMoney(row.balance, money)}
+          </p>
+          <AccountDelta value={row.delta} spending={isCard} />
+          <AccountTrend kind={kind} name={item.name} history={row.history} />
+        </>
+      ) : (
+        <div className="h-[104px] rounded-lg bg-[var(--muted)] animate-pulse" />
+      )}
+    </Link>
   );
 }
 
-function TxRowActions({ onEdit, onHide }) {
-  const { t } = useTranslation();
+function Section({ title, kind, items, rows }) {
+  if (items.length === 0) return null;
   return (
-    <div className="flex justify-end gap-1 flex-shrink-0">
-      <IconButton onClick={onEdit} title={t('accountsPage.edit')}>
-        <svg
-          width="14"
-          height="14"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          aria-hidden="true"
-        >
-          <path d="M12 20h9" />
-          <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L8 18l-4 1 1-4 11.5-11.5z" />
-        </svg>
-      </IconButton>
-      <IconButton onClick={onHide} title={t('accountsPage.hide')} danger>
-        <svg
-          width="14"
-          height="14"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          aria-hidden="true"
-        >
-          <path d="M3 6h18" />
-          <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
-          <path d="M10 11v6M14 11v6" />
-          <path d="M15 6V4a2 2 0 0 0-2-2h-2a2 2 0 0 0-2 2v2" />
-        </svg>
-      </IconButton>
-    </div>
+    <section className="space-y-3">
+      <h2 className="text-base font-semibold text-[var(--foreground)]">
+        {title}{' '}
+        <span className="text-[13px] font-normal text-[var(--muted-foreground)]">
+          {items.length}
+        </span>
+      </h2>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        {items.map((item) => (
+          <OverviewCard
+            key={item.id}
+            kind={kind}
+            item={item}
+            row={rows?.get(item.id)}
+          />
+        ))}
+      </div>
+    </section>
   );
 }
-
-// Account types to unify cards + bank accounts in one list
-const ACCOUNT_CARD = 'card';
-const ACCOUNT_BANK = 'bank';
 
 export default function Accounts() {
   const { t } = useTranslation();
-  // ── Data ─────────────────────────────────────────────────────────────────
-  const [cards, setCards] = useState([]);
-  const [bankAccounts, setBankAccounts] = useState([]);
-  const [categories, setCategories] = useState([]);
-  const [historyTick, setHistoryTick] = useState(0);
   const { money } = useCurrency();
+  const { isHidden, restore } = useHiddenAccounts();
 
-  // ── Hidden cards & bank accounts (persisted locally) ──────────────────────
-  const [hiddenCardIds, setHiddenCardIds] = useState(() =>
-    getPrefJSON('accounts.hiddenCardIds', []),
-  );
-  const [hiddenBankIds, setHiddenBankIds] = useState(() =>
-    getPrefJSON('accounts.hiddenBankIds', []),
-  );
+  const [cards, setCards] = useState(null);
+  const [bankAccounts, setBankAccounts] = useState(null);
+  const [bankRows, setBankRows] = useState(null);
+  const [cardRows, setCardRows] = useState(null);
+  const [failed, setFailed] = useState(false);
+  const [dialog, setDialog] = useState(null); // null | 'bank' | 'link'
 
-  // ── Selected account (unified: {kind, id}) ────────────────────────────────
-  const [selectedItem, setSelectedItem] = useState(() =>
-    getPrefJSON('accounts.selectedItem', null),
-  );
+  const load = useCallback(async () => {
+    setFailed(false);
+    try {
+      const [cardsRes, accRes, bankHist, cardHist] = await Promise.all([
+        api.get('/cards'),
+        api.get('/accounts'),
+        api.get('/accounts/history', { params: { months: 12 } }),
+        api.get('/cards/history', { params: { months: 12 } }),
+      ]);
+      setCards(cardsRes.data);
+      setBankAccounts(accRes.data);
+      setBankRows(new Map(bankHist.data.map((r) => [r.accountId, r])));
+      setCardRows(new Map(cardHist.data.map((r) => [r.cardId, r])));
+    } catch {
+      setFailed(true);
+    }
+  }, []);
 
+  useEffect(() => {
+    load();
+  }, [load]);
+  useEffect(() => onTransactionsChanged(load), [load]);
+
+  const visibleBanks = useMemo(
+    () => (bankAccounts || []).filter((a) => !isHidden('bank', a.id)),
+    [bankAccounts, isHidden],
+  );
   const visibleCards = useMemo(
-    () => cards.filter((c) => !hiddenCardIds.includes(c.id)),
-    [cards, hiddenCardIds],
+    () => (cards || []).filter((c) => !isHidden('card', c.id)),
+    [cards, isHidden],
   );
-  const hiddenCards = useMemo(
-    () => cards.filter((c) => hiddenCardIds.includes(c.id)),
-    [cards, hiddenCardIds],
-  );
-  const visibleBankAccounts = useMemo(
-    () => bankAccounts.filter((a) => !hiddenBankIds.includes(a.id)),
-    [bankAccounts, hiddenBankIds],
-  );
-  const hiddenBankAccounts = useMemo(
-    () => bankAccounts.filter((a) => hiddenBankIds.includes(a.id)),
-    [bankAccounts, hiddenBankIds],
-  );
-
-  useEffect(() => {
-    setPrefJSON('accounts.hiddenCardIds', hiddenCardIds);
-  }, [hiddenCardIds]);
-  useEffect(() => {
-    setPrefJSON('accounts.hiddenBankIds', hiddenBankIds);
-  }, [hiddenBankIds]);
-
-  useEffect(() => {
-    setPrefJSON('accounts.selectedItem', selectedItem);
-  }, [selectedItem]);
-
-  // ── Transactions ──────────────────────────────────────────────────────────
-  const [txItems, setTxItems] = useState([]);
-  const [txPage, setTxPage] = useState(1);
-  const [txLimit, setTxLimit] = useState(10);
-  const [txTotal, setTxTotal] = useState(0);
-  const [summary, setSummary] = useState({ income: 0, expense: 0 });
-
-  // ── Add-transaction form ──────────────────────────────────────────────────
-  const [txMode, setTxMode] = useState('expense');
-  const [txForm, setTxForm] = useState({
-    description: '',
-    amount: '',
-    date: new Date().toISOString().slice(0, 10),
-    categoryId: '',
-    paymentMethod: 'cash',
-  });
-  const [addError, setAddError] = useState('');
-
-  // ── Add Account panel ─────────────────────────────────────────────────────
-  const [showAddPanel, setShowAddPanel] = useState(false);
-  // addTab: 'newCard' | 'newBank' | 'linkCard' | 'linkBank'
-  const [addTab, setAddTab] = useState('newCard');
-
-  // New card form
-  const [cardForm, setCardForm] = useState({
-    name: '',
-    color: '#0ea5e9',
-    last4: '',
-  });
-  const [editingCardId, setEditingCardId] = useState(null);
-  const [editCardForm, setEditCardForm] = useState({
-    name: '',
-    color: '#0ea5e9',
-    last4: '',
-  });
-
-  // New bank account form
-  const [bankForm, setBankForm] = useState({
-    name: '',
-    color: '#10b981',
-    initialBalance: '',
-    isExcludedFromTotals: false,
-  });
-  const [editingBankId, setEditingBankId] = useState(null);
-  const [editBankForm, setEditBankForm] = useState({
-    name: '',
-    color: '#10b981',
-    isExcludedFromTotals: false,
-  });
-
-  // Link existing
-  const [cardToLink, setCardToLink] = useState('');
-  const [bankToLink, setBankToLink] = useState('');
-
-  // ── Edit transaction dialog ───────────────────────────────────────────────
-  const [editingTxId, setEditingTxId] = useState(null);
-  const [editTxData, setEditTxData] = useState({
-    type: 'expense',
-    description: '',
-    categoryId: '',
-    amount: '',
-    date: '',
-    paymentMethod: 'cash',
-  });
-  const [editOpen, setEditOpen] = useState(false);
-  const [editError, setEditError] = useState('');
-
-  const expenseCats = useMemo(
-    () => categories.filter((c) => c.type === 'expense'),
-    [categories],
-  );
-  const incomeCats = useMemo(
-    () => categories.filter((c) => c.type === 'income'),
-    [categories],
-  );
-
-  // ── Load ──────────────────────────────────────────────────────────────────
-  const loadBase = useCallback(async () => {
-    const [cardsRes, catsRes, accRes] = await Promise.all([
-      api.get('/cards'),
-      api.get('/categories'),
-      api.get('/accounts'),
-    ]);
-    setCards(cardsRes.data);
-    setCategories(catsRes.data);
-    setBankAccounts(accRes.data);
-    setHistoryTick((n) => n + 1);
-
-    // Auto-select first visible item if nothing selected
-    const currentHidden = getPrefJSON('accounts.hiddenCardIds', []);
-    const currentHiddenBanks = getPrefJSON('accounts.hiddenBankIds', []);
-    const visible = cardsRes.data.filter((c) => !currentHidden.includes(c.id));
-    const visibleBanks = accRes.data.filter(
-      (a) => !currentHiddenBanks.includes(a.id),
-    );
-    const current = getPrefJSON('accounts.selectedItem', null);
-
-    if (!current) {
-      if (visible.length > 0) {
-        const item = { kind: ACCOUNT_CARD, id: visible[0].id };
-        setSelectedItem(item);
-      } else if (visibleBanks.length > 0) {
-        const item = { kind: ACCOUNT_BANK, id: visibleBanks[0].id };
-        setSelectedItem(item);
-      }
-    }
-  }, []);
-
-  const loadTransactionsPage = useCallback(async (item, page, limit) => {
-    if (!item) {
-      setTxItems([]);
-      setTxTotal(0);
-      return;
-    }
-    const params =
-      item.kind === ACCOUNT_CARD
-        ? { cardId: item.id, page, limit }
-        : { accountId: item.id, page, limit };
-    const res = await api.get('/transactions', { params });
-    setTxItems(res.data.items || []);
-    setTxTotal(res.data.total || 0);
-  }, []);
-
-  const loadSummary = useCallback(async (item) => {
-    if (!item) {
-      setSummary({ income: 0, expense: 0 });
-      return;
-    }
-    const params =
-      item.kind === ACCOUNT_CARD ? { cardId: item.id } : { accountId: item.id };
-    const res = await api.get('/transactions', { params });
-    const items = Array.isArray(res.data) ? res.data : res.data.items || [];
-    const income = items
-      .filter((i) => i.type === 'income')
-      .reduce((a, b) => a + Number(b.amount), 0);
-    const expense = items
-      .filter((i) => i.type === 'expense')
-      .reduce((a, b) => a + Number(b.amount), 0);
-    setSummary({ income, expense });
-  }, []);
-
-  useEffect(() => {
-    loadBase();
-  }, [loadBase]);
-
-  useEffect(() => {
-    setTxPage(1);
-    setTxForm({
-      description: '',
-      amount: '',
-      date: new Date().toISOString().slice(0, 10),
-      categoryId: '',
-      paymentMethod: 'cash',
-    });
-    loadTransactionsPage(selectedItem, 1, txLimit);
-    loadSummary(selectedItem);
-  }, [selectedItem]);
-
-  useEffect(() => {
-    loadTransactionsPage(selectedItem, txPage, txLimit);
-  }, [txPage, txLimit]);
-
-  // Re-fetch after the global quick-add dialog creates a transaction.
-  useEffect(
-    () =>
-      onTransactionsChanged(() => {
-        loadBase();
-        loadTransactionsPage(selectedItem, txPage, txLimit);
-        loadSummary(selectedItem);
-      }),
-    [
-      loadBase,
-      loadTransactionsPage,
-      loadSummary,
-      selectedItem,
-      txPage,
-      txLimit,
+  const hiddenItems = useMemo(
+    () => [
+      ...(bankAccounts || [])
+        .filter((a) => isHidden('bank', a.id))
+        .map((a) => ({ ...a, kind: 'bank' })),
+      ...(cards || [])
+        .filter((c) => isHidden('card', c.id))
+        .map((c) => ({ ...c, kind: 'card' })),
     ],
+    [bankAccounts, cards, isHidden],
   );
 
-  const totalPages = Math.max(1, Math.ceil(txTotal / txLimit));
+  // Same rule as the Dashboard's net worth: every integrated account counts.
+  const integrated = (bankAccounts || []).filter(
+    (a) => !a.isExcludedFromTotals,
+  );
+  const isolatedCount = (bankAccounts || []).length - integrated.length;
+  const total = integrated.reduce(
+    (sum, a) => sum + (bankRows?.get(a.id)?.balance || 0),
+    0,
+  );
 
-  // ── Card CRUD ─────────────────────────────────────────────────────────────
-  const addCard = async (e) => {
-    e.preventDefault();
-    try {
-      await api.post('/cards', cardForm);
-      setCardForm({ name: '', color: '#0ea5e9', last4: '' });
-      setShowAddPanel(false);
-      await loadBase();
-      toast.success(t('accountsPage.cardAdded'));
-    } catch {
-      toast.error(t('accountsPage.cardAddFailed'));
-    }
-  };
+  const loaded = cards !== null && bankAccounts !== null;
+  const isEmpty = loaded && visibleBanks.length + visibleCards.length === 0;
 
-  const saveEditCard = async (id) => {
-    try {
-      await api.put(`/cards/${id}`, editCardForm);
-      setEditingCardId(null);
-      loadBase();
-      loadTransactionsPage(selectedItem, txPage, txLimit);
-      loadSummary(selectedItem);
-      toast.success(t('accountsPage.cardUpdated'));
-    } catch {
-      toast.error(t('accountsPage.cardUpdateFailed'));
-    }
-  };
-
-  const hideCard = (id) => {
-    if (!confirm(t('accountsPage.confirmHideCard'))) return;
-    setHiddenCardIds((prev) => [...prev, id]);
-    if (selectedItem?.kind === ACCOUNT_CARD && selectedItem?.id === id) {
-      const remaining = visibleCards.filter((c) => c.id !== id);
-      const next = remaining[0]
-        ? { kind: ACCOUNT_CARD, id: remaining[0].id }
-        : visibleBankAccounts[0]
-          ? { kind: ACCOUNT_BANK, id: visibleBankAccounts[0].id }
-          : null;
-      setSelectedItem(next);
-    }
-  };
-
-  const linkCard = () => {
-    if (!cardToLink) return;
-    setHiddenCardIds((prev) =>
-      prev.filter((hid) => hid !== parseInt(cardToLink, 10)),
-    );
-    setCardToLink('');
-    setShowAddPanel(false);
-  };
-
-  // ── Bank Account CRUD ─────────────────────────────────────────────────────
-  const addBankAccount = async (e) => {
-    e.preventDefault();
-    try {
-      const res = await api.post('/accounts', {
-        name: bankForm.name,
-        color: bankForm.color,
-        initialBalance: parseFloat(bankForm.initialBalance || '0'),
-        isExcludedFromTotals: bankForm.isExcludedFromTotals,
-      });
-      setBankForm({
-        name: '',
-        color: '#10b981',
-        initialBalance: '',
-        isExcludedFromTotals: false,
-      });
-      setShowAddPanel(false);
-      await loadBase();
-      setSelectedItem({ kind: ACCOUNT_BANK, id: res.data.id });
-      toast.success(t('accountsPage.accountAdded'));
-    } catch {
-      toast.error(t('accountsPage.accountAddFailed'));
-    }
-  };
-
-  const saveEditBank = async (id) => {
-    try {
-      await api.put(`/accounts/${id}`, editBankForm);
-      setEditingBankId(null);
-      loadBase();
-      toast.success(t('accountsPage.accountUpdated'));
-    } catch {
-      toast.error(t('accountsPage.accountUpdateFailed'));
-    }
-  };
-
-  // Hide bank account (same pattern as cards — data preserved)
-  const hideBank = (id) => {
-    if (!confirm(t('accountsPage.confirmHideBank'))) return;
-    setHiddenBankIds((prev) => [...prev, id]);
-    if (selectedItem?.kind === ACCOUNT_BANK && selectedItem?.id === id) {
-      const remaining = visibleBankAccounts.filter((a) => a.id !== id);
-      const next = remaining[0]
-        ? { kind: ACCOUNT_BANK, id: remaining[0].id }
-        : visibleCards[0]
-          ? { kind: ACCOUNT_CARD, id: visibleCards[0].id }
-          : null;
-      setSelectedItem(next);
-    }
-  };
-
-  // Restore a hidden bank account
-  const linkBank = () => {
-    if (!bankToLink) return;
-    setHiddenBankIds((prev) =>
-      prev.filter((hid) => hid !== parseInt(bankToLink, 10)),
-    );
-    setBankToLink('');
-    setShowAddPanel(false);
-  };
-
-  // ── Transaction CRUD ──────────────────────────────────────────────────────
-  const addTransaction = async (e) => {
-    e.preventDefault();
-    if (!selectedItem) return;
-    const amt = Number(txForm.amount);
-    if (!txForm.description.trim()) {
-      setAddError(t('accountsPage.descriptionRequired'));
-      return;
-    }
-    if (!(amt > 0)) {
-      setAddError(t('accountsPage.amountPositive'));
-      return;
-    }
-    const payload = {
-      type: txMode,
-      description: txForm.description,
-      amount: amt,
-      date: txForm.date,
-      categoryId: txForm.categoryId || null,
-      paymentMethod: txMode === 'income' ? 'cash' : txForm.paymentMethod,
-    };
-    if (selectedItem.kind === ACCOUNT_CARD) payload.cardId = selectedItem.id;
-    else payload.accountId = selectedItem.id;
-
-    try {
-      await api.post('/transactions', payload);
-      setTxForm({
-        description: '',
-        amount: '',
-        date: new Date().toISOString().slice(0, 10),
-        categoryId: '',
-        paymentMethod: 'cash',
-      });
-      setAddError('');
-      loadTransactionsPage(selectedItem, 1, txLimit);
-      loadSummary(selectedItem);
-      setHistoryTick((n) => n + 1);
-      setTxPage(1);
-      toast.success(
-        txMode === 'income'
-          ? t('accountsPage.incomeAdded')
-          : t('accountsPage.expenseAdded'),
-      );
-    } catch {
-      toast.error(
-        txMode === 'income'
-          ? t('accountsPage.incomeAddFailed')
-          : t('accountsPage.expenseAddFailed'),
-      );
-    }
-  };
-
-  const deleteTransaction = async (id) => {
-    try {
-      await api.delete(`/transactions/${id}`);
-      loadTransactionsPage(selectedItem, txPage, txLimit);
-      loadSummary(selectedItem);
-      setHistoryTick((n) => n + 1);
-      toast.success(t('accountsPage.txDeleted'));
-    } catch {
-      toast.error(t('accountsPage.txDeleteFailed'));
-    }
-  };
-
-  const startEditTx = (tx) => {
-    setEditingTxId(tx.id);
-    setEditTxData({
-      type: tx.type,
-      description: tx.description || '',
-      categoryId: tx.CategoryId || tx.Category?.id || '',
-      amount: (tx.amount ?? '').toString(),
-      date: tx.date || new Date().toISOString().slice(0, 10),
-      paymentMethod: tx.paymentMethod || 'cash',
-    });
-    setEditOpen(true);
-    setEditError('');
-  };
-
-  const cancelEditTx = () => {
-    setEditOpen(false);
-    setEditingTxId(null);
-  };
-
-  const saveEditTx = async (data, patchOnly) => {
-    if (patchOnly) {
-      setEditTxData(data);
-      return;
-    }
-    const amt = parseFloat(data.amount || 0);
-    if (!data.description.trim()) {
-      setEditError(t('accountsPage.descriptionRequired'));
-      return;
-    }
-    if (!(amt > 0)) {
-      setEditError(t('accountsPage.amountPositive'));
-      return;
-    }
-    const payload = {
-      ...data,
-      amount: amt,
-      paymentMethod: data.type === 'income' ? 'cash' : data.paymentMethod,
-    };
-    if (selectedItem?.kind === ACCOUNT_CARD) payload.cardId = selectedItem.id;
-    else if (selectedItem?.kind === ACCOUNT_BANK)
-      payload.accountId = selectedItem.id;
-    try {
-      await api.put(`/transactions/${editingTxId}`, payload);
-      cancelEditTx();
-      loadTransactionsPage(selectedItem, txPage, txLimit);
-      loadSummary(selectedItem);
-      setHistoryTick((n) => n + 1);
-      toast.success(t('accountsPage.changesSaved'));
-    } catch {
-      toast.error(t('accountsPage.txSaveFailed'));
-    }
-  };
-
-  // ── Unified account list for the left sidebar ─────────────────────────────
-  const allItems = [
-    ...visibleCards.map((c) => ({ kind: ACCOUNT_CARD, ...c, emoji: '💳' })),
-    ...visibleBankAccounts.map((a) => ({
-      kind: ACCOUNT_BANK,
-      ...a,
-      emoji: '🏦',
-    })),
-  ];
-
-  const selectedRaw = selectedItem
-    ? selectedItem.kind === ACCOUNT_CARD
-      ? visibleCards.find((c) => c.id === selectedItem.id)
-      : visibleBankAccounts.find((a) => a.id === selectedItem.id)
-    : null;
-  const selectedData = selectedRaw
-    ? { ...selectedRaw, kind: selectedItem.kind }
-    : null;
-
-  const isSelected = (kind, id) =>
-    selectedItem?.kind === kind && selectedItem?.id === id;
-
-  const showAccountDetails = (account) => {
-    setSelectedItem({ kind: ACCOUNT_BANK, id: account.id });
-    document.getElementById('account-transactions')?.scrollIntoView();
-  };
-
-  // ── Tab config for Add Account panel ─────────────────────────────────────
-  const addTabs = [
-    { id: 'newCard', label: t('accountsPage.tabNewCard') },
-    { id: 'newBank', label: t('accountsPage.tabBank') },
-    ...(hiddenCards.length > 0
-      ? [{ id: 'linkCard', label: t('accountsPage.tabLinkCard') }]
-      : []),
-    ...(hiddenBankAccounts.length > 0
-      ? [{ id: 'linkBank', label: t('accountsPage.tabLinkBank') }]
-      : []),
-  ];
-
-  // ── Render ────────────────────────────────────────────────────────────────
   return (
-    <div className="max-w-6xl mx-auto p-5 space-y-5">
+    <div className="max-w-6xl mx-auto p-4 space-y-6">
       <PageHeader
         title={t('accountsPage.title')}
-        subtitle={t('accountsPage.subtitle')}
+        subtitle={t('accountsPage.overviewSubtitle')}
         actions={
-          <Button
-            variant="secondary"
-            onClick={() => {
-              setShowAddPanel((v) => !v);
-              setAddTab('newCard');
-            }}
-          >
-            {showAddPanel
-              ? t('accountsPage.close')
-              : t('accountsPage.addAccount')}
+          <Button variant="outline" onClick={() => setDialog('bank')}>
+            {t('accountsPage.addAccount')}
           </Button>
         }
       />
 
-      {/* ── Add Account panel ─────────────────────────────────────────────── */}
-      {showAddPanel && (
-        <section className="bg-white dark:bg-slate-900 rounded-2xl border border-[var(--border)] shadow-sm overflow-hidden">
-          {/* Tab bar */}
-          <div className="flex gap-0 border-b border-[var(--border)] px-1 pt-1 bg-gray-50/50 dark:bg-slate-800/30">
-            {addTabs.map((tab) => (
-              <button
-                key={tab.id}
-                type="button"
-                onClick={() => setAddTab(tab.id)}
-                className={cn(
-                  'px-4 py-2.5 text-sm font-medium transition-colors rounded-t-lg border-b-2 -mb-px',
-                  addTab === tab.id
-                    ? 'border-indigo-500 text-indigo-600 dark:text-indigo-400 bg-white dark:bg-slate-900'
-                    : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200',
-                )}
-              >
-                {tab.label}
-              </button>
-            ))}
-          </div>
-
-          <div className="p-5">
-            {/* ── New Card ── */}
-            {addTab === 'newCard' && (
-              <form
-                onSubmit={addCard}
-                className="grid grid-cols-1 sm:grid-cols-[1fr_auto_auto_auto] gap-3 items-end"
-              >
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-semibold text-gray-400 uppercase tracking-widest">
-                    {t('accountsPage.cardName')}
-                  </label>
-                  <Input
-                    placeholder={t('accountsPage.cardNamePlaceholder')}
-                    value={cardForm.name}
-                    onChange={(e) =>
-                      setCardForm((v) => ({ ...v, name: e.target.value }))
-                    }
-                    required
-                  />
-                </div>
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-semibold text-gray-400 uppercase tracking-widest">
-                    {t('accountsPage.color')}
-                  </label>
-                  <input
-                    className="w-10 h-10 rounded-lg border border-[var(--border)] cursor-pointer p-0.5 bg-white dark:bg-slate-800"
-                    type="color"
-                    value={cardForm.color}
-                    onChange={(e) =>
-                      setCardForm((v) => ({ ...v, color: e.target.value }))
-                    }
-                  />
-                </div>
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-semibold text-gray-400 uppercase tracking-widest">
-                    {t('accountsPage.last4')}
-                  </label>
-                  <Input
-                    className="w-24"
-                    placeholder="0000"
-                    value={cardForm.last4}
-                    onChange={(e) =>
-                      setCardForm((v) => ({
-                        ...v,
-                        last4: e.target.value
-                          .replace(/[^0-9]/g, '')
-                          .slice(0, 4),
-                      }))
-                    }
-                    required
-                  />
-                </div>
-                <Button type="submit" variant="primary">
-                  {t('accountsPage.addCard')}
-                </Button>
-              </form>
-            )}
-
-            {/* ── New Bank Account ── */}
-            {addTab === 'newBank' && (
-              <form onSubmit={addBankAccount} className="space-y-4">
-                <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto_auto_auto] gap-3 items-end">
-                  <div className="flex flex-col gap-1.5">
-                    <label className="text-xs font-semibold text-gray-400 uppercase tracking-widest">
-                      {t('accountsPage.accountName')}
-                    </label>
-                    <Input
-                      placeholder={t('accountsPage.accountNamePlaceholder')}
-                      value={bankForm.name}
-                      onChange={(e) =>
-                        setBankForm((v) => ({ ...v, name: e.target.value }))
-                      }
-                      required
-                    />
-                  </div>
-                  <div className="flex flex-col gap-1.5">
-                    <label className="text-xs font-semibold text-gray-400 uppercase tracking-widest">
-                      {t('accountsPage.color')}
-                    </label>
-                    <input
-                      className="w-10 h-10 rounded-lg border border-[var(--border)] cursor-pointer p-0.5 bg-white dark:bg-slate-800"
-                      type="color"
-                      value={bankForm.color}
-                      onChange={(e) =>
-                        setBankForm((v) => ({ ...v, color: e.target.value }))
-                      }
-                    />
-                  </div>
-                  <div className="flex flex-col gap-1.5">
-                    <label className="text-xs font-semibold text-gray-400 uppercase tracking-widest">
-                      {t('accountsPage.startingBalance')}
-                    </label>
-                    <Input
-                      type="number"
-                      step="0.01"
-                      className="w-32"
-                      placeholder="0.00"
-                      value={bankForm.initialBalance}
-                      onChange={(e) =>
-                        setBankForm((v) => ({
-                          ...v,
-                          initialBalance: e.target.value,
-                        }))
-                      }
-                    />
-                  </div>
-                  <Button
-                    variant="custom"
-                    type="submit"
-                    className="bg-emerald-600 hover:bg-emerald-700 text-white"
-                  >
-                    {t('accountsPage.addAccountBtn')}
-                  </Button>
-                </div>
-                <label className="flex items-start gap-3 rounded-xl border border-[var(--border)] bg-[var(--muted)]/40 px-4 py-3 cursor-pointer">
-                  <Switch
-                    checked={bankForm.isExcludedFromTotals}
-                    onCheckedChange={(val) =>
-                      setBankForm((v) => ({ ...v, isExcludedFromTotals: val }))
-                    }
-                  />
-                  <span className="min-w-0">
-                    <span className="block text-sm font-medium text-gray-700 dark:text-gray-200">
-                      {t('accountsPage.doNotIntegrate')}
-                    </span>
-                    <span className="block text-xs text-gray-400 mt-0.5">
-                      {t('accountsPage.doNotIntegrateHint')}
-                    </span>
-                  </span>
-                </label>
-              </form>
-            )}
-
-            {/* ── Link Existing Card ── */}
-            {addTab === 'linkCard' && (
-              <div className="flex gap-3 items-end">
-                <div className="flex flex-col gap-1.5 flex-1">
-                  <label className="text-xs font-semibold text-gray-400 uppercase tracking-widest">
-                    {t('accountsPage.hiddenCards')}
-                  </label>
-                  <Select
-                    value={cardToLink}
-                    onChange={(e) => setCardToLink(e.target.value)}
-                  >
-                    <option value="">
-                      {t('accountsPage.selectCardRestore')}
-                    </option>
-                    {hiddenCards.map((c) => (
-                      <option key={c.id} value={c.id}>
-                        {c.name} (•••• {c.last4})
-                      </option>
-                    ))}
-                  </Select>
-                </div>
-                <Button
-                  onClick={linkCard}
-                  disabled={!cardToLink}
-                  variant="primary"
-                >
-                  {t('accountsPage.restore')}
-                </Button>
-              </div>
-            )}
-
-            {/* ── Link Existing Bank Account ── */}
-            {addTab === 'linkBank' && (
-              <div className="flex gap-3 items-end">
-                <div className="flex flex-col gap-1.5 flex-1">
-                  <label className="text-xs font-semibold text-gray-400 uppercase tracking-widest">
-                    {t('accountsPage.hiddenBanks')}
-                  </label>
-                  <Select
-                    value={bankToLink}
-                    onChange={(e) => setBankToLink(e.target.value)}
-                  >
-                    <option value="">
-                      {t('accountsPage.selectBankRestore')}
-                    </option>
-                    {hiddenBankAccounts.map((a) => (
-                      <option key={a.id} value={a.id}>
-                        {a.name}
-                      </option>
-                    ))}
-                  </Select>
-                </div>
-                <Button
-                  variant="custom"
-                  onClick={linkBank}
-                  disabled={!bankToLink}
-                  className="bg-emerald-600 hover:bg-emerald-700 text-white"
-                >
-                  {t('accountsPage.restore')}
-                </Button>
-              </div>
-            )}
-          </div>
-        </section>
+      {failed && !loaded && (
+        <div className="rounded-2xl border border-[var(--border)] bg-[var(--card)] p-5 flex items-center justify-between gap-3 flex-wrap">
+          <p className="text-sm text-[var(--muted-foreground)]">
+            {t('accountsPage.historyFailed')}
+          </p>
+          <Button variant="outline" onClick={load}>
+            {t('common.retry')}
+          </Button>
+        </div>
       )}
 
-      <AccountBalanceCards
-        accounts={visibleBankAccounts}
-        refreshKey={historyTick}
-        onDetails={showAccountDetails}
+      {!loaded && !failed && (
+        <div className="h-40 rounded-2xl bg-[var(--muted)] animate-pulse" />
+      )}
+
+      {isEmpty && (
+        <div className="rounded-2xl border border-[var(--border)] bg-[var(--card)] p-10 text-center">
+          <p className="text-sm font-medium text-[var(--foreground)]">
+            {t('accountsPage.noAccounts1')}
+          </p>
+          <p className="text-xs text-[var(--muted-foreground)] mt-1">
+            {t('accountsPage.noAccounts2')}
+          </p>
+        </div>
+      )}
+
+      {loaded && integrated.length > 0 && (
+        <div>
+          <p className="text-[13px] font-medium text-[var(--muted-foreground)]">
+            {t('accountsPage.totalBalance')}
+          </p>
+          <p className="text-4xl font-bold tabular-nums text-[var(--foreground)]">
+            {signedMoney(total, money)}
+          </p>
+          <p className="text-[13px] text-[var(--muted-foreground)] mt-0.5">
+            {t('accountsPage.totalNote', { count: integrated.length })}
+            {isolatedCount > 0 &&
+              ` · ${t('accountsPage.isolatedNote', { count: isolatedCount })}`}
+          </p>
+        </div>
+      )}
+
+      <Section
+        title={t('accountsPage.banksSection')}
+        kind="bank"
+        items={visibleBanks}
+        rows={bankRows}
+      />
+      <Section
+        title={t('accountsPage.cardsSection')}
+        kind="card"
+        items={visibleCards}
+        rows={cardRows}
       />
 
-      {/* ── Main grid ─────────────────────────────────────────────────────── */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-        {/* Left: unified account list */}
-        <div className="md:col-span-1 space-y-4">
-          {/* Account list card */}
-          <div className="bg-white dark:bg-slate-900 rounded-2xl border border-[var(--border)] shadow-sm overflow-hidden">
-            <div className="px-4 pt-4 pb-3 border-b border-[var(--border)]">
-              <h3 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-widest">
-                {t('accountsPage.yourAccounts')}
-              </h3>
-            </div>
-            <ul className="divide-y divide-[var(--border)]">
-              {allItems.length === 0 && (
-                <li className="px-4 py-8 text-center text-sm text-gray-400">
-                  {t('accountsPage.noAccounts1')}
-                  <br />
-                  <span className="text-xs">
-                    {t('accountsPage.noAccounts2')}
-                  </span>
-                </li>
-              )}
-              {allItems.map((item) => {
-                const sel = isSelected(item.kind, item.id);
-                return (
-                  <li key={`${item.kind}-${item.id}`}>
-                    {/* Edit state */}
-                    {item.kind === ACCOUNT_CARD &&
-                      editingCardId === item.id && (
-                        <div className="px-4 py-3 space-y-2">
-                          <Input
-                            value={editCardForm.name}
-                            onChange={(e) =>
-                              setEditCardForm((v) => ({
-                                ...v,
-                                name: e.target.value,
-                              }))
-                            }
-                            placeholder={t('accountsPage.namePlaceholder')}
-                          />
-                          <div className="flex gap-2 items-center">
-                            <input
-                              className="w-8 h-8 rounded cursor-pointer border border-[var(--border)] p-0.5"
-                              type="color"
-                              value={editCardForm.color}
-                              onChange={(e) =>
-                                setEditCardForm((v) => ({
-                                  ...v,
-                                  color: e.target.value,
-                                }))
-                              }
-                            />
-                            <Input
-                              className="w-24"
-                              value={editCardForm.last4}
-                              onChange={(e) =>
-                                setEditCardForm((v) => ({
-                                  ...v,
-                                  last4: e.target.value
-                                    .replace(/[^0-9]/g, '')
-                                    .slice(0, 4),
-                                }))
-                              }
-                              placeholder={t('accountsPage.last4Placeholder')}
-                            />
-                          </div>
-                          <div className="flex gap-2">
-                            <Button
-                              className="text-xs px-3 py-1.5"
-                              onClick={() => saveEditCard(item.id)}
-                            >
-                              {t('accountsPage.save')}
-                            </Button>
-                            <Button
-                              className="text-xs px-3 py-1.5"
-                              variant="outline"
-                              onClick={() => setEditingCardId(null)}
-                            >
-                              {t('accountsPage.cancel')}
-                            </Button>
-                          </div>
-                        </div>
-                      )}
-                    {item.kind === ACCOUNT_BANK &&
-                      editingBankId === item.id && (
-                        <div className="px-4 py-3 space-y-2">
-                          <Input
-                            value={editBankForm.name}
-                            onChange={(e) =>
-                              setEditBankForm((v) => ({
-                                ...v,
-                                name: e.target.value,
-                              }))
-                            }
-                            placeholder={t('accountsPage.namePlaceholder')}
-                          />
-                          <input
-                            className="w-8 h-8 rounded cursor-pointer border border-[var(--border)] p-0.5"
-                            type="color"
-                            value={editBankForm.color}
-                            onChange={(e) =>
-                              setEditBankForm((v) => ({
-                                ...v,
-                                color: e.target.value,
-                              }))
-                            }
-                          />
-                          <label className="flex items-center justify-between gap-2 pt-1">
-                            <span className="text-xs font-medium text-gray-600 dark:text-gray-300">
-                              {t('accountsPage.doNotIntegrate')}
-                            </span>
-                            <Switch
-                              checked={editBankForm.isExcludedFromTotals}
-                              onCheckedChange={(val) =>
-                                setEditBankForm((v) => ({
-                                  ...v,
-                                  isExcludedFromTotals: val,
-                                }))
-                              }
-                            />
-                          </label>
-                          <div className="flex gap-2">
-                            <Button
-                              className="text-xs px-3 py-1.5"
-                              onClick={() => saveEditBank(item.id)}
-                            >
-                              {t('accountsPage.save')}
-                            </Button>
-                            <Button
-                              className="text-xs px-3 py-1.5"
-                              variant="outline"
-                              onClick={() => setEditingBankId(null)}
-                            >
-                              {t('accountsPage.cancel')}
-                            </Button>
-                          </div>
-                        </div>
-                      )}
-                    {/* Normal state */}
-                    {(item.kind === ACCOUNT_CARD
-                      ? editingCardId !== item.id
-                      : editingBankId !== item.id) && (
-                      // Row = select button + sibling actions (a <button> may not
-                      // contain the edit/hide buttons).
-                      <div
-                        className={cn(
-                          'w-full flex items-center justify-between gap-2 px-4 py-1.5 transition-colors group',
-                          sel
-                            ? 'bg-indigo-50 dark:bg-indigo-950/30'
-                            : 'hover:bg-gray-50 dark:hover:bg-slate-800/40',
-                        )}
-                        style={
-                          sel
-                            ? { borderLeft: `3px solid ${item.color}` }
-                            : { borderLeft: '3px solid transparent' }
-                        }
-                      >
-                        <button
-                          type="button"
-                          onClick={() =>
-                            setSelectedItem({ kind: item.kind, id: item.id })
-                          }
-                          aria-pressed={sel}
-                          className="flex items-center gap-3 min-w-0 flex-1 py-1.5 text-left rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ring)]"
-                        >
-                          <span className="text-base leading-none flex-shrink-0">
-                            {item.emoji}
-                          </span>
-                          <div className="min-w-0">
-                            <div className="flex items-center gap-1.5 min-w-0">
-                              <p className="text-sm font-medium text-gray-800 dark:text-gray-100 truncate">
-                                {item.name}
-                              </p>
-                              {item.kind === ACCOUNT_BANK &&
-                                item.isExcludedFromTotals && (
-                                  <span className="flex-shrink-0 inline-flex items-center px-1.5 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider bg-amber-100 text-amber-700 dark:bg-amber-950/50 dark:text-amber-400">
-                                    {t('accountsPage.isolated')}
-                                  </span>
-                                )}
-                            </div>
-                            <p className="text-[11px] text-gray-400 tracking-widest">
-                              {item.kind === ACCOUNT_CARD
-                                ? `•••• ${item.last4}`
-                                : item.initialBalance > 0
-                                  ? t('accountsPage.opens', {
-                                      amount: money(item.initialBalance),
-                                    })
-                                  : t('accountsPage.bankAccount')}
-                            </p>
-                          </div>
-                        </button>
-                        <div className="flex gap-1 flex-shrink-0">
-                          <IconButton
-                            title={t('accountsPage.edit')}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              if (item.kind === ACCOUNT_CARD) {
-                                setEditingCardId(item.id);
-                                setEditCardForm({
-                                  name: item.name,
-                                  color: item.color,
-                                  last4: item.last4,
-                                });
-                              } else {
-                                setEditingBankId(item.id);
-                                setEditBankForm({
-                                  name: item.name,
-                                  color: item.color,
-                                  isExcludedFromTotals:
-                                    !!item.isExcludedFromTotals,
-                                });
-                              }
-                            }}
-                          >
-                            <svg
-                              width="14"
-                              height="14"
-                              viewBox="0 0 24 24"
-                              fill="none"
-                              stroke="currentColor"
-                              strokeWidth="2"
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                            >
-                              <path d="M12 20h9" />
-                              <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L8 18l-4 1 1-4 11.5-11.5z" />
-                            </svg>
-                          </IconButton>
-                          <IconButton
-                            title={t('accountsPage.hide')}
-                            danger
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              if (item.kind === ACCOUNT_CARD) hideCard(item.id);
-                              else hideBank(item.id);
-                            }}
-                          >
-                            <svg
-                              width="14"
-                              height="14"
-                              viewBox="0 0 24 24"
-                              fill="none"
-                              stroke="currentColor"
-                              strokeWidth="2"
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                            >
-                              <path d="M3 6h18" />
-                              <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
-                              <path d="M10 11v6M14 11v6M15 6V4a2 2 0 0 0-2-2h-2a2 2 0 0 0-2 2v2" />
-                            </svg>
-                          </IconButton>
-                        </div>
-                      </div>
-                    )}
-                  </li>
-                );
-              })}
-            </ul>
-          </div>
+      {hiddenItems.length > 0 && (
+        <button
+          type="button"
+          onClick={() => setDialog('link')}
+          className="inline-flex items-center gap-1.5 min-h-11 text-[13px] font-medium text-[var(--muted-foreground)] hover:text-[var(--foreground)] rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ring)]"
+        >
+          <NavIcon name="eyeOff" size={16} />
+          {t('accountsPage.hiddenLink', { count: hiddenItems.length })}
+        </button>
+      )}
 
-          {/* Summary card */}
-          {selectedData && (
-            <div className="bg-white dark:bg-slate-900 rounded-2xl border border-[var(--border)] shadow-sm p-4">
-              <div className="flex items-center gap-2 mb-3">
-                <span
-                  className="h-2.5 w-2.5 rounded-full flex-shrink-0"
-                  style={{ background: selectedData.color }}
-                />
-                <h3 className="text-sm font-semibold text-gray-600 dark:text-gray-300 truncate">
-                  {selectedData.name}
-                </h3>
-              </div>
-              <div className="space-y-2 text-sm">
-                {(() => {
-                  const opening =
-                    selectedData.kind === ACCOUNT_BANK
-                      ? Number(selectedData.initialBalance || 0)
-                      : 0;
-                  return [
-                    ...(selectedData.kind === ACCOUNT_BANK
-                      ? [
-                          {
-                            key: 'opening',
-                            label: t('accountsPage.opening'),
-                            value: opening,
-                            color: 'text-gray-500 dark:text-gray-400',
-                          },
-                        ]
-                      : []),
-                    {
-                      key: 'income',
-                      label: t('accountsPage.income'),
-                      value: summary.income,
-                      color: 'text-emerald-600',
-                    },
-                    {
-                      key: 'expenses',
-                      label: t('accountsPage.expenses'),
-                      value: summary.expense,
-                      color: 'text-rose-500',
-                    },
-                    {
-                      key: 'balance',
-                      label: t('accountsPage.balance'),
-                      value: opening + summary.income - summary.expense,
-                      color: null,
-                      bold: true,
-                      border: true,
-                    },
-                  ];
-                })().map(({ key, label, value, color, bold, border }) => (
-                  <div
-                    key={key}
-                    className={cn(
-                      'flex items-center justify-between',
-                      border && 'border-t border-[var(--border)] pt-2 mt-2',
-                    )}
-                  >
-                    <span className="text-gray-500 dark:text-gray-400">
-                      {label}
-                    </span>
-                    <span
-                      className={cn('tabular-nums', bold && 'font-bold', color)}
-                    >
-                      {money(value)}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Right: transactions */}
-        <div className="md:col-span-2 space-y-4">
-          {/* Add transaction */}
-          <div className="bg-white dark:bg-slate-900 rounded-2xl border border-[var(--border)] shadow-sm overflow-hidden">
-            <div className="px-5 pt-4 pb-3 border-b border-[var(--border)] flex items-center justify-between gap-3">
-              <h3 className="text-sm font-semibold tracking-tight">
-                {txMode === 'expense'
-                  ? t('accountsPage.addExpenseHeader')
-                  : t('accountsPage.addIncomeHeader')}
-                {selectedData && (
-                  <span className="ml-1 font-normal text-gray-400">
-                    · {selectedData.name}
-                  </span>
-                )}
-              </h3>
-              <div className="inline-flex rounded-xl border border-[var(--border)] bg-[var(--muted)] p-0.5 gap-0.5">
-                {['expense', 'income'].map((m) => (
-                  <button
-                    key={m}
-                    type="button"
-                    onClick={() => setTxMode(m)}
-                    className={cn(
-                      'px-4 py-1.5 text-xs font-semibold rounded-lg transition-all duration-150',
-                      txMode === m
-                        ? m === 'expense'
-                          ? 'bg-rose-600 text-white shadow-sm'
-                          : 'bg-emerald-600 text-white shadow-sm'
-                        : 'text-gray-400 hover:text-gray-700 dark:hover:text-gray-200',
-                    )}
-                  >
-                    {m === 'expense'
-                      ? t('accountsPage.expenseTabLabel')
-                      : t('accountsPage.incomeTabLabel')}
-                  </button>
-                ))}
-              </div>
-            </div>
-            {addError && (
-              <Alert
-                variant="error"
-                message={addError}
-                onClose={() => setAddError('')}
-                className="mx-5 mt-3"
-              />
-            )}
-            <form
-              onSubmit={addTransaction}
-              className="p-5 grid grid-cols-1 sm:grid-cols-2 gap-3"
-            >
-              <div className="sm:col-span-2">
-                <Input
-                  placeholder={t('accountsPage.descriptionPlaceholder')}
-                  value={txForm.description}
-                  onChange={(e) =>
-                    setTxForm((v) => ({ ...v, description: e.target.value }))
-                  }
-                  required
-                />
-              </div>
-              <Input
-                type="number"
-                step="0.01"
-                placeholder={t('accountsPage.amountPlaceholder')}
-                value={txForm.amount}
-                onChange={(e) =>
-                  setTxForm((v) => ({ ...v, amount: e.target.value }))
-                }
-                required
-              />
-              <DateInput
-                value={txForm.date}
-                onChange={(e) =>
-                  setTxForm((v) => ({ ...v, date: e.target.value }))
-                }
-              />
-              <Select
-                value={txForm.categoryId}
-                onChange={(e) =>
-                  setTxForm((v) => ({ ...v, categoryId: e.target.value }))
-                }
-              >
-                <option value="">{t('accountsPage.noCategory')}</option>
-                {(txMode === 'expense' ? expenseCats : incomeCats).map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.name}
-                  </option>
-                ))}
-              </Select>
-              {txMode === 'expense' && (
-                <Select
-                  value={txForm.paymentMethod}
-                  onChange={(e) =>
-                    setTxForm((v) => ({ ...v, paymentMethod: e.target.value }))
-                  }
-                >
-                  <option value="cash">💵 {t('accountsPage.cash')}</option>
-                  <option value="card">💳 {t('accountsPage.card')}</option>
-                </Select>
-              )}
-              <div className="sm:col-span-2 flex justify-end">
-                <Button
-                  type="submit"
-                  disabled={!selectedItem}
-                  className={cn(
-                    'px-6 font-semibold',
-                    txMode === 'expense'
-                      ? 'bg-rose-600 hover:bg-rose-700 text-white'
-                      : 'bg-emerald-600 hover:bg-emerald-700 text-white',
-                  )}
-                >
-                  {!selectedItem
-                    ? t('accountsPage.selectAccountFirst')
-                    : txMode === 'expense'
-                      ? t('accountsPage.addExpenseBtn')
-                      : t('accountsPage.addIncomeBtn')}
-                </Button>
-              </div>
-            </form>
-          </div>
-
-          {/* Transaction history */}
-          <div
-            id="account-transactions"
-            className="scroll-mt-20 bg-white dark:bg-slate-900 rounded-2xl border border-[var(--border)] shadow-sm overflow-hidden"
-          >
-            <div className="px-5 py-3 border-b border-[var(--border)] flex items-center justify-between gap-3">
-              <h3 className="text-sm font-semibold tracking-tight">
-                {t('accountsPage.transactions')}
-              </h3>
-              <div className="flex items-center gap-2 text-xs">
-                <Select
-                  value={txLimit}
-                  onChange={(e) => setTxLimit(parseInt(e.target.value, 10))}
-                >
-                  {[10, 20, 50].map((n) => (
-                    <option key={n} value={n}>
-                      {t('accountsPage.perPage', { n })}
-                    </option>
-                  ))}
-                </Select>
-                <span className="text-gray-400">
-                  {t('accountsPage.total', { count: txTotal })}
-                </span>
-              </div>
-            </div>
-            {/* ── Mobile list (< sm): the table hid Amount off-screen ── */}
-            <ul className="sm:hidden divide-y divide-[var(--border)]">
-              {txItems.map((tx) => (
-                <li key={tx.id} className="px-4 py-3 flex items-center gap-3">
-                  <div className="flex-1 min-w-0 space-y-1">
-                    {/* No type badge here: the −/+ sign on the amount says it */}
-                    <p className="font-medium text-sm text-gray-800 dark:text-gray-100 truncate">
-                      {tx.description}
-                    </p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
-                      {tx.date}
-                      {tx.Category?.name ? ` · ${tx.Category.name}` : ''}
-                    </p>
-                  </div>
-                  <span
-                    className={cn(
-                      'text-sm font-semibold tabular-nums whitespace-nowrap',
-                      tx.type === 'expense'
-                        ? 'text-rose-600 dark:text-rose-400'
-                        : 'text-emerald-600 dark:text-emerald-400',
-                    )}
-                  >
-                    {tx.type === 'expense' ? '−' : '+'}
-                    {money(tx.amount)}
-                  </span>
-                  <TxRowActions
-                    onEdit={() => startEditTx(tx)}
-                    onHide={() => deleteTransaction(tx.id)}
-                  />
-                </li>
-              ))}
-              {txItems.length === 0 && (
-                <li className="py-12 px-4 text-center text-sm text-gray-500 dark:text-gray-400">
-                  <p>{t('accountsPage.noTransactions')}</p>
-                  <p className="text-xs mt-1">
-                    {selectedItem
-                      ? t('accountsPage.addFirstAbove')
-                      : t('accountsPage.selectFromLeft')}
-                  </p>
-                </li>
-              )}
-            </ul>
-
-            {/* ── Table (≥ sm) ── */}
-            <div className="hidden sm:block overflow-x-auto">
-              <table className="min-w-full text-sm">
-                <thead>
-                  <tr className="bg-gray-50 dark:bg-slate-800/50 border-b border-[var(--border)]">
-                    {[
-                      t('accountsPage.colDate'),
-                      t('accountsPage.colType'),
-                      t('accountsPage.colDescription'),
-                      t('accountsPage.colCategory'),
-                      t('accountsPage.colAmount'),
-                      '',
-                    ].map((h, i) => (
-                      <th
-                        key={i}
-                        className="px-4 py-2.5 text-left text-[11px] font-bold uppercase tracking-widest text-gray-400 whitespace-nowrap"
-                      >
-                        {h}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-[var(--border)]">
-                  {txItems.map((tx) => (
-                    <tr
-                      key={tx.id}
-                      className="group hover:bg-gray-50/60 dark:hover:bg-slate-800/30 transition-colors"
-                    >
-                      <td className="px-4 py-3 text-xs text-gray-400 whitespace-nowrap">
-                        {tx.date}
-                      </td>
-                      <td className="px-4 py-3">
-                        <Badge type={tx.type} />
-                      </td>
-                      <td className="px-4 py-3 font-medium text-gray-800 dark:text-gray-100 max-w-[180px] truncate">
-                        {tx.description}
-                      </td>
-                      <td className="px-4 py-3 text-xs text-gray-400">
-                        {tx.Category?.name || '—'}
-                      </td>
-                      <td
-                        className={cn(
-                          'px-4 py-3 font-semibold tabular-nums whitespace-nowrap',
-                          tx.type === 'expense'
-                            ? 'text-rose-600 dark:text-rose-400'
-                            : 'text-emerald-600 dark:text-emerald-400',
-                        )}
-                      >
-                        {tx.type === 'expense' ? '−' : '+'}
-                        {money(tx.amount)}
-                      </td>
-                      <td className="px-4 py-3 text-right">
-                        <TxRowActions
-                          onEdit={() => startEditTx(tx)}
-                          onHide={() => deleteTransaction(tx.id)}
-                        />
-                      </td>
-                    </tr>
-                  ))}
-                  {txItems.length === 0 && (
-                    <tr>
-                      <td
-                        colSpan={6}
-                        className="py-12 text-center text-sm text-gray-400"
-                      >
-                        <p>{t('accountsPage.noTransactions')}</p>
-                        <p className="text-xs mt-1">
-                          {selectedItem
-                            ? t('accountsPage.addFirstAbove')
-                            : t('accountsPage.selectFromLeft')}
-                        </p>
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-            {/* Pagination */}
-            <div className="px-5 py-3 border-t border-[var(--border)] flex items-center justify-between text-xs">
-              <span className="text-gray-400">
-                {t('accountsPage.page', { page: txPage, total: totalPages })}
-              </span>
-              <div className="flex gap-1">
-                {[
-                  {
-                    label: '«',
-                    action: () => setTxPage(1),
-                    disabled: txPage === 1,
-                  },
-                  {
-                    label: '‹',
-                    action: () => setTxPage((p) => Math.max(1, p - 1)),
-                    disabled: txPage === 1,
-                  },
-                  {
-                    label: '›',
-                    action: () => setTxPage((p) => Math.min(totalPages, p + 1)),
-                    disabled: txPage >= totalPages,
-                  },
-                  {
-                    label: '»',
-                    action: () => setTxPage(totalPages),
-                    disabled: txPage >= totalPages,
-                  },
-                ].map(({ label, action, disabled }) => (
-                  <button
-                    key={label}
-                    onClick={action}
-                    disabled={disabled}
-                    className="size-11 sm:size-7 rounded-lg border border-[var(--border)] text-sm font-medium transition-colors disabled:opacity-30 hover:bg-gray-100 dark:hover:bg-slate-800"
-                  >
-                    {label}
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Edit tx dialog */}
-      <EditTransactionDialog
-        open={editOpen}
-        onOpenChange={(o) => {
-          if (!o) cancelEditTx();
+      <AddAccountDialog
+        open={dialog !== null}
+        onOpenChange={(o) => !o && setDialog(null)}
+        initialTab={dialog || 'bank'}
+        hiddenItems={hiddenItems}
+        onRestore={(kind, id) => {
+          restore(kind, id);
+          if (hiddenItems.length === 1) setDialog(null);
         }}
-        initial={editTxData}
-        expenseCats={expenseCats}
-        incomeCats={incomeCats}
-        cards={[]}
-        onSave={saveEditTx}
-        onCancel={cancelEditTx}
-        error={editError}
+        onCreated={load}
       />
     </div>
   );

@@ -1,5 +1,9 @@
 import { isPrivacyOn, PRIVACY_MASK } from './privacy';
 
+/** Puts the minus before the currency symbol: −$12.00, not $-12.00. */
+export const signedMoney = (value, money) =>
+  `${value < 0 ? '−' : ''}${money(Math.abs(value))}`;
+
 /** Axis-friendly short number: 950 → "950", 1500 → "1.5k", 2000 → "2k", 1.2e6 → "1.2M". */
 export function compactNumber(value) {
   const n = Number(value) || 0;

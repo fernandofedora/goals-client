@@ -1,5 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
-import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom';
+import {
+  Link,
+  NavLink,
+  matchPath,
+  useLocation,
+  useNavigate,
+} from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import * as Dialog from '@radix-ui/react-dialog';
 import { cn } from '../lib/utils';
@@ -309,9 +315,23 @@ export default function AppShell({ theme, onToggleTheme, children }) {
       },
     ],
   ];
-  const tabPaths = tabs.map((tab) => tab.to);
   const moreIsActive =
-    moreOpen || !tabPaths.includes(location.pathname);
+    moreOpen ||
+    !tabs.some((tab) =>
+      tab.end
+        ? location.pathname === tab.to
+        : location.pathname.startsWith(tab.to),
+    );
+
+  // On an account's page, quick-add starts with that account selected.
+  const accountMatch = matchPath(
+    '/plans/accounts/:kind/:id',
+    location.pathname,
+  );
+  const currentAccount =
+    accountMatch && ['bank', 'card'].includes(accountMatch.params.kind)
+      ? { kind: accountMatch.params.kind, id: Number(accountMatch.params.id) }
+      : null;
 
   const privacyLabel = privacyMode
     ? t('nav.showAmounts')
@@ -612,7 +632,11 @@ export default function AppShell({ theme, onToggleTheme, children }) {
         </Dialog.Portal>
       </Dialog.Root>
 
-      <QuickAddTransaction open={quickAddOpen} onOpenChange={setQuickAddOpen} />
+      <QuickAddTransaction
+        open={quickAddOpen}
+        onOpenChange={setQuickAddOpen}
+        account={currentAccount}
+      />
     </div>
   );
 }

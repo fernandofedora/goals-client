@@ -11,7 +11,11 @@ import { emitTransactionsChanged } from '../utils/transactionEvents';
  * button or the `N` shortcut). Loads the pickers' data each time it opens so
  * categories/cards created elsewhere are always there.
  */
-export default function QuickAddTransaction({ open, onOpenChange }) {
+export default function QuickAddTransaction({
+  open,
+  onOpenChange,
+  account = null,
+}) {
   const { t } = useTranslation();
   const [data, setData] = useState(null); // { categories, cards, accounts }
   const [loadError, setLoadError] = useState(false);
@@ -41,6 +45,13 @@ export default function QuickAddTransaction({ open, onOpenChange }) {
     };
   }, [open]);
 
+  const accountName =
+    account &&
+    data &&
+    (account.kind === 'card' ? data.cards : data.accounts).find(
+      (x) => x.id === account.id,
+    )?.name;
+
   const onCreated = ({ addAnother }) => {
     emitTransactionsChanged();
     if (!addAnother) onOpenChange(false);
@@ -61,7 +72,9 @@ export default function QuickAddTransaction({ open, onOpenChange }) {
         >
           <div className="flex items-start justify-between gap-3 mb-4">
             <Dialog.Title className="text-lg font-bold text-gray-900 dark:text-white">
-              {t('quickAdd.title')}
+              {accountName
+                ? t('quickAdd.titleFor', { name: accountName })
+                : t('quickAdd.title')}
             </Dialog.Title>
             <Dialog.Close
               className="-mr-2 -mt-2 inline-flex items-center justify-center size-11 rounded-lg text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-slate-800 transition-colors cursor-pointer"
@@ -95,6 +108,7 @@ export default function QuickAddTransaction({ open, onOpenChange }) {
           ) : (
             <TransactionForm
               variant="dialog"
+              account={account}
               categories={data.categories}
               cards={data.cards}
               accounts={data.accounts}
