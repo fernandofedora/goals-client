@@ -10,7 +10,7 @@ import Alert from '../components/ui/alert';
 import EditTransactionDialog from '../components/ui/edit-transaction-dialog';
 import { cn } from '../lib/utils';
 import { useCurrency } from '../context/CurrencyContext';
-import { getPrefJSON, setPrefJSON } from '../utils/userStorage';
+import { getPrefJSON, setPrefJSON, removePref } from '../utils/userStorage';
 import { toast } from 'sonner';
 
 // ── Tiny helpers ──────────────────────────────────────────────────────────────
@@ -63,42 +63,22 @@ export default function Accounts() {
   const [categories, setCategories] = useState([]);
   const { symbol: cs } = useCurrency();
 
-  // ── Hidden cards & bank accounts (persisted locally) ──────────────────────
-  const [hiddenCardIds, setHiddenCardIds] = useState(() =>
-    getPrefJSON('accounts.hiddenCardIds', []),
-  );
-  const [hiddenBankIds, setHiddenBankIds] = useState(() =>
-    getPrefJSON('accounts.hiddenBankIds', []),
-  );
-
   // ── Selected account (unified: {kind, id}) ────────────────────────────────
   const [selectedItem, setSelectedItem] = useState(() =>
     getPrefJSON('accounts.selectedItem', null),
   );
 
-  const visibleCards = useMemo(
-    () => cards.filter((c) => !hiddenCardIds.includes(c.id)),
-    [cards, hiddenCardIds],
-  );
-  const hiddenCards = useMemo(
-    () => cards.filter((c) => hiddenCardIds.includes(c.id)),
-    [cards, hiddenCardIds],
-  );
+  // ── Hidden cards & bank accounts (persisted on the server: isHidden) ──────
+  const visibleCards = useMemo(() => cards.filter((c) => !c.isHidden), [cards]);
+  const hiddenCards = useMemo(() => cards.filter((c) => c.isHidden), [cards]);
   const visibleBankAccounts = useMemo(
-    () => bankAccounts.filter((a) => !hiddenBankIds.includes(a.id)),
-    [bankAccounts, hiddenBankIds],
+    () => bankAccounts.filter((a) => !a.isHidden),
+    [bankAccounts],
   );
   const hiddenBankAccounts = useMemo(
-    () => bankAccounts.filter((a) => hiddenBankIds.includes(a.id)),
-    [bankAccounts, hiddenBankIds],
+    () => bankAccounts.filter((a) => a.isHidden),
+    [bankAccounts],
   );
-
-  useEffect(() => {
-    setPrefJSON('accounts.hiddenCardIds', hiddenCardIds);
-  }, [hiddenCardIds]);
-  useEffect(() => {
-    setPrefJSON('accounts.hiddenBankIds', hiddenBankIds);
-  }, [hiddenBankIds]);
 
   useEffect(() => {
     setPrefJSON('accounts.selectedItem', selectedItem);
@@ -187,17 +167,38 @@ export default function Accounts() {
       api.get('/categories'),
       api.get('/accounts'),
     ]);
+
+    // One-time migration: items hidden before isHidden existed lived only in
+    // this browser's localStorage. Push them to the server, then drop the prefs.
+    const legacyCardIds = getPrefJSON('accounts.hiddenCardIds', []);
+    const legacyBankIds = getPrefJSON('accounts.hiddenBankIds', []);
+    if (legacyCardIds.length > 0 || legacyBankIds.length > 0) {
+      const toHide = (items, ids, path) =>
+        items
+          .filter((i) => ids.includes(i.id) && !i.isHidden)
+          .map((i) => {
+            i.isHidden = true;
+            return api.patch(`${path}/${i.id}/visibility`, { isHidden: true });
+          });
+      try {
+        await Promise.all([
+          ...toHide(cardsRes.data, legacyCardIds, '/cards'),
+          ...toHide(accRes.data, legacyBankIds, '/accounts'),
+        ]);
+        removePref('accounts.hiddenCardIds');
+        removePref('accounts.hiddenBankIds');
+      } catch {
+        /* keep the prefs so the migration retries on the next load */
+      }
+    }
+
     setCards(cardsRes.data);
     setCategories(catsRes.data);
     setBankAccounts(accRes.data);
 
     // Auto-select first visible item if nothing selected
-    const currentHidden = getPrefJSON('accounts.hiddenCardIds', []);
-    const currentHiddenBanks = getPrefJSON('accounts.hiddenBankIds', []);
-    const visible = cardsRes.data.filter((c) => !currentHidden.includes(c.id));
-    const visibleBanks = accRes.data.filter(
-      (a) => !currentHiddenBanks.includes(a.id),
-    );
+    const visible = cardsRes.data.filter((c) => !c.isHidden);
+    const visibleBanks = accRes.data.filter((a) => !a.isHidden);
     const current = getPrefJSON('accounts.selectedItem', null);
 
     if (!current) {
@@ -294,9 +295,23 @@ export default function Accounts() {
     }
   };
 
-  const hideCard = (id) => {
+  // Hide/restore is stored on the server so it syncs across devices
+  const setCardHidden = async (id, isHidden) => {
+    try {
+      await api.patch(`/cards/${id}/visibility`, { isHidden });
+      setCards((prev) =>
+        prev.map((c) => (c.id === id ? { ...c, isHidden } : c)),
+      );
+      return true;
+    } catch {
+      toast.error(t('accountsPage.cardUpdateFailed'));
+      return false;
+    }
+  };
+
+  const hideCard = async (id) => {
     if (!confirm(t('accountsPage.confirmHideCard'))) return;
-    setHiddenCardIds((prev) => [...prev, id]);
+    if (!(await setCardHidden(id, true))) return;
     if (selectedItem?.kind === ACCOUNT_CARD && selectedItem?.id === id) {
       const remaining = visibleCards.filter((c) => c.id !== id);
       const next = remaining[0]
@@ -308,11 +323,9 @@ export default function Accounts() {
     }
   };
 
-  const linkCard = () => {
+  const linkCard = async () => {
     if (!cardToLink) return;
-    setHiddenCardIds((prev) =>
-      prev.filter((hid) => hid !== parseInt(cardToLink, 10)),
-    );
+    if (!(await setCardHidden(parseInt(cardToLink, 10), false))) return;
     setCardToLink('');
     setShowAddPanel(false);
   };
@@ -353,10 +366,23 @@ export default function Accounts() {
     }
   };
 
+  const setBankHidden = async (id, isHidden) => {
+    try {
+      await api.patch(`/accounts/${id}/visibility`, { isHidden });
+      setBankAccounts((prev) =>
+        prev.map((a) => (a.id === id ? { ...a, isHidden } : a)),
+      );
+      return true;
+    } catch {
+      toast.error(t('accountsPage.accountUpdateFailed'));
+      return false;
+    }
+  };
+
   // Hide bank account (same pattern as cards — data preserved)
-  const hideBank = (id) => {
+  const hideBank = async (id) => {
     if (!confirm(t('accountsPage.confirmHideBank'))) return;
-    setHiddenBankIds((prev) => [...prev, id]);
+    if (!(await setBankHidden(id, true))) return;
     if (selectedItem?.kind === ACCOUNT_BANK && selectedItem?.id === id) {
       const remaining = visibleBankAccounts.filter((a) => a.id !== id);
       const next = remaining[0]
@@ -369,11 +395,9 @@ export default function Accounts() {
   };
 
   // Restore a hidden bank account
-  const linkBank = () => {
+  const linkBank = async () => {
     if (!bankToLink) return;
-    setHiddenBankIds((prev) =>
-      prev.filter((hid) => hid !== parseInt(bankToLink, 10)),
-    );
+    if (!(await setBankHidden(parseInt(bankToLink, 10), false))) return;
     setBankToLink('');
     setShowAddPanel(false);
   };
