@@ -997,7 +997,7 @@ export default function Dashboard() {
             <button
               id="budget-view-monthly"
               onClick={() => setBudgetView('monthly')}
-              className={`px-3 py-1.5 transition-colors ${
+              className={`min-h-11 sm:min-h-0 px-3 py-1.5 transition-colors ${
                 budgetView === 'monthly'
                   ? 'bg-indigo-600 text-white'
                   : 'bg-white dark:bg-slate-800 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-slate-700'
@@ -1008,7 +1008,7 @@ export default function Dashboard() {
             <button
               id="budget-view-category"
               onClick={() => setBudgetView('category')}
-              className={`px-3 py-1.5 transition-colors border-l border-[var(--border)] ${
+              className={`min-h-11 sm:min-h-0 px-3 py-1.5 transition-colors border-l border-[var(--border)] ${
                 budgetView === 'category'
                   ? 'bg-indigo-600 text-white'
                   : 'bg-white dark:bg-slate-800 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-slate-700'
