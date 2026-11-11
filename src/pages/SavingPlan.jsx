@@ -14,6 +14,7 @@ import { cn } from '../lib/utils';
 import { useCurrency } from '../context/CurrencyContext';
 import { getPref, setPref } from '../utils/userStorage';
 import { translateServerError } from '../utils/serverError';
+import { categoryOptions } from '../utils/categories';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 function Field({ label, children }) {
@@ -523,9 +524,9 @@ export default function SavingPlan() {
                   name="linkedCategoryId"
                 >
                   <option value="">{t('savings.noCategory')}</option>
-                  {categories.map((c) => (
-                    <option key={c.id} value={String(c.id)}>
-                      {c.name}
+                  {categoryOptions(categories).map((o) => (
+                    <option key={o.id} value={String(o.id)}>
+                      {o.label}
                     </option>
                   ))}
                 </Select>
@@ -758,9 +759,9 @@ export default function SavingPlan() {
                     name="linkedCategoryId"
                   >
                     <option value="">{t('savings.noCategory')}</option>
-                    {categories.map((c) => (
-                      <option key={c.id} value={String(c.id)}>
-                        {c.name}
+                    {categoryOptions(categories).map((o) => (
+                      <option key={o.id} value={String(o.id)}>
+                        {o.label}
                       </option>
                     ))}
                   </Select>

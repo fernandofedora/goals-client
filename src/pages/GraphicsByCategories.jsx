@@ -132,8 +132,9 @@ export default function GraphicsByCategories() {
   useEffect(() => {
     if (didInitDefaults) return;
     if (allCategories.length === 0) return;
+    // Top-level only: a parent's line already includes its subcategories.
     const defaults = allCategories
-      .filter((c) => c.type === txType)
+      .filter((c) => c.type === txType && !c.parentId)
       .map((c) => c.id);
     setSelectedIds(defaults);
     setDidInitDefaults(true);
@@ -288,7 +289,7 @@ export default function GraphicsByCategories() {
                 setTxType(next);
                 // Reset selection to all of the new type so user isn't stuck with mismatched IDs
                 const matching = allCategories
-                  .filter((c) => c.type === next)
+                  .filter((c) => c.type === next && !c.parentId)
                   .map((c) => c.id);
                 setSelectedIds(matching);
               }}

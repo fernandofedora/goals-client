@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { cn } from '../../lib/utils';
+import { categoryOptions } from '../../utils/categories';
 
 function ChevronDown({ open }) {
   return (
@@ -49,15 +50,21 @@ export default function CategoryMultiSelect({
       : [...selectedIds, id];
     onChange(next);
   };
-  const selectAll = () => onChange(categories.map((c) => c.id));
+  // "All" means every top-level line; each one already sums its subcategories.
+  const options = categoryOptions(categories);
+  const topIds = options.filter((o) => !o.category.parentId).map((o) => o.id);
+  const selectAll = () => onChange(topIds);
+  const allSelected =
+    selectedIds.length === topIds.length &&
+    topIds.every((id) => selectedSet.has(id));
   const clear = () => onChange([]);
 
   const triggerLabel =
     selectedIds.length === 0
       ? placeholderText
-      : selectedIds.length === categories.length
+      : allSelected
         ? t('ui.categoryMultiSelect.allCategories', {
-            count: categories.length,
+            count: topIds.length,
           })
         : t('ui.categoryMultiSelect.selectedCount', {
             count: selectedIds.length,
@@ -114,13 +121,15 @@ export default function CategoryMultiSelect({
                 {t('ui.categoryMultiSelect.empty')}
               </li>
             )}
-            {categories.map((c) => {
+            {options.map(({ category: c }) => {
               const checked = selectedSet.has(c.id);
+              const isChild = Boolean(c.parentId);
               return (
                 <li key={c.id}>
                   <label
                     className={cn(
-                      'flex items-center gap-2.5 px-3 py-2 cursor-pointer transition-colors',
+                      'flex items-center gap-2.5 pr-3 py-2 cursor-pointer transition-colors',
+                      isChild ? 'pl-8' : 'pl-3',
                       'hover:bg-[var(--muted)]',
                       checked && 'bg-[var(--muted)]/50',
                     )}

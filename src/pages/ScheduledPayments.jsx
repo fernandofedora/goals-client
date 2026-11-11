@@ -10,6 +10,7 @@ import { cn } from '../lib/utils';
 import { useCurrency } from '../context/CurrencyContext';
 import { intlLocale } from '../utils/dateLocale';
 import { translateServerError } from '../utils/serverError';
+import { categoryOptions } from '../utils/categories';
 
 const PERIOD_ICONS = {
   daily: '☀️',
@@ -704,13 +705,13 @@ export default function ScheduledPayments() {
               required
             >
               <option value="">{t('scheduledPayments.selectCategory')}</option>
-              {categories
-                .filter((c) => c.type === formState.type)
-                .map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.name}
-                  </option>
-                ))}
+              {categoryOptions(
+                categories.filter((c) => c.type === formState.type),
+              ).map((o) => (
+                <option key={o.id} value={o.id}>
+                  {o.label}
+                </option>
+              ))}
             </Select>
           </Field>
 

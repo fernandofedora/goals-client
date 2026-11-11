@@ -123,7 +123,15 @@
       "inUse": "No se puede eliminar: la categoría se usa en transacciones",
       "addFailed": "No se pudo agregar la categoría",
       "updateFailed": "No se pudo actualizar la categoría",
-      "deleteFailed": "No se pudo eliminar la categoría"
+      "deleteFailed": "No se pudo eliminar la categoría",
+      "addSub": "Agregar subcategoría a {{name}}",
+      "subOf": "Subcategoría de {{name}}",
+      "subPlaceholder": "ej. Luz",
+      "parent": "Categoría padre",
+      "noParent": "Ninguna (principal)",
+      "hasChildren": "Mueve o elimina primero sus subcategorías",
+      "tooDeep": "Solo se permite un nivel de subcategorías",
+      "invalidParent": "Esa categoría padre no es válida"
     },
     "cards": {
       "title": "Tarjetas de Crédito",
@@ -410,7 +418,8 @@
     "doNotIntegrate": "No integrar",
     "isolatedSub": "No se incluyen en los totales generales ni en los gráficos",
     "subtotal": "Subtotal",
-    "pageSubtitle": "Tus ingresos, gastos y saldos del periodo que elijas."
+    "pageSubtitle": "Tus ingresos, gastos y saldos del periodo que elijas.",
+    "noSubcategory": "Sin subcategoría"
   },
   "scheduledPayments": {
     "title": "Pagos Programados",

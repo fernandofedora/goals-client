@@ -5,6 +5,7 @@ import Select from './select';
 import DateInput from '../DateInput';
 import Button from './button';
 import { cn } from '../../lib/utils';
+import { categoryOptions } from '../../utils/categories';
 
 export default function EditTransactionDialog({
   open,
@@ -132,9 +133,9 @@ export default function EditTransactionDialog({
                 className="h-11 w-full"
               >
                 <option value="">{t('transactions.selectCategory')}</option>
-                {cats.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.name}
+                {categoryOptions(cats).map((o) => (
+                  <option key={o.id} value={o.id}>
+                    {o.label}
                   </option>
                 ))}
               </Select>

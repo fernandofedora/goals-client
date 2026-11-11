@@ -9,6 +9,7 @@ import Button from './ui/button';
 import Select from './ui/select';
 import { cn } from '../lib/utils';
 import { useCurrency } from '../context/CurrencyContext';
+import { categoryOptions } from '../utils/categories';
 
 const todayISO = () => {
   const d = new Date();
@@ -122,9 +123,7 @@ export default function TransactionForm({
   const [expense, setExpense] = useState(() =>
     emptyExpense(initialDate, account),
   );
-  const [income, setIncome] = useState(() =>
-    emptyIncome(initialDate, account),
-  );
+  const [income, setIncome] = useState(() => emptyIncome(initialDate, account));
   const [submitting, setSubmitting] = useState(false);
 
   const expenseCats = categories.filter((c) => c.type === 'expense');
@@ -308,9 +307,11 @@ export default function TransactionForm({
             required
           >
             <option value="">{t('addTransaction.selectCategory')}</option>
-            {(txMode === 'expense' ? expenseCats : incomeCats).map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.name}
+            {categoryOptions(
+              txMode === 'expense' ? expenseCats : incomeCats,
+            ).map((o) => (
+              <option key={o.id} value={o.id}>
+                {o.label}
               </option>
             ))}
           </Select>

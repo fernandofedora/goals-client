@@ -16,6 +16,7 @@ import { intlLocale } from '../utils/dateLocale';
 import { signedMoney } from '../utils/format';
 import { onTransactionsChanged } from '../utils/transactionEvents';
 import { getPref, setPref } from '../utils/userStorage';
+import { categoryOptions } from '../utils/categories';
 
 const PAGE_SIZE_OPTIONS = [10, 25, 50, 100];
 const DEFAULT_PAGE_SIZE = 25;
@@ -604,9 +605,9 @@ export default function TransactionHistory({
                 onChange={onField('categoryId')}
               >
                 <option value="">{t('addTransaction.allCategories')}</option>
-                {categories.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.name}
+                {categoryOptions(categories).map((o) => (
+                  <option key={o.id} value={o.id}>
+                    {o.label}
                   </option>
                 ))}
               </Select>
@@ -719,9 +720,9 @@ export default function TransactionHistory({
             onChange={(e) => setBulkCategory(e.target.value)}
           >
             <option value="">{t('addTransaction.changeCategory')}</option>
-            {bulkCategories.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.name}
+            {categoryOptions(bulkCategories).map((o) => (
+              <option key={o.id} value={o.id}>
+                {o.label}
               </option>
             ))}
           </Select>

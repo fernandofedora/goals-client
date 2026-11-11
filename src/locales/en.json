@@ -123,7 +123,15 @@
       "inUse": "Cannot delete: category is used in transactions",
       "addFailed": "Failed to add category",
       "updateFailed": "Failed to update category",
-      "deleteFailed": "Failed to delete category"
+      "deleteFailed": "Failed to delete category",
+      "addSub": "Add subcategory to {{name}}",
+      "subOf": "Subcategory of {{name}}",
+      "subPlaceholder": "e.g. Electricity",
+      "parent": "Parent category",
+      "noParent": "None (top level)",
+      "hasChildren": "Move or delete its subcategories first",
+      "tooDeep": "Only one level of subcategories is allowed",
+      "invalidParent": "That parent category is not valid"
     },
     "cards": {
       "title": "Credit Cards",
@@ -410,7 +418,8 @@
     "doNotIntegrate": "Do not integrate",
     "isolatedSub": "Not included in general totals or charts",
     "subtotal": "Subtotal",
-    "pageSubtitle": "Your income, spending and balances for the period you pick."
+    "pageSubtitle": "Your income, spending and balances for the period you pick.",
+    "noSubcategory": "No subcategory"
   },
   "scheduledPayments": {
     "title": "Scheduled Payments",

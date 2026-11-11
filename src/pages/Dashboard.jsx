@@ -32,6 +32,7 @@ import { compactNumber } from '../utils/format';
 import { onTransactionsChanged } from '../utils/transactionEvents';
 import { getPref, setPref } from '../utils/userStorage';
 import { intlLocale } from '../utils/dateLocale';
+import CategoryLegend from '../components/CategoryLegend';
 
 // currencyFormatter is now defined inside the component to use dynamic symbol
 
@@ -877,36 +878,10 @@ export default function Dashboard() {
                   </Pie>
                 </PieChart>
               </ChartContainer>
-              {/* Legend list */}
-              <ul className="mt-3 divide-y divide-gray-100 dark:divide-slate-800">
-                {catData.map((c) => {
-                  const totalExp = summary?.totals?.expense || 0;
-                  const pct =
-                    totalExp > 0 ? ((c.amount / totalExp) * 100).toFixed(1) : 0;
-                  return (
-                    <li
-                      key={c.name}
-                      className="flex items-center justify-between py-1.5 text-sm"
-                    >
-                      <div className="flex items-center gap-2">
-                        <span
-                          className="h-2.5 w-2.5 rounded-full flex-shrink-0"
-                          style={{ background: c.color }}
-                        />
-                        <span className="text-gray-700 dark:text-gray-300 truncate max-w-[160px]">
-                          {c.name}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-3 text-right">
-                        <span className="text-gray-400 text-xs">{pct}%</span>
-                        <span className="font-semibold text-gray-800 dark:text-gray-100 tabular-nums">
-                          {money(c.amount)}
-                        </span>
-                      </div>
-                    </li>
-                  );
-                })}
-              </ul>
+              <CategoryLegend
+                items={catData}
+                total={summary?.totals?.expense || 0}
+              />
             </>
           )}
         </div>
@@ -945,35 +920,10 @@ export default function Dashboard() {
                   </Pie>
                 </PieChart>
               </ChartContainer>
-              <ul className="mt-3 divide-y divide-gray-100 dark:divide-slate-800">
-                {incomeCatData.map((c) => {
-                  const totalInc = summary?.totals?.income || 0;
-                  const pct =
-                    totalInc > 0 ? ((c.amount / totalInc) * 100).toFixed(1) : 0;
-                  return (
-                    <li
-                      key={c.name}
-                      className="flex items-center justify-between py-1.5 text-sm"
-                    >
-                      <div className="flex items-center gap-2">
-                        <span
-                          className="h-2.5 w-2.5 rounded-full flex-shrink-0"
-                          style={{ background: c.color }}
-                        />
-                        <span className="text-gray-700 dark:text-gray-300 truncate max-w-[160px]">
-                          {c.name}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-3 text-right">
-                        <span className="text-gray-400 text-xs">{pct}%</span>
-                        <span className="font-semibold text-gray-800 dark:text-gray-100 tabular-nums">
-                          {money(c.amount)}
-                        </span>
-                      </div>
-                    </li>
-                  );
-                })}
-              </ul>
+              <CategoryLegend
+                items={incomeCatData}
+                total={summary?.totals?.income || 0}
+              />
             </>
           )}
         </div>
