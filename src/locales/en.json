@@ -873,7 +873,14 @@
     "profileUpdated": "Profile updated successfully ✓",
     "updateProfileFailed": "Error updating profile",
     "passwordChanged": "Password changed successfully ✓",
-    "changePasswordFailed": "Error changing password"
+    "changePasswordFailed": "Error changing password",
+    "notifications": "Notifications",
+    "notificationsSub": "Alerts we send you by email",
+    "budgetAlerts": "Budget alerts",
+    "budgetAlertsDesc": "We email you when a category's spending this month reaches 80% and 100% of its budget.",
+    "budgetAlertsOn": "Budget alerts turned on",
+    "budgetAlertsOff": "Budget alerts turned off",
+    "budgetAlertsFailed": "Couldn't save the preference"
   },
   "admin": {
     "title": "User Manager",

@@ -4,6 +4,7 @@ import api from '../api';
 import Button from '../components/ui/button';
 import Input from '../components/ui/input';
 import Alert from '../components/ui/alert';
+import Switch from '../components/ui/switch';
 import { cn } from '../lib/utils';
 import { intlLocale } from '../utils/dateLocale';
 import { translateServerError } from '../utils/serverError';
@@ -243,6 +244,9 @@ export default function Profile() {
   const [pwErrors, setPwErrors] = useState({});
   const [statusMsg, setStatusMsg] = useState(null);
   const [statusType, setStatusType] = useState('success');
+  // null until /user/me answers, so the switch never flips on load.
+  const [budgetAlerts, setBudgetAlerts] = useState(null);
+  const [savingAlerts, setSavingAlerts] = useState(false);
 
   // ── Load user ─────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -256,6 +260,7 @@ export default function Profile() {
         setInitialEmail(data.email || '');
         setCreatedAt(data.createdAt || '');
         setLastLoginAt(data.lastLoginAt || '');
+        setBudgetAlerts(data.budgetAlertsEnabled !== false);
       })
       .catch(() => {});
     return () => {
@@ -305,6 +310,28 @@ export default function Profile() {
       setStatusMsg(translateServerError(err, t, 'profile.updateProfileFailed'));
     } finally {
       setSubmittingProfile(false);
+    }
+  };
+
+  // ── Budget alerts preference (saved on toggle) ───────────────────────────
+  const onToggleBudgetAlerts = async (next) => {
+    setBudgetAlerts(next);
+    setSavingAlerts(true);
+    try {
+      const { data } = await api.put('/user/profile', {
+        budgetAlertsEnabled: next,
+      });
+      setBudgetAlerts(data.budgetAlertsEnabled);
+      setStatusType('success');
+      setStatusMsg(
+        next ? t('profile.budgetAlertsOn') : t('profile.budgetAlertsOff'),
+      );
+    } catch (err) {
+      setBudgetAlerts(!next);
+      setStatusType('error');
+      setStatusMsg(translateServerError(err, t, 'profile.budgetAlertsFailed'));
+    } finally {
+      setSavingAlerts(false);
     }
   };
 
@@ -648,6 +675,38 @@ export default function Profile() {
                 value={fmt(lastLoginAt)}
               />
               <StatRow label={t('profile.email')} value={email} />
+            </div>
+          </Card>
+
+          <Card
+            icon="🔔"
+            accent={heroColor}
+            title={t('profile.notifications')}
+            subtitle={t('profile.notificationsSub')}
+          >
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p
+                  id="budget-alerts-label"
+                  className="text-sm font-medium text-gray-800 dark:text-gray-100"
+                >
+                  {t('profile.budgetAlerts')}
+                </p>
+                <p
+                  id="budget-alerts-desc"
+                  className="text-xs text-gray-600 dark:text-gray-300 mt-1"
+                >
+                  {t('profile.budgetAlertsDesc')}
+                </p>
+              </div>
+              <Switch
+                checked={Boolean(budgetAlerts)}
+                disabled={budgetAlerts === null || savingAlerts}
+                onCheckedChange={onToggleBudgetAlerts}
+                aria-labelledby="budget-alerts-label"
+                aria-describedby="budget-alerts-desc"
+                className="mt-0.5"
+              />
             </div>
           </Card>
 

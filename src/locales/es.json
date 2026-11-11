@@ -873,7 +873,14 @@
     "profileUpdated": "Perfil actualizado correctamente ✓",
     "updateProfileFailed": "Error al actualizar perfil",
     "passwordChanged": "Contraseña cambiada correctamente ✓",
-    "changePasswordFailed": "Error al cambiar contraseña"
+    "changePasswordFailed": "Error al cambiar contraseña",
+    "notifications": "Notificaciones",
+    "notificationsSub": "Avisos que te enviamos por correo",
+    "budgetAlerts": "Alertas de presupuesto",
+    "budgetAlertsDesc": "Te escribimos cuando el gasto del mes en una categoría llega al 80% y al 100% de su presupuesto.",
+    "budgetAlertsOn": "Alertas de presupuesto activadas",
+    "budgetAlertsOff": "Alertas de presupuesto desactivadas",
+    "budgetAlertsFailed": "No se pudo guardar la preferencia"
   },
   "admin": {
     "title": "Gestor de Usuarios",
