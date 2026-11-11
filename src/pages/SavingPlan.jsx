@@ -15,6 +15,7 @@ import { useCurrency } from '../context/CurrencyContext';
 import { getPref, setPref } from '../utils/userStorage';
 import { translateServerError } from '../utils/serverError';
 import { categoryOptions } from '../utils/categories';
+import { intlLocale } from '../utils/dateLocale';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 function Field({ label, children }) {
@@ -94,6 +95,56 @@ function Card({ title, subtitle, action, children, noPad }) {
 }
 
 // ── SVG icons ─────────────────────────────────────────────────────────────────
+const EMPTY_PLAN_FORM = {
+  name: '',
+  targetAmount: '',
+  linkedCategoryId: '',
+  targetDate: '',
+  initialAmount: '',
+};
+
+const formFromPlan = (p) => ({
+  name: p.name || '',
+  targetAmount: String(p.targetAmount || ''),
+  linkedCategoryId: String(p.linkedCategoryId || ''),
+  targetDate: p.targetDate || '',
+  initialAmount: Number(p.initialAmount) > 0 ? String(p.initialAmount) : '',
+});
+
+const formatDay = (iso) =>
+  new Date(`${iso}T00:00:00`).toLocaleDateString(intlLocale(), {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+  });
+
+// Soft tints with -700 text keep 4.5:1 on both the tab and the card.
+const STATUS_TONES = {
+  on_track:
+    'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800',
+  ahead:
+    'bg-sky-50 text-sky-700 border-sky-200 dark:bg-sky-950/40 dark:text-sky-300 dark:border-sky-800',
+  behind:
+    'bg-amber-50 text-amber-800 border-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800',
+  completed:
+    'bg-emerald-600 text-white border-emerald-600 dark:bg-emerald-500 dark:text-emerald-950 dark:border-emerald-500',
+};
+
+function GoalStatusBadge({ status }) {
+  const { t } = useTranslation();
+  if (!status) return null;
+  return (
+    <span
+      className={cn(
+        'inline-flex items-center px-2 py-0.5 rounded-md border text-[11px] font-semibold leading-4',
+        STATUS_TONES[status],
+      )}
+    >
+      {t(`savings.status.${status}`)}
+    </span>
+  );
+}
+
 const EditIcon = () => (
   <svg
     width="14"
@@ -163,11 +214,7 @@ export default function SavingPlan() {
   const [categories, setCategories] = useState([]);
   const [plans, setPlans] = useState([]);
   const [selectedPlanId, setSelectedPlanId] = useState('');
-  const [planForm, setPlanForm] = useState({
-    name: '',
-    targetAmount: '',
-    linkedCategoryId: '',
-  });
+  const [planForm, setPlanForm] = useState(EMPTY_PLAN_FORM);
   const [summary, setSummary] = useState(null);
   const [contrForm, setContrForm] = useState({
     amount: '',
@@ -205,11 +252,7 @@ export default function SavingPlan() {
           const chosen =
             p.find((x) => String(x.id) === String(savedId)) || p[0];
           setSelectedPlanId(String(chosen.id));
-          setPlanForm({
-            name: chosen.name || '',
-            targetAmount: String(chosen.targetAmount || ''),
-            linkedCategoryId: String(chosen.linkedCategoryId || ''),
-          });
+          setPlanForm(formFromPlan(chosen));
         }
       } catch (err) {
         console.error(err);
@@ -239,11 +282,7 @@ export default function SavingPlan() {
   // sync planForm when switching plans
   useEffect(() => {
     if (!currentPlan) return;
-    setPlanForm({
-      name: currentPlan.name || '',
-      targetAmount: String(currentPlan.targetAmount || ''),
-      linkedCategoryId: String(currentPlan.linkedCategoryId || ''),
-    });
+    setPlanForm(formFromPlan(currentPlan));
   }, [currentPlan]);
 
   // reset contribution form + pagination when switching plans
@@ -281,6 +320,10 @@ export default function SavingPlan() {
         linkedCategoryId: planForm.linkedCategoryId
           ? Number(planForm.linkedCategoryId)
           : null,
+        targetDate: planForm.targetDate || null,
+        initialAmount: planForm.initialAmount
+          ? Number(planForm.initialAmount)
+          : 0,
       };
       const res = await api.post('/savings/plans', body);
       setPlans((prev) => [res.data, ...prev]);
@@ -306,6 +349,10 @@ export default function SavingPlan() {
         linkedCategoryId: planForm.linkedCategoryId
           ? Number(planForm.linkedCategoryId)
           : null,
+        targetDate: planForm.targetDate || null,
+        initialAmount: planForm.initialAmount
+          ? Number(planForm.initialAmount)
+          : 0,
       };
       const res = await api.put(`/savings/plans/${selectedPlanId}`, body);
       setPlans((prev) =>
@@ -406,7 +453,7 @@ export default function SavingPlan() {
   const progressPct = summary
     ? Math.min(Math.round(summary.progressPercent), 100)
     : 0;
-  const totalSaved = summary ? summary.totalManual + summary.totalAuto : 0;
+  const totalSaved = summary ? (summary.initialAmount || 0) + summary.totalManual + summary.totalAuto : 0;
 
   const rows = useMemo(() => {
     if (!summary) return [];
@@ -475,11 +522,7 @@ export default function SavingPlan() {
               } else {
                 setShowNewPlan(true);
                 setSelectedPlanId('');
-                setPlanForm({
-                  name: '',
-                  targetAmount: '',
-                  linkedCategoryId: '',
-                });
+                setPlanForm(EMPTY_PLAN_FORM);
               }
             }}
           >
@@ -531,6 +574,25 @@ export default function SavingPlan() {
                   ))}
                 </Select>
               </Field>
+              <Field label={t('savings.targetDate')}>
+                <DateInput
+                  name="targetDate"
+                  value={planForm.targetDate}
+                  onChange={onPlanField}
+                  placeholder={t('savings.noTargetDate')}
+                />
+              </Field>
+              <Field label={t('savings.initialAmount', { symbol: cs })}>
+                <Input
+                  name="initialAmount"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={planForm.initialAmount}
+                  onChange={onPlanField}
+                  placeholder="0.00"
+                />
+              </Field>
             </div>
             <div className="mt-4 flex justify-end">
               <Button
@@ -558,13 +620,20 @@ export default function SavingPlan() {
                 setShowNewPlan(false);
               }}
               className={cn(
-                'px-4 py-2 rounded-xl text-sm font-medium transition-all border',
+                'inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all border cursor-pointer',
                 String(p.id) === selectedPlanId
                   ? 'bg-indigo-600 text-white border-indigo-600 shadow-sm'
                   : 'bg-white dark:bg-slate-900 text-gray-600 dark:text-gray-300 border-[var(--border)] hover:border-indigo-400',
               )}
             >
               {p.name}
+              <GoalStatusBadge
+                status={
+                  String(p.id) === selectedPlanId
+                    ? summary?.status
+                    : p.progress?.status
+                }
+              />
             </button>
           ))}
         </div>
@@ -635,6 +704,23 @@ export default function SavingPlan() {
                         )?.name || t('savings.linkedCategoryFallback')}
                       </span>
                     )}
+                    {currentPlan.targetDate && (
+                      <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-gray-600 dark:text-gray-300">
+                        <GoalStatusBadge status={summary?.status} />
+                        <span>
+                          {t('savings.dueOn', {
+                            date: formatDay(currentPlan.targetDate),
+                          })}
+                        </span>
+                        {summary?.suggestedMonthly > 0 && (
+                          <span className="font-medium text-gray-800 dark:text-gray-100">
+                            {t('savings.suggestedMonthly', {
+                              amount: fmt(summary.suggestedMonthly),
+                            })}
+                          </span>
+                        )}
+                      </div>
+                    )}
                   </div>
 
                   {/* Progress bar */}
@@ -680,8 +766,24 @@ export default function SavingPlan() {
                   </div>
 
                   {/* Mini stats row */}
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                  <div
+                    className={cn(
+                      'grid grid-cols-2 gap-3',
+                      summary?.initialAmount > 0
+                        ? 'sm:grid-cols-4'
+                        : 'sm:grid-cols-3',
+                    )}
+                  >
                     {[
+                      ...(summary?.initialAmount > 0
+                        ? [
+                            {
+                              label: t('savings.initial'),
+                              value: fmt(summary.initialAmount),
+                              color: 'text-gray-700 dark:text-gray-200',
+                            },
+                          ]
+                        : []),
                       {
                         label: t('savings.manual'),
                         value: fmt(summary?.totalManual ?? 0),
@@ -766,6 +868,27 @@ export default function SavingPlan() {
                     ))}
                   </Select>
                 </Field>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <Field label={t('savings.targetDate')}>
+                    <DateInput
+                      name="targetDate"
+                      value={planForm.targetDate}
+                      onChange={onPlanField}
+                      placeholder={t('savings.noTargetDate')}
+                    />
+                  </Field>
+                  <Field label={t('savings.initialAmount', { symbol: cs })}>
+                    <Input
+                      name="initialAmount"
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      value={planForm.initialAmount}
+                      onChange={onPlanField}
+                      placeholder="0.00"
+                    />
+                  </Field>
+                </div>
                 <div className="flex gap-2 pt-1">
                   <Button
                     variant="custom"

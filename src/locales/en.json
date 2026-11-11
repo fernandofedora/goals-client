@@ -662,7 +662,19 @@
     "contribUpdated": "Contribution updated ✓",
     "updateContribFailed": "Error updating contribution",
     "contribDeleted": "Contribution deleted",
-    "deleteContribFailed": "Error deleting"
+    "deleteContribFailed": "Error deleting",
+    "targetDate": "Target date (optional)",
+    "noTargetDate": "No date",
+    "initialAmount": "Already saved ({{symbol}})",
+    "initial": "Already saved",
+    "dueOn": "Due {{date}}",
+    "suggestedMonthly": "Suggested: {{amount}} per month",
+    "status": {
+      "on_track": "On track",
+      "ahead": "Ahead",
+      "behind": "Behind",
+      "completed": "Completed"
+    }
   },
   "accountsPage": {
     "title": "Accounts",

@@ -662,7 +662,19 @@
     "contribUpdated": "Contribución actualizada ✓",
     "updateContribFailed": "Error al actualizar contribución",
     "contribDeleted": "Contribución eliminada",
-    "deleteContribFailed": "Error al eliminar"
+    "deleteContribFailed": "Error al eliminar",
+    "targetDate": "Fecha objetivo (opcional)",
+    "noTargetDate": "Sin fecha",
+    "initialAmount": "Ya ahorrado ({{symbol}})",
+    "initial": "Ya ahorrado",
+    "dueOn": "Meta para el {{date}}",
+    "suggestedMonthly": "Sugerido: {{amount}} al mes",
+    "status": {
+      "on_track": "En camino",
+      "ahead": "Adelantada",
+      "behind": "Atrasada",
+      "completed": "Completada"
+    }
   },
   "accountsPage": {
     "title": "Cuentas",
