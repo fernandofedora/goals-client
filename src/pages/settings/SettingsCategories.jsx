@@ -139,6 +139,7 @@ export default function SettingsCategories() {
     parentId: '',
   });
   const [deleteCatId, setDeleteCatId] = useState(null);
+  const [addingSuggested, setAddingSuggested] = useState(false);
 
   const load = useCallback(async () => {
     try {
@@ -152,6 +153,26 @@ export default function SettingsCategories() {
   useEffect(() => {
     load();
   }, [load]);
+
+  // Only creates the suggested categories the user is missing.
+  const addSuggested = async () => {
+    setAddingSuggested(true);
+    try {
+      const { data } = await api.post('/categories/suggested');
+      if (data.created > 0) {
+        toast.success(
+          t('settings.categories.suggestedAdded', { count: data.created }),
+        );
+        load();
+      } else {
+        toast.info(t('settings.categories.suggestedNone'));
+      }
+    } catch {
+      toast.error(t('settings.categories.suggestedFailed'));
+    } finally {
+      setAddingSuggested(false);
+    }
+  };
 
   const openNew = (type, parent = null) => {
     const sameForm =
@@ -352,6 +373,18 @@ export default function SettingsCategories() {
       <SectionCard
         title={t('settings.categories.title')}
         subtitle={t('settings.categories.subtitle')}
+        action={
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={addSuggested}
+            disabled={addingSuggested}
+          >
+            {addingSuggested
+              ? t('settings.categories.suggestedAdding')
+              : t('settings.categories.addSuggested')}
+          </Button>
+        }
       >
         {renderSection('expense')}
         {renderSection('income')}

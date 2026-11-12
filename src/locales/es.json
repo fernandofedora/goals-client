@@ -98,7 +98,7 @@
     },
     "categories": {
       "title": "Categorías",
-      "subtitle": "Administra tus categorías de gastos e ingresos",
+      "subtitle": "Administra tus categorías de gastos, ingresos y transferencias",
       "expense": "Gasto",
       "income": "Ingreso",
       "add": "+ Agregar",
@@ -134,7 +134,13 @@
       "invalidParent": "Esa categoría padre no es válida",
       "transfer": "Transferencia",
       "emptyTransfer": "Aún no hay categorías de transferencia. Úsalas para mover dinero entre tus cuentas o pagar la tarjeta sin que cuente como gasto.",
-      "transferNamePlaceholder": "ej. Pago de tarjeta"
+      "transferNamePlaceholder": "ej. Pago de tarjeta",
+      "addSuggested": "Agregar categorías sugeridas",
+      "suggestedAdding": "Agregando…",
+      "suggestedAdded_one": "Se agregó {{count}} categoría sugerida",
+      "suggestedAdded_other": "Se agregaron {{count}} categorías sugeridas",
+      "suggestedNone": "Ya tienes todas las categorías sugeridas",
+      "suggestedFailed": "No se pudieron agregar las categorías sugeridas"
     },
     "cards": {
       "title": "Tarjetas de Crédito",

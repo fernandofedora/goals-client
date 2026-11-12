@@ -98,7 +98,7 @@
     },
     "categories": {
       "title": "Categories",
-      "subtitle": "Manage your expense and income categories",
+      "subtitle": "Manage your expense, income and transfer categories",
       "expense": "Expense",
       "income": "Income",
       "add": "+ Add",
@@ -134,7 +134,13 @@
       "invalidParent": "That parent category is not valid",
       "transfer": "Transfer",
       "emptyTransfer": "No transfer categories yet. Use them to move money between your accounts or pay your card without it counting as an expense.",
-      "transferNamePlaceholder": "e.g. Card payment"
+      "transferNamePlaceholder": "e.g. Card payment",
+      "addSuggested": "Add suggested categories",
+      "suggestedAdding": "Adding…",
+      "suggestedAdded_one": "Added {{count}} suggested category",
+      "suggestedAdded_other": "Added {{count}} suggested categories",
+      "suggestedNone": "You already have all the suggested categories",
+      "suggestedFailed": "Couldn't add the suggested categories"
     },
     "cards": {
       "title": "Credit Cards",
