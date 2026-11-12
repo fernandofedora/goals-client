@@ -131,7 +131,10 @@
       "noParent": "None (top level)",
       "hasChildren": "Move or delete its subcategories first",
       "tooDeep": "Only one level of subcategories is allowed",
-      "invalidParent": "That parent category is not valid"
+      "invalidParent": "That parent category is not valid",
+      "transfer": "Transfer",
+      "emptyTransfer": "No transfer categories yet. Use them to move money between your accounts or pay your card without it counting as an expense.",
+      "transferNamePlaceholder": "e.g. Card payment"
     },
     "cards": {
       "title": "Credit Cards",
@@ -419,7 +422,8 @@
     "isolatedSub": "Not included in general totals or charts",
     "subtotal": "Subtotal",
     "pageSubtitle": "Your income, spending and balances for the period you pick.",
-    "noSubcategory": "No subcategory"
+    "noSubcategory": "No subcategory",
+    "transfersNote": "Moved between your accounts this period: {{amount}}. It doesn't count as income or expense."
   },
   "scheduledPayments": {
     "title": "Scheduled Payments",

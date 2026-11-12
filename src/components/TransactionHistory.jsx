@@ -16,7 +16,7 @@ import { intlLocale } from '../utils/dateLocale';
 import { signedMoney } from '../utils/format';
 import { onTransactionsChanged } from '../utils/transactionEvents';
 import { getPref, setPref } from '../utils/userStorage';
-import { categoryOptions } from '../utils/categories';
+import { categoryOptions, categoriesForTxType } from '../utils/categories';
 
 const PAGE_SIZE_OPTIONS = [10, 25, 50, 100];
 const DEFAULT_PAGE_SIZE = 25;
@@ -306,7 +306,9 @@ export default function TransactionHistory({
   const selectedTypes = new Set(selectedRows.map((tx) => tx.type));
   const bulkCategories =
     selectedTypes.size === 1
-      ? categories.filter((c) => selectedTypes.has(c.type))
+      ? categories.filter(
+          (c) => selectedTypes.has(c.type) || c.type === 'transfer',
+        )
       : categories;
   const allOnPage =
     items.length > 0 && items.every((tx) => selected.has(tx.id));
@@ -962,8 +964,8 @@ export default function TransactionHistory({
         open={editingTxId !== null}
         onOpenChange={(o) => !o && setEditingTxId(null)}
         initial={editTxData}
-        expenseCats={categories.filter((c) => c.type === 'expense')}
-        incomeCats={categories.filter((c) => c.type === 'income')}
+        expenseCats={categoriesForTxType(categories, 'expense')}
+        incomeCats={categoriesForTxType(categories, 'income')}
         cards={cards}
         accounts={accounts}
         onSave={saveEditTx}

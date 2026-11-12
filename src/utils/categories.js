@@ -35,3 +35,10 @@ export function categoryTree(categories) {
       children: categories.filter((c) => c.parentId === parent.id),
     }));
 }
+
+/**
+ * Categories a transaction of `type` can use. Transfer categories fit both
+ * legs: the expense out of one account and the income into the other.
+ */
+export const categoriesForTxType = (categories, type) =>
+  categories.filter((c) => c.type === type || c.type === 'transfer');

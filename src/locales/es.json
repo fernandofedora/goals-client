@@ -131,7 +131,10 @@
       "noParent": "Ninguna (principal)",
       "hasChildren": "Mueve o elimina primero sus subcategorías",
       "tooDeep": "Solo se permite un nivel de subcategorías",
-      "invalidParent": "Esa categoría padre no es válida"
+      "invalidParent": "Esa categoría padre no es válida",
+      "transfer": "Transferencia",
+      "emptyTransfer": "Aún no hay categorías de transferencia. Úsalas para mover dinero entre tus cuentas o pagar la tarjeta sin que cuente como gasto.",
+      "transferNamePlaceholder": "ej. Pago de tarjeta"
     },
     "cards": {
       "title": "Tarjetas de Crédito",
@@ -419,7 +422,8 @@
     "isolatedSub": "No se incluyen en los totales generales ni en los gráficos",
     "subtotal": "Subtotal",
     "pageSubtitle": "Tus ingresos, gastos y saldos del periodo que elijas.",
-    "noSubcategory": "Sin subcategoría"
+    "noSubcategory": "Sin subcategoría",
+    "transfersNote": "Movimientos entre tus cuentas en este periodo: {{amount}}. No cuentan como ingreso ni gasto."
   },
   "scheduledPayments": {
     "title": "Pagos Programados",

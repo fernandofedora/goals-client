@@ -666,6 +666,15 @@ export default function Dashboard() {
             </p>
           </div>
         ))}
+        {summary.transfers?.transactions > 0 && (
+          <p className="col-span-full text-xs text-gray-600 dark:text-gray-300">
+            {t('dashboard.transfersNote', {
+              amount: money(
+                Math.max(summary.transfers.out, summary.transfers.in),
+              ),
+            })}
+          </p>
+        )}
         {period !== 'all' && allTimeSummary && (
           <div className="rounded-xl p-4 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700/60">
             <p className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-1">

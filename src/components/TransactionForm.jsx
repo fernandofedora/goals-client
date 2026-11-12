@@ -9,7 +9,7 @@ import Button from './ui/button';
 import Select from './ui/select';
 import { cn } from '../lib/utils';
 import { useCurrency } from '../context/CurrencyContext';
-import { categoryOptions } from '../utils/categories';
+import { categoryOptions, categoriesForTxType } from '../utils/categories';
 
 const todayISO = () => {
   const d = new Date();
@@ -126,8 +126,8 @@ export default function TransactionForm({
   const [income, setIncome] = useState(() => emptyIncome(initialDate, account));
   const [submitting, setSubmitting] = useState(false);
 
-  const expenseCats = categories.filter((c) => c.type === 'expense');
-  const incomeCats = categories.filter((c) => c.type === 'income');
+  const expenseCats = categoriesForTxType(categories, 'expense');
+  const incomeCats = categoriesForTxType(categories, 'income');
   const current = txMode === 'expense' ? expense : income;
   const setCurrent = txMode === 'expense' ? setExpense : setIncome;
   const patch = (field) => (e) =>

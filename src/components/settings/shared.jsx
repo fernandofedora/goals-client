@@ -178,6 +178,9 @@ export function CatRow({
                 <option value="income">
                   {t("settings.categories.income")}
                 </option>
+                <option value="transfer">
+                  {t("settings.categories.transfer")}
+                </option>
               </Select>
             </Field>
           )}

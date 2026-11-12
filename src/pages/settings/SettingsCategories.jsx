@@ -13,7 +13,36 @@ import {
 } from '../../components/settings/shared';
 import { categoryTree } from '../../utils/categories';
 
-const DEFAULT_COLOR = { expense: '#3b82f6', income: '#16a34a' };
+const DEFAULT_COLOR = {
+  expense: '#3b82f6',
+  income: '#16a34a',
+  transfer: '#64748b',
+};
+
+// Per-type look and copy of each section (and of its inline "new" form).
+const SECTIONS = {
+  expense: {
+    dot: 'bg-rose-500',
+    tint: 'bg-rose-50/30 dark:bg-rose-950/10',
+    label: 'settings.categories.expense',
+    empty: 'settings.categories.emptyExpense',
+    placeholder: 'settings.categories.expenseNamePlaceholder',
+  },
+  income: {
+    dot: 'bg-emerald-500',
+    tint: 'bg-emerald-50/30 dark:bg-emerald-950/10',
+    label: 'settings.categories.income',
+    empty: 'settings.categories.emptyIncome',
+    placeholder: 'settings.categories.incomeNamePlaceholder',
+  },
+  transfer: {
+    dot: 'bg-slate-500',
+    tint: 'bg-slate-50/60 dark:bg-slate-800/30',
+    label: 'settings.categories.transfer',
+    empty: 'settings.categories.emptyTransfer',
+    placeholder: 'settings.categories.transferNamePlaceholder',
+  },
+};
 
 // Server error codes from /api/categories → messages under settings.categories.
 const ERROR_KEYS = {
@@ -38,9 +67,7 @@ function NewCategoryForm({
   return (
     <form
       className={`px-5 py-4 border-b border-[var(--border)] flex flex-wrap gap-4 items-end ${
-        tone === 'income'
-          ? 'bg-emerald-50/30 dark:bg-emerald-950/10'
-          : 'bg-rose-50/30 dark:bg-rose-950/10'
+        SECTIONS[tone].tint
       } ${form.parentId ? 'sm:pl-12' : ''}`}
       onSubmit={onSubmit}
     >
@@ -222,10 +249,8 @@ export default function SettingsCategories() {
   const renderSection = (type) => {
     const groups = tree.filter((c) => c.type === type);
     const count = categories.filter((c) => c.type === type).length;
-    const placeholder =
-      type === 'expense'
-        ? t('settings.categories.expenseNamePlaceholder')
-        : t('settings.categories.incomeNamePlaceholder');
+    const section = SECTIONS[type];
+    const placeholder = t(section.placeholder);
     // Where an edited category could move: top-level categories of the
     // edited type, never itself.
     const parentChoices = (cat) =>
@@ -237,17 +262,13 @@ export default function SettingsCategories() {
 
     return (
       <div
-        className={type === 'income' ? 'border-t border-[var(--border)]' : ''}
+        className={type !== 'expense' ? 'border-t border-[var(--border)]' : ''}
       >
         <div className="px-5 pt-4 pb-2 flex items-center justify-between border-b border-[var(--border)] bg-gray-50/50 dark:bg-slate-800/30">
           <div className="flex items-center gap-2">
-            <span
-              className={`w-2 h-2 rounded-full ${type === 'income' ? 'bg-emerald-500' : 'bg-rose-500'}`}
-            />
+            <span className={`w-2 h-2 rounded-full ${section.dot}`} />
             <span className="text-xs font-bold uppercase tracking-widest text-gray-500 dark:text-gray-400">
-              {type === 'income'
-                ? t('settings.categories.income')
-                : t('settings.categories.expense')}
+              {t(section.label)}
             </span>
             <span className="text-xs text-gray-500 dark:text-gray-400 tabular-nums">
               ({count})
@@ -270,13 +291,7 @@ export default function SettingsCategories() {
         )}
 
         {groups.length === 0 ? (
-          <EmptyState
-            message={
-              type === 'income'
-                ? t('settings.categories.emptyIncome')
-                : t('settings.categories.emptyExpense')
-            }
-          />
+          <EmptyState message={t(section.empty)} />
         ) : (
           <ul className="divide-y divide-[var(--border)]">
             {groups.map((group) => (
@@ -340,6 +355,7 @@ export default function SettingsCategories() {
       >
         {renderSection('expense')}
         {renderSection('income')}
+        {renderSection('transfer')}
       </SectionCard>
     </>
   );

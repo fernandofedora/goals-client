@@ -19,6 +19,7 @@ import { cn } from '../lib/utils';
 import { useCurrency } from '../context/CurrencyContext';
 import { setAccountHidden } from '../utils/hiddenAccounts';
 import { onTransactionsChanged } from '../utils/transactionEvents';
+import { categoriesForTxType } from '../utils/categories';
 
 const EditIcon = () => (
   <svg
@@ -180,8 +181,8 @@ export default function AccountDetail() {
   }, [search]);
 
   const totalPages = Math.max(1, Math.ceil(txTotal / limit));
-  const expenseCats = categories.filter((c) => c.type === 'expense');
-  const incomeCats = categories.filter((c) => c.type === 'income');
+  const expenseCats = categoriesForTxType(categories, 'expense');
+  const incomeCats = categoriesForTxType(categories, 'income');
 
   const startEditTx = (tx) => {
     setEditingTxId(tx.id);
