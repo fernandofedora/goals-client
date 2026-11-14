@@ -229,7 +229,10 @@
     "card": "Card",
     "account": "Account",
     "selectCard": "Select Card",
-    "selectAccount": "Select Account"
+    "selectAccount": "Select Account",
+    "transferTag": "Transfer",
+    "transfersApart": "Moved between your accounts: {{amount}} (not in these totals)",
+    "transfersIncluded": "Includes {{amount}} moved between your accounts"
   },
   "editTransaction": {
     "title": "Edit Transaction",

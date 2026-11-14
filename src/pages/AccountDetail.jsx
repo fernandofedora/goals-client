@@ -20,6 +20,7 @@ import { useCurrency } from '../context/CurrencyContext';
 import { setAccountHidden } from '../utils/hiddenAccounts';
 import { onTransactionsChanged } from '../utils/transactionEvents';
 import { categoriesForTxType } from '../utils/categories';
+import TransferTag from '../components/ui/transfer-tag';
 
 const EditIcon = () => (
   <svg
@@ -445,8 +446,9 @@ export default function AccountDetail() {
                     {tx.Category?.name ? ` · ${tx.Category.name}` : ''}
                   </p>
                 </div>
-                <span className="hidden sm:block w-36 flex-shrink-0 text-[13px] text-[var(--muted-foreground)] truncate">
-                  {tx.Category?.name || ''}
+                <span className="hidden sm:flex w-36 flex-shrink-0 items-center gap-1.5 text-[13px] text-[var(--muted-foreground)] min-w-0">
+                  <span className="truncate">{tx.Category?.name || ''}</span>
+                  <TransferTag category={tx.Category} />
                 </span>
                 <span
                   className={cn(

@@ -229,7 +229,10 @@
     "card": "Tarjeta",
     "account": "Cuenta",
     "selectCard": "Selecciona una tarjeta",
-    "selectAccount": "Selecciona una cuenta"
+    "selectAccount": "Selecciona una cuenta",
+    "transferTag": "Transferencia",
+    "transfersApart": "Movimientos entre tus cuentas: {{amount}} (fuera de estos totales)",
+    "transfersIncluded": "Incluye {{amount}} de movimientos entre tus cuentas"
   },
   "editTransaction": {
     "title": "Editar Transacción",

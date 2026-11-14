@@ -17,6 +17,7 @@ import { signedMoney } from '../utils/format';
 import { onTransactionsChanged } from '../utils/transactionEvents';
 import { getPref, setPref } from '../utils/userStorage';
 import { categoryOptions, categoriesForTxType } from '../utils/categories';
+import TransferTag from './ui/transfer-tag';
 
 const PAGE_SIZE_OPTIONS = [10, 25, 50, 100];
 const DEFAULT_PAGE_SIZE = 25;
@@ -510,6 +511,20 @@ export default function TransactionHistory({
           <span className="px-2.5 py-1.5 rounded-lg bg-[var(--muted)] text-[var(--foreground)] font-bold">
             = {signedMoney(totals.income - totals.expense, money)}
           </span>
+          {data?.transfers && (
+            <span className="basis-full sm:basis-auto font-normal text-[var(--muted-foreground)]">
+              {t(
+                data.transfers.inTotals
+                  ? 'transactions.transfersIncluded'
+                  : 'transactions.transfersApart',
+                {
+                  amount: money(
+                    Math.max(data.transfers.in, data.transfers.out),
+                  ),
+                },
+              )}
+            </span>
+          )}
           <Button variant="outline" onClick={exportCsv} disabled={total === 0}>
             {t('addTransaction.exportCsv')}
           </Button>
@@ -842,6 +857,7 @@ export default function TransactionHistory({
                               <span className="truncate flex-shrink-0 max-w-[55%]">
                                 {tx.Category.name}
                               </span>
+                              <TransferTag category={tx.Category} />
                               <span aria-hidden="true">·</span>
                             </>
                           )}
