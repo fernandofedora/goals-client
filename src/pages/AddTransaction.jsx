@@ -6,6 +6,8 @@ import PageHeader from '../components/ui/page-header';
 import TransactionForm from '../components/TransactionForm';
 import TransactionHistory from '../components/TransactionHistory';
 import ImportDialog from '../components/ImportDialog';
+import CategorizeDialog from '../components/CategorizeDialog';
+import { onTransactionsChanged } from '../utils/transactionEvents';
 import Button from '../components/ui/button';
 
 export default function AddTransaction() {
@@ -15,6 +17,22 @@ export default function AddTransaction() {
   const [accounts, setAccounts] = useState([]);
   const [refreshKey, setRefreshKey] = useState(0);
   const [importOpen, setImportOpen] = useState(false);
+  const [categorizeOpen, setCategorizeOpen] = useState(false);
+  const [uncategorized, setUncategorized] = useState(0);
+
+  // Live count for the "Categorizar (N)" inbox button.
+  const loadUncategorized = useCallback(async () => {
+    try {
+      const { data } = await api.get('/transactions/uncategorized', { params: { limit: 1 } });
+      setUncategorized(data.count);
+    } catch {
+      // The button just stays as it was.
+    }
+  }, []);
+  useEffect(() => {
+    loadUncategorized();
+    return onTransactionsChanged(loadUncategorized);
+  }, [loadUncategorized, refreshKey]);
 
   const load = useCallback(async () => {
     try {
@@ -41,10 +59,22 @@ export default function AddTransaction() {
         title={t('nav.transactions')}
         subtitle={t('addTransaction.pageSubtitle')}
         actions={
-          <Button variant="outline" onClick={() => setImportOpen(true)}>
-            {t('import.open')}
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            {uncategorized > 0 && (
+              <Button variant="outline" onClick={() => setCategorizeOpen(true)}>
+                {t('categorize.open', { count: uncategorized })}
+              </Button>
+            )}
+            <Button variant="outline" onClick={() => setImportOpen(true)}>
+              {t('import.open')}
+            </Button>
+          </div>
         }
+      />
+      <CategorizeDialog
+        open={categorizeOpen}
+        onOpenChange={setCategorizeOpen}
+        categories={categories}
       />
       <ImportDialog
         open={importOpen}

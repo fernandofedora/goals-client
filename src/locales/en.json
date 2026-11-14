@@ -1297,5 +1297,31 @@
       "CATEGORY_NOT_FOUND": "Category doesn't exist",
       "CATEGORY_TYPE_MISMATCH": "Category doesn't match the type"
     }
+  },
+  "categorize": {
+    "open": "Categorize ({{count}})",
+    "title": "Categorize transactions",
+    "remaining_one": "{{count}} left without a category",
+    "remaining_other": "{{count}} left without a category",
+    "pick": "Category",
+    "searchPlaceholder": "Type to filter…",
+    "keysHint": "Type to filter, use ↑ ↓ to move and Enter to assign.",
+    "noMatch": "No category matches.",
+    "skip": "Skip",
+    "stop": "Finish",
+    "income": "Income",
+    "expense": "Expense",
+    "ruleOffer": "Always use “{{category}}” for anything containing “{{keyword}}”?",
+    "createRule": "Create rule",
+    "noThanks": "No thanks",
+    "ruleCreated_one": "Rule “{{keyword}}” → {{category}} created. {{count}} more transaction categorized.",
+    "ruleCreated_other": "Rule “{{keyword}}” → {{category}} created. {{count}} more transactions categorized.",
+    "ruleFailed": "Couldn't create the rule",
+    "assignFailed": "Couldn't assign the category",
+    "loadFailed": "Couldn't load the uncategorized transactions.",
+    "done": "All your transactions have a category.",
+    "doneSkipped_one": "Done. You skipped {{count}}; it stays in the inbox for later.",
+    "doneSkipped_other": "Done. You skipped {{count}}; they stay in the inbox for later.",
+    "close": "Close"
   }
 }

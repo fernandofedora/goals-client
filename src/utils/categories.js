@@ -42,3 +42,54 @@ export function categoryTree(categories) {
  */
 export const categoriesForTxType = (categories, type) =>
   categories.filter((c) => c.type === type || c.type === 'transfer');
+
+/** Lowercase and without accents, the way rules compare text. */
+export const foldText = (value) =>
+  String(value ?? '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase();
+
+// Words that show up in any bank statement line, so a rule on them would
+// catch unrelated transactions.
+const GENERIC_WORDS = new Set([
+  'pago',
+  'pagos',
+  'compra',
+  'compras',
+  'cuota',
+  'cargo',
+  'abono',
+  'deposito',
+  'retiro',
+  'transferencia',
+  'transf',
+  'debito',
+  'credito',
+  'tarjeta',
+  'pos',
+  'con',
+  'por',
+  'para',
+  'del',
+  'las',
+  'los',
+  'una',
+  'payment',
+  'purchase',
+  'transfer',
+  'card',
+  'debit',
+  'credit',
+  'the',
+  'and',
+  'for',
+  'from',
+]);
+
+/** First word of a description worth a rule: "PAGO UBER *TRIP 8812" → "uber". */
+export const ruleKeyword = (description) =>
+  foldText(description)
+    .split(/[^a-z0-9ñ]+/)
+    .find((w) => w.length >= 3 && !/^\d+$/.test(w) && !GENERIC_WORDS.has(w)) ||
+  null;

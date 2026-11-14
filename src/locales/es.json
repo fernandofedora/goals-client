@@ -1297,5 +1297,31 @@
       "CATEGORY_NOT_FOUND": "La categoría no existe",
       "CATEGORY_TYPE_MISMATCH": "La categoría no corresponde al tipo"
     }
+  },
+  "categorize": {
+    "open": "Categorizar ({{count}})",
+    "title": "Categorizar transacciones",
+    "remaining_one": "Queda {{count}} sin categoría",
+    "remaining_other": "Quedan {{count}} sin categoría",
+    "pick": "Categoría",
+    "searchPlaceholder": "Escribe para filtrar…",
+    "keysHint": "Escribe para filtrar, usa ↑ ↓ para moverte y Enter para asignar.",
+    "noMatch": "Ninguna categoría coincide.",
+    "skip": "Saltar",
+    "stop": "Terminar",
+    "income": "Ingreso",
+    "expense": "Gasto",
+    "ruleOffer": "¿Usar siempre «{{category}}» para lo que contenga «{{keyword}}»?",
+    "createRule": "Crear regla",
+    "noThanks": "No, gracias",
+    "ruleCreated_one": "Regla «{{keyword}}» → {{category}} creada. Se categorizó {{count}} transacción más.",
+    "ruleCreated_other": "Regla «{{keyword}}» → {{category}} creada. Se categorizaron {{count}} transacciones más.",
+    "ruleFailed": "No se pudo crear la regla",
+    "assignFailed": "No se pudo asignar la categoría",
+    "loadFailed": "No se pudieron cargar las transacciones sin categoría.",
+    "done": "Todas tus transacciones tienen categoría.",
+    "doneSkipped_one": "Listo. Saltaste {{count}}; quedará en la bandeja para después.",
+    "doneSkipped_other": "Listo. Saltaste {{count}}; quedarán en la bandeja para después.",
+    "close": "Cerrar"
   }
 }
