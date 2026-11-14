@@ -999,6 +999,10 @@
       "last6Months": "Last 6 months",
       "thisYear": "This year",
       "lastYear": "Last year"
+    },
+    "monthStepper": {
+      "prev": "Previous month",
+      "next": "Next month"
     }
   },
   "errors": {
@@ -1066,8 +1070,6 @@
   "cashflow": {
     "title": "Cashflow",
     "subtitle": "Where your money came from this month and where it went.",
-    "prevMonth": "Previous month",
-    "nextMonth": "Next month",
     "netFlow": "Net flow",
     "vsPrevious": "{{amount}} vs {{month}}",
     "savingsRate": "Savings rate",
@@ -1087,5 +1089,37 @@
     "incomeList": "Where it came from",
     "expenseList": "Where it went",
     "nothingHere": "Nothing this month."
+  },
+  "categoryBudgets": {
+    "title": "Budgets by category",
+    "subtitle": "Tap a category to see its spending day by day.",
+    "left": "{{amount}} left · {{pct}}% used",
+    "over": "Over by {{amount}} · {{pct}}% used",
+    "empty": "No category has a monthly budget yet.",
+    "setUp": "Set budgets in Settings › Categories",
+    "loadFailed": "Couldn't load your category budgets."
+  },
+  "budgetDetail": {
+    "back": "Budget",
+    "title": "Budget",
+    "subtitle": "This month's cumulative spending against last month and your limit.",
+    "notFound": "We couldn't find this expense category.",
+    "loadFailed": "Couldn't load the detail. Try again.",
+    "assigned": "Assigned",
+    "spent": "Spent",
+    "available": "Available",
+    "over": "Over",
+    "previousMonth": "Last month",
+    "noBudget": "No budget assigned",
+    "ofBudget": "{{pct}}% of budget",
+    "chartTitle": "Cumulative spending",
+    "chartSub": "Dashed line: where you were on the same day of {{previous}}.",
+    "day": "{{month}} {{day}}",
+    "limit": "Limit",
+    "legendThisMonth": "This month",
+    "legendPrevious": "Last month",
+    "transactions": "This month's transactions",
+    "openHistory": "Open in history",
+    "noTransactions": "No spending in this category this month."
   }
 }

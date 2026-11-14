@@ -9,13 +9,8 @@ import { buildCashflow, savingsRate } from '../utils/cashflow';
 import { intlLocale } from '../utils/dateLocale';
 import { signedMoney } from '../utils/format';
 import { cn } from '../lib/utils';
-
-const pad = (n) => String(n).padStart(2, '0');
-const periodOf = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}`;
-const monthLabel = (d) =>
-  d.toLocaleDateString(intlLocale(), { month: 'long', year: 'numeric' });
-const shiftMonth = (d, delta) =>
-  new Date(d.getFullYear(), d.getMonth() + delta, 1);
+import MonthStepper from '../components/ui/month-stepper';
+import { periodOf, shiftMonth } from '../utils/months';
 
 // Below this width the side labels would squeeze the flow, so the diagram
 // drops them and the lists under it carry the names.
@@ -36,24 +31,6 @@ function useWidth() {
     return () => observer.disconnect();
   }, []);
   return [ref, width];
-}
-
-function ChevronIcon({ dir }) {
-  return (
-    <svg
-      width="16"
-      height="16"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      <path d={dir === 'prev' ? 'm15 18-6-6 6-6' : 'm9 18 6-6-6-6'} />
-    </svg>
-  );
 }
 
 function StatCard({ label, value, detail, tone }) {
@@ -288,32 +265,7 @@ export default function Cashflow() {
       <PageHeader
         title={t('cashflow.title')}
         subtitle={t('cashflow.subtitle')}
-        actions={
-          <div className="flex items-center gap-1 rounded-xl border border-[var(--border)] bg-white dark:bg-slate-900 p-1">
-            <button
-              type="button"
-              onClick={() => setMonth((m) => shiftMonth(m, -1))}
-              aria-label={t('cashflow.prevMonth')}
-              className="inline-flex items-center justify-center size-11 sm:size-9 rounded-lg cursor-pointer text-[var(--foreground)] hover:bg-[var(--muted)] active:bg-[var(--muted)]"
-            >
-              <ChevronIcon dir="prev" />
-            </button>
-            <span
-              className="min-w-36 text-center text-sm font-semibold capitalize text-[var(--foreground)]"
-              aria-live="polite"
-            >
-              {monthLabel(month)}
-            </span>
-            <button
-              type="button"
-              onClick={() => setMonth((m) => shiftMonth(m, 1))}
-              aria-label={t('cashflow.nextMonth')}
-              className="inline-flex items-center justify-center size-11 sm:size-9 rounded-lg cursor-pointer text-[var(--foreground)] hover:bg-[var(--muted)] active:bg-[var(--muted)]"
-            >
-              <ChevronIcon dir="next" />
-            </button>
-          </div>
-        }
+        actions={<MonthStepper value={month} onChange={setMonth} />}
       />
 
       {status === 'error' && (

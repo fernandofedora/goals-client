@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useTranslation, Trans } from 'react-i18next';
+import { Link } from 'react-router-dom';
 import PageHeader from '../components/ui/page-header';
 import { cn } from '../lib/utils';
 import api from '../api';
@@ -1093,9 +1094,23 @@ export default function Dashboard() {
                             className="w-2.5 h-2.5 rounded-full flex-shrink-0"
                             style={{ background: cat.color }}
                           />
-                          <span className="font-medium text-gray-800 dark:text-gray-100">
-                            {cat.name}
-                          </span>
+                          {cat.id ? (
+                            <Link
+                              to={`/transactions/budget/${cat.id}?period=${
+                                filterMode === 'period' &&
+                                /^\d{2}$/.test(period)
+                                  ? `${selectedYear}-${period}`
+                                  : ''
+                              }`}
+                              className="font-medium text-gray-800 dark:text-gray-100 hover:underline rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ring)]"
+                            >
+                              {cat.name}
+                            </Link>
+                          ) : (
+                            <span className="font-medium text-gray-800 dark:text-gray-100">
+                              {cat.name}
+                            </span>
+                          )}
                         </div>
                         <div className="flex items-center gap-3 text-right">
                           <span className="text-gray-500 dark:text-gray-400 tabular-nums">

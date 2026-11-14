@@ -21,6 +21,7 @@ import Budget from './pages/Budget';
 import AddTransaction from './pages/AddTransaction';
 import GraphicsByCategories from './pages/GraphicsByCategories';
 import Cashflow from './pages/Cashflow';
+import BudgetCategory from './pages/BudgetCategory';
 import UserManager from './pages/UserManager';
 import VerifyEmail from './pages/VerifyEmail';
 import useTheme from './hooks/useTheme';
@@ -128,6 +129,14 @@ export default function App() {
                     element={
                       <ProtectedRoute>
                         <Budget />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/transactions/budget/:categoryId"
+                    element={
+                      <ProtectedRoute>
+                        <BudgetCategory />
                       </ProtectedRoute>
                     }
                   />

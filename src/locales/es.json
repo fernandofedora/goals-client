@@ -999,6 +999,10 @@
       "last6Months": "Últimos 6 meses",
       "thisYear": "Este año",
       "lastYear": "Año pasado"
+    },
+    "monthStepper": {
+      "prev": "Mes anterior",
+      "next": "Mes siguiente"
     }
   },
   "errors": {
@@ -1066,8 +1070,6 @@
   "cashflow": {
     "title": "Flujo de caja",
     "subtitle": "De dónde vino tu dinero este mes y a dónde fue.",
-    "prevMonth": "Mes anterior",
-    "nextMonth": "Mes siguiente",
     "netFlow": "Flujo neto",
     "vsPrevious": "{{amount}} frente a {{month}}",
     "savingsRate": "Tasa de ahorro",
@@ -1087,5 +1089,37 @@
     "incomeList": "De dónde vino",
     "expenseList": "A dónde fue",
     "nothingHere": "Nada este mes."
+  },
+  "categoryBudgets": {
+    "title": "Presupuestos por categoría",
+    "subtitle": "Toca una categoría para ver cómo va su gasto día a día.",
+    "left": "Quedan {{amount}} · {{pct}}% usado",
+    "over": "Excedido por {{amount}} · {{pct}}% usado",
+    "empty": "Ninguna categoría tiene presupuesto mensual todavía.",
+    "setUp": "Asignar presupuestos en Ajustes › Categorías",
+    "loadFailed": "No se pudieron cargar los presupuestos por categoría."
+  },
+  "budgetDetail": {
+    "back": "Presupuesto",
+    "title": "Presupuesto",
+    "subtitle": "Gasto acumulado del mes frente al mes anterior y a tu límite.",
+    "notFound": "No encontramos esta categoría de gasto.",
+    "loadFailed": "No se pudo cargar el detalle. Intenta de nuevo.",
+    "assigned": "Asignado",
+    "spent": "Gastado",
+    "available": "Disponible",
+    "over": "Excedido",
+    "previousMonth": "Mes anterior",
+    "noBudget": "Sin presupuesto asignado",
+    "ofBudget": "{{pct}}% del presupuesto",
+    "chartTitle": "Gasto acumulado",
+    "chartSub": "Línea punteada: lo que llevabas el mismo día de {{previous}}.",
+    "day": "{{day}} de {{month}}",
+    "limit": "Límite",
+    "legendThisMonth": "Este mes",
+    "legendPrevious": "Mes anterior",
+    "transactions": "Transacciones del mes",
+    "openHistory": "Ver en el historial",
+    "noTransactions": "No hay gastos en esta categoría este mes."
   }
 }
