@@ -56,13 +56,14 @@
   },
   "settings": {
     "title": "Ajustes",
-    "subtitle": "Administra tus cuentas, categorías y tarjetas de crédito",
+    "subtitle": "Administra tu moneda, cuentas, categorías, reglas y tarjetas de crédito",
     "sections": "Secciones de ajustes",
     "sidebar": {
       "currency": "Moneda",
       "accounts": "Cuentas",
       "categories": "Categorías",
-      "cards": "Tarjetas de Crédito"
+      "cards": "Tarjetas de Crédito",
+      "rules": "Reglas"
     },
     "loadFailed": "No se pudieron cargar los datos",
     "currency": {
@@ -166,6 +167,78 @@
       "addFailed": "No se pudo agregar la tarjeta",
       "updateFailed": "No se pudo actualizar la tarjeta",
       "deleteFailed": "No se pudo eliminar la tarjeta"
+    },
+    "rules": {
+      "title": "Reglas de categorías",
+      "subtitle": "Asignan la categoría sola a las transacciones nuevas e importadas.",
+      "add": "+ Agregar regla",
+      "create": "Crear regla",
+      "name": "Nombre",
+      "namePlaceholder": "ej. Viajes en Uber",
+      "category": "Categoría",
+      "pickCategory": "Elige una categoría",
+      "when": "Cuando",
+      "textValue": "Texto",
+      "textPlaceholder": "ej. uber",
+      "amountValue": "Monto ({{symbol}})",
+      "active": "Activa",
+      "activeFor": "Regla {{name}} activa",
+      "fields": {
+        "description": "Descripción",
+        "amount": "Monto"
+      },
+      "operators": {
+        "contains": "Contiene",
+        "startsWith": "Empieza con",
+        "equals": "Es igual a",
+        "notContains": "No contiene",
+        "gt": "Es mayor que",
+        "lt": "Es menor que"
+      },
+      "empty": "Aún no tienes reglas. Crea una para que, por ejemplo, todo lo que diga \"uber\" vaya a Transporte.",
+      "priorityHint": "Si varias reglas coinciden, gana la que está más arriba. Usa las flechas para cambiar el orden.",
+      "moveUp": "Subir",
+      "moveDown": "Bajar",
+      "applyExisting": "Aplicar a transacciones existentes",
+      "edit": "Editar regla",
+      "delete": "Eliminar regla",
+      "actionsFor": "Acciones de la regla {{name}}",
+      "created": "Regla creada",
+      "updated": "Regla actualizada",
+      "deleted": "Regla eliminada",
+      "saveFailed": "No se pudo guardar la regla",
+      "deleteFailed": "No se pudo eliminar la regla",
+      "orderFailed": "No se pudo cambiar el orden",
+      "loadFailed": "No se pudieron cargar las reglas.",
+      "deleteTitle": "Eliminar regla",
+      "deleteDescription": "Las transacciones que ya categorizó se quedan como están.",
+      "applyTitle": "Aplicar «{{name}}»",
+      "applyDescription": "Revisa qué cambiaría antes de confirmar.",
+      "uncategorizedMatches_one": "{{count}} transacción sin categoría coincide con esta regla.",
+      "uncategorizedMatches_other": "{{count}} transacciones sin categoría coinciden con esta regla.",
+      "alsoCategorized_one": "Cambiar también {{count}} que ya tiene otra categoría",
+      "alsoCategorized_other": "Cambiar también {{count}} que ya tienen otra categoría",
+      "alsoCategorizedHint": "Reemplaza categorías que pudiste elegir a mano.",
+      "applyCount_one": "Aplicar a {{count}}",
+      "applyCount_other": "Aplicar a {{count}}",
+      "applied_one": "Se categorizó {{count}} transacción",
+      "applied_other": "Se categorizaron {{count}} transacciones",
+      "previewFailed": "No se pudo calcular qué cambiaría",
+      "applyFailed": "No se pudo aplicar la regla",
+      "errors": {
+        "RULE_INVALID_NAME": "El nombre debe tener entre 1 y 80 caracteres.",
+        "RULE_INVALID_FIELD": "Elige descripción o monto.",
+        "RULE_INVALID_OPERATOR": "Esa condición no sirve para ese campo.",
+        "RULE_INVALID_AMOUNT": "El monto debe ser un número mayor que 0.",
+        "RULE_INVALID_TEXT": "El texto debe tener entre 1 y 100 caracteres.",
+        "RULE_INVALID_CATEGORY": "Elige una de tus categorías.",
+        "RULE_LIMIT": "Llegaste al máximo de 200 reglas.",
+        "RULE_INVALID_ORDER": "No se pudo cambiar el orden."
+      },
+      "conditions": {
+        "description": "Si la descripción {{operator}} {{value}}",
+        "amount": "Si el monto {{operator}} {{value}}"
+      }
     }
   },
   "auth": {
@@ -336,7 +409,9 @@
     "bulkDeleteDescription": "Esta acción no se puede deshacer.",
     "noMatches": "Ninguna transacción coincide con los filtros.",
     "listFailed": "No pudimos cargar tus transacciones.",
-    "colAccount": "Cuenta o tarjeta"
+    "colAccount": "Cuenta o tarjeta",
+    "createRule": "Crear regla desde esta transacción",
+    "suggestedByRule": "Sugerida por la regla «{{name}}»"
   },
   "budget": {
     "title": "Presupuesto Mensual",

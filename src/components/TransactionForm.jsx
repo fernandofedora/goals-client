@@ -1,4 +1,4 @@
-import { useId, useRef, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
@@ -132,6 +132,37 @@ export default function TransactionForm({
   const setCurrent = txMode === 'expense' ? setExpense : setIncome;
   const patch = (field) => (e) =>
     setCurrent((v) => ({ ...v, [field]: e.target.value }));
+
+  // Category the user's rules suggest for what is being typed. It only fills an
+  // empty category, and picking one by hand switches it off.
+  const [suggestion, setSuggestion] = useState(null);
+  const description = current.description;
+  const amount = current.amount;
+  const categoryId = current.categoryId;
+  const suggestedId = suggestion?.categoryId;
+  useEffect(() => {
+    const manual = categoryId && String(categoryId) !== String(suggestedId);
+    if (manual || description.trim().length < 3) return undefined;
+    let alive = true;
+    const timer = setTimeout(async () => {
+      try {
+        const { data } = await api.post('/rules/match', {
+          description,
+          amount: Number(amount) || 0,
+          type: txMode,
+        });
+        if (!alive) return;
+        setSuggestion(data);
+        setCurrent((v) => ({ ...v, categoryId: data ? String(data.categoryId) : '' }));
+      } catch {
+        // A failed suggestion just leaves the category for the user.
+      }
+    }, 400);
+    return () => {
+      alive = false;
+      clearTimeout(timer);
+    };
+  }, [description, amount, txMode, categoryId, suggestedId, setCurrent]);
 
   const buildPayload = () => {
     if (txMode === 'expense') {
@@ -303,7 +334,10 @@ export default function TransactionForm({
         >
           <Select
             value={current.categoryId}
-            onChange={patch('categoryId')}
+            onChange={(e) => {
+              setSuggestion(null);
+              patch('categoryId')(e);
+            }}
             required
           >
             <option value="">{t('addTransaction.selectCategory')}</option>
@@ -315,6 +349,14 @@ export default function TransactionForm({
               </option>
             ))}
           </Select>
+          {suggestion &&
+            String(current.categoryId) === String(suggestion.categoryId) && (
+              <p className="mt-1 text-xs text-[var(--muted-foreground)]">
+                {t('addTransaction.suggestedByRule', {
+                  name: suggestion.ruleName,
+                })}
+              </p>
+            )}
         </Field>
 
         {/* Expense-only: 3-way payment picker + conditional card or account picker */}

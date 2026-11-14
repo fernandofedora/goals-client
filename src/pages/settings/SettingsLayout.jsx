@@ -69,6 +69,29 @@ const SECTIONS = [
     ),
   },
   {
+    to: '/settings/rules',
+    labelKey: 'settings.sidebar.rules',
+    // Shuffle: rules route each transaction to a category.
+    icon: (
+      <svg
+        width="15"
+        height="15"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
+        <path d="M16 3h5v5" />
+        <path d="M4 20 21 3" />
+        <path d="M21 16v5h-5" />
+        <path d="m15 15 6 6" />
+        <path d="M4 4l5 5" />
+      </svg>
+    ),
+  },
+  {
     to: '/settings/cards',
     labelKey: 'settings.sidebar.cards',
     icon: (
@@ -89,7 +112,7 @@ const SECTIONS = [
   },
 ];
 
-// Phones: 4 equal tabs (icon over label) so none is cut off at the edge.
+// Phones: 5 equal tabs (icon over label) so none is cut off at the edge.
 // md+: vertical sidebar rows.
 const sideLinkClass = ({ isActive }) =>
   cn(
@@ -113,7 +136,7 @@ export default function SettingsLayout() {
         {/* ── Section nav: vertical sidebar on desktop, pill row on mobile ── */}
         <aside className="w-full md:w-48 shrink-0 md:sticky md:top-20">
           <nav
-            className="grid grid-cols-4 md:flex md:flex-col gap-1"
+            className="grid grid-cols-5 md:flex md:flex-col gap-1"
             aria-label={t('settings.sections')}
           >
             {SECTIONS.map((s) => (

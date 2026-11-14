@@ -56,13 +56,14 @@
   },
   "settings": {
     "title": "Settings",
-    "subtitle": "Manage your accounts, categories and credit cards",
+    "subtitle": "Manage your currency, accounts, categories, rules and credit cards",
     "sections": "Settings sections",
     "sidebar": {
       "currency": "Currency",
       "accounts": "Accounts",
       "categories": "Categories",
-      "cards": "Credit Cards"
+      "cards": "Credit Cards",
+      "rules": "Rules"
     },
     "loadFailed": "Failed to load data",
     "currency": {
@@ -166,6 +167,78 @@
       "addFailed": "Failed to add card",
       "updateFailed": "Failed to update card",
       "deleteFailed": "Failed to delete card"
+    },
+    "rules": {
+      "title": "Category rules",
+      "subtitle": "They set the category of new and imported transactions for you.",
+      "add": "+ Add rule",
+      "create": "Create rule",
+      "name": "Name",
+      "namePlaceholder": "e.g. Uber rides",
+      "category": "Category",
+      "pickCategory": "Pick a category",
+      "when": "When",
+      "textValue": "Text",
+      "textPlaceholder": "e.g. uber",
+      "amountValue": "Amount ({{symbol}})",
+      "active": "Active",
+      "activeFor": "Rule {{name}} active",
+      "fields": {
+        "description": "Description",
+        "amount": "Amount"
+      },
+      "operators": {
+        "contains": "Contains",
+        "startsWith": "Starts with",
+        "equals": "Equals",
+        "notContains": "Doesn't contain",
+        "gt": "Is greater than",
+        "lt": "Is less than"
+      },
+      "empty": "No rules yet. Create one so that, for example, anything saying \"uber\" goes to Transportation.",
+      "priorityHint": "When several rules match, the one higher up wins. Use the arrows to reorder.",
+      "moveUp": "Move up",
+      "moveDown": "Move down",
+      "applyExisting": "Apply to existing transactions",
+      "edit": "Edit rule",
+      "delete": "Delete rule",
+      "actionsFor": "Actions for rule {{name}}",
+      "created": "Rule created",
+      "updated": "Rule updated",
+      "deleted": "Rule deleted",
+      "saveFailed": "Couldn't save the rule",
+      "deleteFailed": "Couldn't delete the rule",
+      "orderFailed": "Couldn't change the order",
+      "loadFailed": "Couldn't load your rules.",
+      "deleteTitle": "Delete rule",
+      "deleteDescription": "Transactions it already categorized stay as they are.",
+      "applyTitle": "Apply “{{name}}”",
+      "applyDescription": "Check what would change before confirming.",
+      "uncategorizedMatches_one": "{{count}} uncategorized transaction matches this rule.",
+      "uncategorizedMatches_other": "{{count}} uncategorized transactions match this rule.",
+      "alsoCategorized_one": "Also change {{count}} that already has another category",
+      "alsoCategorized_other": "Also change {{count}} that already have another category",
+      "alsoCategorizedHint": "Replaces categories you may have picked by hand.",
+      "applyCount_one": "Apply to {{count}}",
+      "applyCount_other": "Apply to {{count}}",
+      "applied_one": "Categorized {{count}} transaction",
+      "applied_other": "Categorized {{count}} transactions",
+      "previewFailed": "Couldn't work out what would change",
+      "applyFailed": "Couldn't apply the rule",
+      "errors": {
+        "RULE_INVALID_NAME": "The name must be 1 to 80 characters.",
+        "RULE_INVALID_FIELD": "Pick description or amount.",
+        "RULE_INVALID_OPERATOR": "That condition doesn't work for that field.",
+        "RULE_INVALID_AMOUNT": "The amount must be a number above 0.",
+        "RULE_INVALID_TEXT": "The text must be 1 to 100 characters.",
+        "RULE_INVALID_CATEGORY": "Pick one of your categories.",
+        "RULE_LIMIT": "You reached the limit of 200 rules.",
+        "RULE_INVALID_ORDER": "Couldn't change the order."
+      },
+      "conditions": {
+        "description": "If the description {{operator}} {{value}}",
+        "amount": "If the amount {{operator}} {{value}}"
+      }
     }
   },
   "auth": {
@@ -336,7 +409,9 @@
     "bulkDeleteDescription": "This action cannot be undone.",
     "noMatches": "No transaction matches the filters.",
     "listFailed": "We could not load your transactions.",
-    "colAccount": "Account or card"
+    "colAccount": "Account or card",
+    "createRule": "Create rule from this transaction",
+    "suggestedByRule": "Suggested by rule “{{name}}”"
   },
   "budget": {
     "title": "Monthly Budget",
