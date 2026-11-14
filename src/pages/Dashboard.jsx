@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useTranslation, Trans } from 'react-i18next';
 import { Link } from 'react-router-dom';
+import NetWorthCard from '../components/NetWorthCard';
 import PageHeader from '../components/ui/page-header';
 import { cn } from '../lib/utils';
 import api from '../api';
@@ -768,6 +769,8 @@ export default function Dashboard() {
         </div>
         {renderSummary()}
       </div>
+
+      <NetWorthCard />
 
       {/* ── Income vs Expenses Bar Chart ── */}
       <div className="bg-white dark:bg-slate-900 rounded-2xl border border-[var(--border)] shadow-sm p-5">

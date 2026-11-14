@@ -1121,5 +1121,17 @@
     "transactions": "Transacciones del mes",
     "openHistory": "Ver en el historial",
     "noTransactions": "No hay gastos en esta categoría este mes."
+  },
+  "netWorth": {
+    "title": "Patrimonio",
+    "subtitle": "Saldo de tus cuentas al cierre de cada mes.",
+    "subtitleWithInvestments": "Tus cuentas más tus inversiones, al cierre de cada mes.",
+    "thisMonth": "este mes",
+    "last12": "en 12 meses",
+    "accounts": "Cuentas",
+    "investments": "Inversiones",
+    "total": "Total",
+    "costNote": "Los meses anteriores a este registro valoran las inversiones a lo que pagaste por ellas.",
+    "loadFailed": "No se pudo cargar tu patrimonio."
   }
 }

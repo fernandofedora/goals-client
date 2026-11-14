@@ -1121,5 +1121,17 @@
     "transactions": "This month's transactions",
     "openHistory": "Open in history",
     "noTransactions": "No spending in this category this month."
+  },
+  "netWorth": {
+    "title": "Net worth",
+    "subtitle": "Your account balances at the close of each month.",
+    "subtitleWithInvestments": "Your accounts plus your investments, at the close of each month.",
+    "thisMonth": "this month",
+    "last12": "over 12 months",
+    "accounts": "Accounts",
+    "investments": "Investments",
+    "total": "Total",
+    "costNote": "Months before this record value investments at what you paid for them.",
+    "loadFailed": "Couldn't load your net worth."
   }
 }
