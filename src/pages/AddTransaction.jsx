@@ -5,6 +5,8 @@ import api from '../api';
 import PageHeader from '../components/ui/page-header';
 import TransactionForm from '../components/TransactionForm';
 import TransactionHistory from '../components/TransactionHistory';
+import ImportDialog from '../components/ImportDialog';
+import Button from '../components/ui/button';
 
 export default function AddTransaction() {
   const { t } = useTranslation();
@@ -12,6 +14,7 @@ export default function AddTransaction() {
   const [cards, setCards] = useState([]);
   const [accounts, setAccounts] = useState([]);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [importOpen, setImportOpen] = useState(false);
 
   const load = useCallback(async () => {
     try {
@@ -37,6 +40,17 @@ export default function AddTransaction() {
       <PageHeader
         title={t('nav.transactions')}
         subtitle={t('addTransaction.pageSubtitle')}
+        actions={
+          <Button variant="outline" onClick={() => setImportOpen(true)}>
+            {t('import.open')}
+          </Button>
+        }
+      />
+      <ImportDialog
+        open={importOpen}
+        onOpenChange={setImportOpen}
+        accounts={accounts}
+        cards={cards}
       />
 
       <section className="bg-white dark:bg-slate-900 rounded-2xl border border-[var(--border)] shadow-sm overflow-hidden">
