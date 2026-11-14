@@ -20,6 +20,7 @@ import Investments from './pages/Investments';
 import Budget from './pages/Budget';
 import AddTransaction from './pages/AddTransaction';
 import GraphicsByCategories from './pages/GraphicsByCategories';
+import Cashflow from './pages/Cashflow';
 import UserManager from './pages/UserManager';
 import VerifyEmail from './pages/VerifyEmail';
 import useTheme from './hooks/useTheme';
@@ -189,6 +190,14 @@ export default function App() {
                   <Route
                     path="/graphics"
                     element={<Navigate to="/graphics/categories" replace />}
+                  />
+                  <Route
+                    path="/graphics/cashflow"
+                    element={
+                      <ProtectedRoute>
+                        <Cashflow />
+                      </ProtectedRoute>
+                    }
                   />
                   <Route
                     path="/graphics/categories"

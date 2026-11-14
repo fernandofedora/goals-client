@@ -51,7 +51,8 @@
     "themeLight": "Light",
     "themeDark": "Dark",
     "collapseSidebar": "Collapse menu",
-    "expandSidebar": "Expand menu"
+    "expandSidebar": "Expand menu",
+    "cashflow": "Cashflow"
   },
   "settings": {
     "title": "Settings",
@@ -1061,5 +1062,30 @@
     "loading": "Loading categories and accounts…",
     "loadFailed": "We could not load your categories and accounts. Close and try again.",
     "titleFor": "New transaction · {{name}}"
+  },
+  "cashflow": {
+    "title": "Cashflow",
+    "subtitle": "Where your money came from this month and where it went.",
+    "prevMonth": "Previous month",
+    "nextMonth": "Next month",
+    "netFlow": "Net flow",
+    "vsPrevious": "{{amount}} vs {{month}}",
+    "savingsRate": "Savings rate",
+    "rateHint": "Share of your income you didn't spend.",
+    "noIncome": "No income recorded this month.",
+    "overspent": "Spending is above income.",
+    "diagramTitle": "Income and spending",
+    "diagramSub": "Tap a category to see its transactions. Transfers between your accounts are left out.",
+    "empty": "No income or spending this month.",
+    "loadFailed": "Couldn't load your cashflow. Try again.",
+    "flowNode": "Income this month",
+    "savingsNode": "Savings",
+    "deficitNode": "From earlier balance",
+    "otherIncome": "Other income",
+    "otherExpense": "Other spending",
+    "uncategorized": "Uncategorized",
+    "incomeList": "Where it came from",
+    "expenseList": "Where it went",
+    "nothingHere": "Nothing this month."
   }
 }

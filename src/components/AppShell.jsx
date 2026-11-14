@@ -223,6 +223,11 @@ export default function AppShell({ theme, onToggleTheme, children }) {
     label: t('nav.dashboard'),
     icon: 'dashboard',
   };
+  const cashflow = {
+    to: '/graphics/cashflow',
+    label: t('nav.cashflow'),
+    icon: 'flow',
+  };
   const transactions = {
     to: '/transactions/add',
     label: t('nav.transactions'),
@@ -273,6 +278,7 @@ export default function AppShell({ theme, onToggleTheme, children }) {
 
   const sidebarMain = [
     home,
+    cashflow,
     transactions,
     budget,
     savings,
@@ -283,7 +289,7 @@ export default function AppShell({ theme, onToggleTheme, children }) {
   ].filter(Boolean);
   const tabs = [home, transactions, budget, accounts];
   const moreSections = [
-    [savings, scheduled, investments, graphics].filter(Boolean),
+    [cashflow, savings, scheduled, investments, graphics].filter(Boolean),
     [
       settings,
       { to: '/profile', label: t('nav.profile'), icon: 'user' },

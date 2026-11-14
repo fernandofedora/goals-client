@@ -43,6 +43,13 @@ const ICONS = {
   ),
   trending: ['m22 7-8.5 8.5-5-5L2 17', 'M16 7h6v6'].map(line),
   chart: ['M3 3v16a2 2 0 0 0 2 2h16', 'm19 9-5 5-4-4-3 3'].map(line),
+  // One stream splitting in two: income branching into spending and savings.
+  flow: [
+    'M16 3h5v5',
+    'M8 3H3v5',
+    'M12 22v-8.3a4 4 0 0 0-1.172-2.872L3 3',
+    'm15 9 6-6',
+  ].map(line),
   shield: line('M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z'),
   settings: (
     <>

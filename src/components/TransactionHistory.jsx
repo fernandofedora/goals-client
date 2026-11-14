@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
+import { useSearchParams } from 'react-router-dom';
 import api from '../api';
 import Button from './ui/button';
 import Input from './ui/input';
@@ -188,13 +189,27 @@ export default function TransactionHistory({
   const { t } = useTranslation();
   const { money } = useCurrency();
   const now = new Date();
+  // Links from other pages (e.g. Cashflow) open the history already filtered:
+  // ?categoryId=12&period=2026-11
+  const [searchParams] = useSearchParams();
+  const linkedPeriod = /^\d{4}-\d{2}$/.test(searchParams.get('period') || '')
+    ? searchParams.get('period').split('-')
+    : null;
+  const linkedCategory = /^\d+$/.test(searchParams.get('categoryId') || '')
+    ? searchParams.get('categoryId')
+    : '';
 
   const [month, setMonth] = useState(
-    String(now.getMonth() + 1).padStart(2, '0'),
+    linkedPeriod?.[1] ?? String(now.getMonth() + 1).padStart(2, '0'),
   );
-  const [year, setYear] = useState(String(now.getFullYear()));
-  const [filters, setFilters] = useState(EMPTY_FILTERS);
-  const [showFilters, setShowFilters] = useState(false);
+  const [year, setYear] = useState(
+    linkedPeriod?.[0] ?? String(now.getFullYear()),
+  );
+  const [filters, setFilters] = useState(() => ({
+    ...EMPTY_FILTERS,
+    categoryId: linkedCategory,
+  }));
+  const [showFilters, setShowFilters] = useState(Boolean(linkedCategory));
 
   const [data, setData] = useState(null);
   const [failed, setFailed] = useState(false);

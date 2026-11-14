@@ -51,7 +51,8 @@
     "themeLight": "Claro",
     "themeDark": "Oscuro",
     "collapseSidebar": "Colapsar menú",
-    "expandSidebar": "Expandir menú"
+    "expandSidebar": "Expandir menú",
+    "cashflow": "Flujo de caja"
   },
   "settings": {
     "title": "Ajustes",
@@ -1061,5 +1062,30 @@
     "loading": "Cargando categorías y cuentas…",
     "loadFailed": "No pudimos cargar tus categorías y cuentas. Cierra y vuelve a intentarlo.",
     "titleFor": "Nueva transacción · {{name}}"
+  },
+  "cashflow": {
+    "title": "Flujo de caja",
+    "subtitle": "De dónde vino tu dinero este mes y a dónde fue.",
+    "prevMonth": "Mes anterior",
+    "nextMonth": "Mes siguiente",
+    "netFlow": "Flujo neto",
+    "vsPrevious": "{{amount}} frente a {{month}}",
+    "savingsRate": "Tasa de ahorro",
+    "rateHint": "Parte de tus ingresos que no gastaste.",
+    "noIncome": "Sin ingresos registrados este mes.",
+    "overspent": "Los gastos superan a los ingresos.",
+    "diagramTitle": "Ingresos y gastos",
+    "diagramSub": "Toca una categoría para ver sus transacciones. Las transferencias entre tus cuentas no aparecen.",
+    "empty": "No hay ingresos ni gastos este mes.",
+    "loadFailed": "No se pudo cargar el flujo de caja. Intenta de nuevo.",
+    "flowNode": "Ingresos del mes",
+    "savingsNode": "Ahorro",
+    "deficitNode": "De tu saldo previo",
+    "otherIncome": "Otros ingresos",
+    "otherExpense": "Otros gastos",
+    "uncategorized": "Sin categoría",
+    "incomeList": "De dónde vino",
+    "expenseList": "A dónde fue",
+    "nothingHere": "Nada este mes."
   }
 }
