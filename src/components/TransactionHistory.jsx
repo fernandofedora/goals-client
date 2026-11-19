@@ -20,6 +20,7 @@ import { getPref, setPref } from '../utils/userStorage';
 import { categoryOptions, categoriesForTxType } from '../utils/categories';
 import TransferTag from './ui/transfer-tag';
 import RowMenu from './ui/row-menu';
+import SplitDialog from './SplitDialog';
 
 const PAGE_SIZE_OPTIONS = [10, 25, 50, 100];
 const DEFAULT_PAGE_SIZE = 25;
@@ -136,6 +137,10 @@ export default function TransactionHistory({
   const [bulkCategory, setBulkCategory] = useState('');
   const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
   const [deleteTargetId, setDeleteTargetId] = useState(null);
+  const [splitId, setSplitId] = useState(null);
+  const deleteIsPart = Boolean(
+    data?.items?.find((tx) => tx.id === deleteTargetId)?.splitOfId,
+  );
 
   const [editingTxId, setEditingTxId] = useState(null);
   const [editTxData, setEditTxData] = useState(EMPTY_EDIT);
@@ -312,8 +317,13 @@ export default function TransactionHistory({
       setEditingTxId(null);
       toast.success(t('addTransaction.changesSaved'));
       load();
-    } catch {
-      setEditError(t('addTransaction.saveFailed'));
+    } catch (err) {
+      const code = err?.response?.data?.code;
+      setEditError(
+        code === 'SPLIT_PART_LOCKED'
+          ? t('split.errors.SPLIT_PART_LOCKED')
+          : t('addTransaction.saveFailed'),
+      );
     }
   };
 
@@ -809,6 +819,11 @@ export default function TransactionHistory({
                             </>
                           )}
                           <span className="truncate">{methodLabel(tx, t)}</span>
+                          {tx.splitOfId && (
+                            <span className="inline-flex flex-shrink-0 items-center rounded border border-slate-300 dark:border-slate-600 bg-slate-100 dark:bg-slate-800 px-1.5 text-[11px] font-medium leading-4 text-slate-700 dark:text-slate-200">
+                              {t('split.badge')}
+                            </span>
+                          )}
                           {(tx.Tags || []).map((tag) => (
                             <span
                               key={tag.id}
@@ -839,6 +854,12 @@ export default function TransactionHistory({
                           {
                             label: t('addTransaction.editRow'),
                             onClick: () => startEditTx(tx),
+                          },
+                          {
+                            label: tx.splitOfId
+                              ? t('split.editRow')
+                              : t('split.row'),
+                            onClick: () => setSplitId(tx.id),
                           },
                           {
                             label: t('addTransaction.duplicate'),
@@ -922,11 +943,23 @@ export default function TransactionHistory({
         </>
       )}
 
+      <SplitDialog
+        transactionId={splitId}
+        categories={categories}
+        onClose={(saved) => {
+          setSplitId(null);
+          if (saved) load();
+        }}
+      />
       <ConfirmDialog
         open={deleteTargetId !== null}
         onOpenChange={(o) => !o && setDeleteTargetId(null)}
         title={t('addTransaction.deleteTitle')}
-        description={t('addTransaction.deleteDescription')}
+        description={
+          deleteIsPart
+            ? t('split.deleteWarning')
+            : t('addTransaction.deleteDescription')
+        }
         confirmText={t('common.delete')}
         cancelText={t('common.cancel')}
         onConfirm={confirmDelete}

@@ -224,8 +224,12 @@ export default function AccountDetail() {
       setEditingTxId(null);
       refresh();
       toast.success(t('accountsPage.changesSaved'));
-    } catch {
-      toast.error(t('accountsPage.txSaveFailed'));
+    } catch (err) {
+      toast.error(
+        err?.response?.data?.code === 'SPLIT_PART_LOCKED'
+          ? t('split.errors.SPLIT_PART_LOCKED')
+          : t('accountsPage.txSaveFailed'),
+      );
     }
   };
 

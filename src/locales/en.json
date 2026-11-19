@@ -1397,5 +1397,46 @@
       "TAG_LIMIT": "You reached the limit of 100 tags.",
       "TAGS_INVALID": "Some tag is not valid."
     }
+  },
+  "split": {
+    "row": "Split",
+    "editRow": "Edit split",
+    "badge": "Split",
+    "title": "Split transaction",
+    "editTitle": "Edit split",
+    "subtitle": "Share the total out in parts with their own category. They must add up exactly to the total.",
+    "part": "Part {{n}}",
+    "amountOf": "Amount of part {{n}}",
+    "descriptionOf": "Description of part {{n}}",
+    "descriptionPlaceholder": "Description (optional, default: {{description}})",
+    "pickCategory": "Pick a category",
+    "addPart": "+ Add part",
+    "remove": "Remove",
+    "removePart": "Remove part {{n}}",
+    "addRest": "Put the rest here",
+    "takeExcess": "Take the excess off here",
+    "balanced": "Matches the total",
+    "left": "{{amount}} left to assign",
+    "over": "Over by {{amount}}",
+    "save_one": "Save split",
+    "save_other": "Save {{count}} parts",
+    "join": "Join back",
+    "saved_one": "Transaction split",
+    "saved_other": "Transaction split into {{count}} parts",
+    "joined": "The parts were joined back",
+    "saveFailed": "Couldn't save the split",
+    "joinFailed": "Couldn't join the parts",
+    "loadFailed": "Couldn't load the transaction.",
+    "deleteWarning": "This transaction is part of a split: the whole purchase is deleted, with all its parts.",
+    "errors": {
+      "SPLIT_PART_COUNT": "Split into 2 to 20 parts.",
+      "SPLIT_PART_AMOUNT": "Each part needs an amount above 0, with up to 2 decimals.",
+      "SPLIT_PART_CATEGORY": "Each part needs one of your categories of the same type.",
+      "SPLIT_PART_DESCRIPTION": "The description is up to 255 characters.",
+      "SPLIT_SUM_MISMATCH": "The parts must add up exactly to the total.",
+      "SPLIT_PART_LOCKED": "This is part of a split: change the amount, date or account from “Edit split”.",
+      "TAGS_INVALID": "Some tag is not valid."
+    },
+    "incomplete": "Fill in the amount and category of every part"
   }
 }

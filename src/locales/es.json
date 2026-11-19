@@ -1397,5 +1397,46 @@
       "TAG_LIMIT": "Llegaste al máximo de 100 etiquetas.",
       "TAGS_INVALID": "Alguna etiqueta no es válida."
     }
+  },
+  "split": {
+    "row": "Dividir",
+    "editRow": "Editar división",
+    "badge": "Dividida",
+    "title": "Dividir transacción",
+    "editTitle": "Editar división",
+    "subtitle": "Reparte el total en partes con su propia categoría. Deben sumar exactamente el total.",
+    "part": "Parte {{n}}",
+    "amountOf": "Monto de la parte {{n}}",
+    "descriptionOf": "Descripción de la parte {{n}}",
+    "descriptionPlaceholder": "Descripción (opcional, por defecto: {{description}})",
+    "pickCategory": "Elige una categoría",
+    "addPart": "+ Agregar parte",
+    "remove": "Quitar",
+    "removePart": "Quitar la parte {{n}}",
+    "addRest": "Poner el resto aquí",
+    "takeExcess": "Restar lo que sobra aquí",
+    "balanced": "Cuadra con el total",
+    "left": "Falta repartir {{amount}}",
+    "over": "Te pasaste por {{amount}}",
+    "save_one": "Guardar división",
+    "save_other": "Guardar {{count}} partes",
+    "join": "Unir de nuevo",
+    "saved_one": "Transacción dividida",
+    "saved_other": "Transacción dividida en {{count}} partes",
+    "joined": "Las partes se unieron de nuevo",
+    "saveFailed": "No se pudo guardar la división",
+    "joinFailed": "No se pudieron unir las partes",
+    "loadFailed": "No se pudo cargar la transacción.",
+    "deleteWarning": "Esta transacción es parte de una división: se eliminará la compra completa, con todas sus partes.",
+    "errors": {
+      "SPLIT_PART_COUNT": "Divide en 2 a 20 partes.",
+      "SPLIT_PART_AMOUNT": "Cada parte necesita un monto mayor que 0, con hasta 2 decimales.",
+      "SPLIT_PART_CATEGORY": "Cada parte necesita una de tus categorías del mismo tipo.",
+      "SPLIT_PART_DESCRIPTION": "La descripción tiene hasta 255 caracteres.",
+      "SPLIT_SUM_MISMATCH": "Las partes deben sumar exactamente el total.",
+      "SPLIT_PART_LOCKED": "Es parte de una división: cambia el monto, la fecha o la cuenta desde «Editar división».",
+      "TAGS_INVALID": "Alguna etiqueta no es válida."
+    },
+    "incomplete": "Completa el monto y la categoría de cada parte"
   }
 }
