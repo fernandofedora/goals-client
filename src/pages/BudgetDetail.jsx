@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
 import {
@@ -13,11 +13,11 @@ import {
   YAxis,
 } from 'recharts';
 import api from '../api';
-import MonthStepper from '../components/ui/month-stepper';
+import { ScopeLine } from '../components/budgets/BudgetRow';
 import { useCurrency } from '../context/CurrencyContext';
 import { compactNumber } from '../utils/format';
 import { intlLocale } from '../utils/dateLocale';
-import { monthFromPeriod, periodOf } from '../utils/months';
+import { budgetColor, periodRange } from '../utils/budgets';
 import { cn } from '../lib/utils';
 
 // Rounds the axis top up to 1, 2, 2.5 or 5 times a power of ten, so the
@@ -29,8 +29,69 @@ function niceCeil(value) {
   return step * magnitude;
 }
 
-const monthName = (period) =>
-  monthFromPeriod(period).toLocaleDateString(intlLocale(), { month: 'long' });
+const shortDate = (iso) => {
+  const [y, m, d] = iso.split('-').map(Number);
+  return new Date(y, m - 1, d).toLocaleDateString(intlLocale(), {
+    day: 'numeric',
+    month: 'short',
+  });
+};
+
+const MIN_OFFSET = -60;
+
+function Chevron({ dir }) {
+  return (
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d={dir === 'prev' ? 'm15 18-6-6 6-6' : 'm9 18 6-6-6-6'} />
+    </svg>
+  );
+}
+
+const stepClass =
+  'inline-flex items-center justify-center size-11 sm:size-9 rounded-lg cursor-pointer text-[var(--foreground)] hover:bg-[var(--muted)] active:bg-[var(--muted)] disabled:opacity-40 disabled:cursor-default disabled:hover:bg-transparent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ring)]';
+
+/** `‹ 1 – 31 mar ›`: steps one budget period at a time, never past today's. */
+function PeriodStepper({ offset, period, onChange }) {
+  const { t } = useTranslation();
+  return (
+    <div className="inline-flex items-center gap-1 rounded-xl border border-[var(--border)] bg-white dark:bg-slate-900 p-1">
+      <button
+        type="button"
+        onClick={() => onChange(offset - 1)}
+        disabled={offset <= MIN_OFFSET}
+        aria-label={t('budgetDetail.prevPeriod')}
+        className={stepClass}
+      >
+        <Chevron dir="prev" />
+      </button>
+      <span
+        className="min-w-36 text-center text-sm font-semibold text-[var(--foreground)]"
+        aria-live="polite"
+      >
+        {period ? periodRange(period) : '…'}
+      </span>
+      <button
+        type="button"
+        onClick={() => onChange(offset + 1)}
+        disabled={offset >= 0}
+        aria-label={t('budgetDetail.nextPeriod')}
+        className={stepClass}
+      >
+        <Chevron dir="next" />
+      </button>
+    </div>
+  );
+}
 
 function Tile({ label, value, detail, tone }) {
   return (
@@ -57,21 +118,19 @@ function Tile({ label, value, detail, tone }) {
   );
 }
 
-// Assigned, spent, previous month and available for the hovered day.
-function DayTooltip({ active, payload, label, budget, money, t, period }) {
+// Available, spent, previous period and what is left for the hovered day.
+function DayTooltip({ active, payload, available, money, t }) {
   if (!active || !payload?.length) return null;
   const point = payload[0].payload;
   const spent = point.spent;
-  const left = budget != null && spent != null ? budget - spent : null;
+  const left = spent != null ? available - spent : null;
   const row = (name, value, strong) => (
     <div className="flex justify-between gap-6">
       <span className="text-[var(--muted-foreground)]">{name}</span>
       <span
         className={cn(
-          'tabular-nums',
-          strong
-            ? 'font-semibold text-[var(--foreground)]'
-            : 'text-[var(--foreground)]',
+          'tabular-nums text-[var(--foreground)]',
+          strong && 'font-semibold',
         )}
       >
         {value}
@@ -81,54 +140,48 @@ function DayTooltip({ active, payload, label, budget, money, t, period }) {
   return (
     <div className="min-w-48 rounded-lg border border-[var(--border)] bg-[var(--card)] px-3 py-2 text-xs shadow-md space-y-1">
       <p className="font-medium text-[var(--foreground)]">
-        {t('budgetDetail.day', { day: label, month: monthName(period) })}
+        {shortDate(point.date)}
       </p>
-      {budget != null && row(t('budgetDetail.assigned'), money(budget))}
+      {row(t('budgetDetail.assigned'), money(available))}
       {row(t('budgetDetail.spent'), spent == null ? '—' : money(spent), true)}
-      {row(t('budgetDetail.previousMonth'), money(point.previous))}
+      {row(t('budgetDetail.previousPeriod'), money(point.previous))}
       {left != null &&
         row(
           left >= 0 ? t('budgetDetail.available') : t('budgetDetail.over'),
-          `${money(Math.abs(left))} (${Math.round((Math.abs(left) / budget) * 100)}%)`,
+          money(Math.abs(left)),
         )}
     </div>
   );
 }
 
-export default function BudgetCategory() {
+export default function BudgetDetail() {
   const { t } = useTranslation();
   const { money } = useCurrency();
-  const { categoryId } = useParams();
+  const { budgetId } = useParams();
   const [searchParams, setSearchParams] = useSearchParams();
-  const month = monthFromPeriod(searchParams.get('period'));
-  const period = periodOf(month);
+  const raw = Number(searchParams.get('offset') || 0);
+  const offset =
+    Number.isInteger(raw) && raw <= 0 && raw >= MIN_OFFSET ? raw : 0;
 
   const [data, setData] = useState(null);
-  const [txs, setTxs] = useState([]);
+  const [categories, setCategories] = useState([]);
   const [status, setStatus] = useState('loading');
+
+  useEffect(() => {
+    api
+      .get('/categories')
+      .then((res) => setCategories(res.data))
+      .catch(() => setCategories([]));
+  }, []);
 
   useEffect(() => {
     let alive = true;
     setStatus('loading');
-    const [y, m] = period.split('-').map(Number);
-    const last = new Date(y, m, 0).getDate();
-    Promise.all([
-      api.get(`/stats/category-budget/${categoryId}`, { params: { period } }),
-      api.get('/transactions', {
-        params: {
-          categoryId,
-          type: 'expense',
-          from: `${period}-01`,
-          to: `${period}-${String(last).padStart(2, '0')}`,
-          page: 1,
-          limit: 50,
-        },
-      }),
-    ])
-      .then(([detail, list]) => {
+    api
+      .get(`/spending-budgets/${budgetId}/detail`, { params: { offset } })
+      .then((res) => {
         if (!alive) return;
-        setData(detail.data);
-        setTxs(list.data.items || []);
+        setData(res.data);
         setStatus('ready');
       })
       .catch((err) => {
@@ -138,19 +191,27 @@ export default function BudgetCategory() {
     return () => {
       alive = false;
     };
-  }, [categoryId, period]);
+  }, [budgetId, offset]);
 
-  const setMonth = (d) => setSearchParams({ period: periodOf(d) });
-  const budget = data?.budget ?? null;
-  const spent = data?.spent ?? 0;
-  const left = budget != null ? budget - spent : null;
-  const color = data?.category?.color || '#059669';
+  const categoryById = useMemo(
+    () => new Map(categories.map((c) => [c.id, c])),
+    [categories],
+  );
+  const setOffset = (next) =>
+    setSearchParams(next === 0 ? {} : { offset: String(next) });
+
+  const budget = data?.budget;
+  const available = budget?.available ?? 0;
+  const spent = budget?.spent ?? 0;
+  const left = available - spent;
+  const color = budget ? budgetColor(budget) : '#059669';
   const yMax = niceCeil(
     Math.max(
-      budget ?? 0,
+      available,
       ...(data?.series ?? []).flatMap((p) => [p.spent ?? 0, p.previous]),
     ) * 1.05,
   );
+  const loading = status === 'loading';
 
   return (
     <div className="max-w-5xl mx-auto p-4 pb-12 space-y-5">
@@ -169,14 +230,24 @@ export default function BudgetCategory() {
               style={{ background: color }}
             />
             <span className="truncate">
-              {data?.category?.name ?? t('budgetDetail.title')}
+              {budget?.name ?? t('budgetDetail.title')}
             </span>
           </h1>
-          <p className="mt-1 text-sm text-[var(--muted-foreground)]">
-            {t('budgetDetail.subtitle')}
-          </p>
+          {budget ? (
+            <ScopeLine budget={budget} className="mt-1 text-sm" />
+          ) : (
+            <p className="mt-1 text-sm text-[var(--muted-foreground)]">
+              {t('budgetDetail.subtitle')}
+            </p>
+          )}
         </div>
-        <MonthStepper value={month} onChange={setMonth} />
+        {status !== 'missing' && (
+          <PeriodStepper
+            offset={offset}
+            period={budget?.period}
+            onChange={setOffset}
+          />
+        )}
       </div>
 
       {status === 'missing' && (
@@ -190,56 +261,48 @@ export default function BudgetCategory() {
         </div>
       )}
 
-      {(status === 'loading' || status === 'ready') && (
+      {(loading || status === 'ready') && (
         <>
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
             <Tile
               label={t('budgetDetail.assigned')}
-              value={
-                status === 'loading'
-                  ? '…'
-                  : budget != null
-                    ? money(budget)
-                    : '—'
-              }
+              value={loading ? '…' : money(available)}
               detail={
-                budget == null && status === 'ready'
-                  ? t('budgetDetail.noBudget')
+                !loading && budget.carry !== 0
+                  ? t(
+                      budget.carry > 0
+                        ? 'budgetDetail.withCarryIn'
+                        : 'budgetDetail.withCarryOut',
+                      {
+                        amount: money(budget.amount),
+                        carry: money(Math.abs(budget.carry)),
+                      },
+                    )
                   : null
               }
             />
             <Tile
               label={t('budgetDetail.spent')}
-              value={status === 'loading' ? '…' : money(spent)}
+              value={loading ? '…' : money(spent)}
               detail={
-                budget && status === 'ready'
+                !loading
                   ? t('budgetDetail.ofBudget', {
-                      pct: Math.round((spent / budget) * 100),
+                      pct: Math.round(budget.percent),
                     })
                   : null
               }
             />
             <Tile
               label={
-                left != null && left < 0
-                  ? t('budgetDetail.over')
-                  : t('budgetDetail.available')
+                left < 0 ? t('budgetDetail.over') : t('budgetDetail.available')
               }
-              value={
-                status === 'loading'
-                  ? '…'
-                  : left != null
-                    ? money(Math.abs(left))
-                    : '—'
-              }
-              tone={left != null && left < 0 ? 'bad' : null}
+              value={loading ? '…' : money(Math.abs(left))}
+              tone={!loading && left < 0 ? 'bad' : null}
             />
             <Tile
-              label={t('budgetDetail.previousMonth')}
-              value={
-                status === 'loading' ? '…' : money(data?.previousSpent ?? 0)
-              }
-              detail={data ? monthName(data.previousPeriod) : null}
+              label={t('budgetDetail.previousPeriod')}
+              value={loading ? '…' : money(data.previousPeriod.spent)}
+              detail={loading ? null : periodRange(data.previousPeriod)}
             />
           </div>
 
@@ -248,12 +311,10 @@ export default function BudgetCategory() {
               {t('budgetDetail.chartTitle')}
             </h2>
             <p className="text-xs text-[var(--muted-foreground)] mt-0.5">
-              {t('budgetDetail.chartSub', {
-                previous: data ? monthName(data.previousPeriod) : '',
-              })}
+              {t('budgetDetail.chartSub')}
             </p>
             <div className="mt-4 h-72">
-              {status === 'loading' ? (
+              {loading ? (
                 <div className="h-full animate-pulse motion-reduce:animate-none rounded-xl bg-[var(--muted)]" />
               ) : (
                 <ResponsiveContainer
@@ -267,11 +328,12 @@ export default function BudgetCategory() {
                   >
                     <CartesianGrid vertical={false} stroke="var(--border)" />
                     <XAxis
-                      dataKey="day"
+                      dataKey="date"
+                      tickFormatter={shortDate}
                       tickLine={false}
                       axisLine={false}
                       interval="preserveStartEnd"
-                      minTickGap={16}
+                      minTickGap={24}
                       tick={{ fontSize: 12, fill: 'var(--muted-foreground)' }}
                     />
                     <YAxis
@@ -285,21 +347,16 @@ export default function BudgetCategory() {
                     />
                     <Tooltip
                       content={
-                        <DayTooltip
-                          budget={budget}
-                          money={money}
-                          t={t}
-                          period={period}
-                        />
+                        <DayTooltip available={available} money={money} t={t} />
                       }
                       cursor={{
                         stroke: 'var(--muted-foreground)',
                         strokeDasharray: '3 3',
                       }}
                     />
-                    {budget != null && (
+                    {available > 0 && (
                       <ReferenceLine
-                        y={budget}
+                        y={available}
                         stroke="#e11d48"
                         strokeWidth={1.5}
                         strokeDasharray="6 4"
@@ -314,7 +371,7 @@ export default function BudgetCategory() {
                     <Line
                       type="monotone"
                       dataKey="previous"
-                      name={t('budgetDetail.previousMonth')}
+                      name={t('budgetDetail.previousPeriod')}
                       stroke="var(--muted-foreground)"
                       strokeWidth={2}
                       strokeDasharray="4 4"
@@ -343,13 +400,13 @@ export default function BudgetCategory() {
                   className="h-0.5 w-5 rounded"
                   style={{ background: color }}
                 />
-                {t('budgetDetail.legendThisMonth')}
+                {t('budgetDetail.legendThisPeriod')}
               </li>
               <li className="flex items-center gap-1.5">
                 <span className="w-5 border-t-2 border-dashed border-[var(--muted-foreground)]" />
-                {t('budgetDetail.legendPrevious')}
+                {t('budgetDetail.previousPeriod')}
               </li>
-              {budget != null && (
+              {available > 0 && (
                 <li className="flex items-center gap-1.5">
                   <span className="w-5 border-t-2 border-dashed border-rose-600" />
                   {t('budgetDetail.limit')}
@@ -359,44 +416,43 @@ export default function BudgetCategory() {
           </section>
 
           <section className="bg-white dark:bg-slate-900 rounded-2xl border border-[var(--border)] shadow-sm overflow-hidden">
-            <div className="px-5 pt-5 pb-3 flex items-center justify-between gap-3 flex-wrap border-b border-[var(--border)]">
+            <div className="px-5 pt-5 pb-3 border-b border-[var(--border)]">
               <h2 className="text-base font-semibold text-[var(--foreground)]">
                 {t('budgetDetail.transactions')}
               </h2>
-              <Link
-                to={`/transactions/add?categoryId=${categoryId}&period=${period}`}
-                className="inline-flex items-center min-h-11 sm:min-h-0 text-sm font-medium text-emerald-700 dark:text-emerald-400 hover:underline rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ring)]"
-              >
-                {t('budgetDetail.openHistory')}
-              </Link>
             </div>
-            {status === 'ready' && txs.length === 0 ? (
+            {!loading && data.transactions.length === 0 ? (
               <p className="px-5 py-8 text-center text-sm text-[var(--muted-foreground)]">
                 {t('budgetDetail.noTransactions')}
               </p>
             ) : (
               <ul className="divide-y divide-[var(--border)]">
-                {txs.map((tx) => (
-                  <li key={tx.id} className="px-5 py-3 flex items-center gap-3">
-                    <span className="w-20 sm:w-24 flex-shrink-0 text-[13px] tabular-nums text-[var(--muted-foreground)]">
-                      {tx.date}
-                    </span>
-                    <span className="flex-1 min-w-0">
-                      <span className="block truncate text-sm font-medium text-[var(--foreground)]">
-                        {tx.description}
+                {(data?.transactions ?? []).map((tx) => {
+                  const cat = categoryById.get(tx.CategoryId);
+                  return (
+                    <li
+                      key={tx.id}
+                      className="px-5 py-3 flex items-center gap-3"
+                    >
+                      <span className="w-16 sm:w-20 flex-shrink-0 text-[13px] tabular-nums text-[var(--muted-foreground)]">
+                        {shortDate(tx.date)}
                       </span>
-                      {tx.Category &&
-                        String(tx.Category.id) !== String(categoryId) && (
+                      <span className="flex-1 min-w-0">
+                        <span className="block truncate text-sm font-medium text-[var(--foreground)]">
+                          {tx.description}
+                        </span>
+                        {cat && (
                           <span className="block truncate text-xs text-[var(--muted-foreground)]">
-                            {tx.Category.name}
+                            {cat.name}
                           </span>
                         )}
-                    </span>
-                    <span className="text-sm font-semibold tabular-nums text-[var(--foreground)]">
-                      {money(tx.amount)}
-                    </span>
-                  </li>
-                ))}
+                      </span>
+                      <span className="text-sm font-semibold tabular-nums text-[var(--foreground)]">
+                        {money(tx.amount)}
+                      </span>
+                    </li>
+                  );
+                })}
               </ul>
             )}
           </section>

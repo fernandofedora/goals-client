@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 import NetWorthCard from '../components/NetWorthCard';
 import CardLimitAlert from '../components/CardLimitAlert';
 import TopTagsCard from '../components/TopTagsCard';
+import DashboardBudgets from '../components/budgets/DashboardBudgets';
 import PageHeader from '../components/ui/page-header';
 import { cn } from '../lib/utils';
 import api from '../api';
@@ -1045,128 +1046,9 @@ export default function Dashboard() {
         )}
 
         {/* ── Category Budgets view (new) ── */}
-        {budgetView === 'category' &&
-          (() => {
-            if (!isMonthSelected)
-              return (
-                <p className="text-sm text-gray-400">
-                  {t('dashboard.selectMonthCompare')}
-                </p>
-              );
-            const catsWithBudget = (summary?.categories || []).filter(
-              (c) => c.monthlyBudget != null,
-            );
-            if (loading)
-              return (
-                <p className="text-sm text-gray-400 animate-pulse">
-                  {t('dashboard.loading')}
-                </p>
-              );
-            if (catsWithBudget.length === 0)
-              return (
-                <div className="flex flex-col items-center justify-center py-8 gap-2 text-center">
-                  <span className="text-3xl opacity-30">📊</span>
-                  <p className="text-sm text-gray-400">
-                    {t('dashboard.noCategoryBudget')}
-                  </p>
-                  <p className="text-xs text-gray-400">
-                    <Trans
-                      i18nKey="dashboard.categoryBudgetHint"
-                      components={[<strong key="s" />]}
-                    />
-                  </p>
-                </div>
-              );
-            return (
-              <div className="space-y-4">
-                {catsWithBudget.map((cat) => {
-                  const budget = Number(cat.monthlyBudget);
-                  const spent = Number(cat.amount || 0);
-                  const remaining = budget - spent;
-                  const pct =
-                    budget > 0 ? Math.round((spent / budget) * 100) : 0;
-                  const isOver = remaining < 0;
-                  const remainingPct = 100 - pct;
-                  const barColor = isOver
-                    ? '#f43f5e'
-                    : remainingPct <= 10
-                      ? '#f43f5e'
-                      : remainingPct <= 30
-                        ? '#f59e0b'
-                        : cat.color;
-                  return (
-                    <div key={cat.name} className="space-y-1.5">
-                      <div className="flex items-center justify-between text-sm">
-                        <div className="flex items-center gap-2">
-                          <span
-                            className="w-2.5 h-2.5 rounded-full flex-shrink-0"
-                            style={{ background: cat.color }}
-                          />
-                          {cat.id ? (
-                            <Link
-                              to={`/transactions/budget/${cat.id}?period=${
-                                filterMode === 'period' &&
-                                /^\d{2}$/.test(period)
-                                  ? `${selectedYear}-${period}`
-                                  : ''
-                              }`}
-                              className="font-medium text-gray-800 dark:text-gray-100 hover:underline rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ring)]"
-                            >
-                              {cat.name}
-                            </Link>
-                          ) : (
-                            <span className="font-medium text-gray-800 dark:text-gray-100">
-                              {cat.name}
-                            </span>
-                          )}
-                        </div>
-                        <div className="flex items-center gap-3 text-right">
-                          <span className="text-gray-500 dark:text-gray-400 tabular-nums">
-                            {money(spent)}{' '}
-                            <span className="text-gray-300 dark:text-gray-600">
-                              /
-                            </span>{' '}
-                            {money(budget)}
-                          </span>
-                          <span
-                            className={`text-xs font-semibold tabular-nums ${
-                              isOver ? 'text-rose-600' : 'text-emerald-600'
-                            }`}
-                          >
-                            {isOver
-                              ? t('dashboard.overBy', {
-                                  amount: money(Math.abs(remaining)),
-                                })
-                              : t('dashboard.leftAmount', {
-                                  amount: money(remaining),
-                                })}
-                          </span>
-                        </div>
-                      </div>
-                      <div className="w-full h-2.5 bg-gray-100 dark:bg-slate-800 rounded-full overflow-hidden">
-                        <div
-                          className="h-2.5 rounded-full transition-all duration-700"
-                          style={{
-                            width: `${Math.min(pct, 100)}%`,
-                            background: barColor,
-                          }}
-                        />
-                      </div>
-                      <p className="text-[11px] text-gray-400">
-                        {isOver
-                          ? t('dashboard.consumedOver', {
-                              pct: Math.min(pct, 100),
-                            })
-                          : t('dashboard.consumed', {
-                              pct: Math.min(pct, 100),
-                            })}
-                      </p>
-                    </div>
-                  );
-                })}
-              </div>
-            );
-          })()}
+        {budgetView === 'category' && (
+          <DashboardBudgets refreshKey={refreshTick} />
+        )}
       </div>
 
       {/* ── Saldo + Payment Methods + Card Usage ── */}

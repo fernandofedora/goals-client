@@ -10,7 +10,7 @@ import PageHeader from '../components/ui/page-header';
 import { toast } from 'sonner';
 import { useCurrency } from '../context/CurrencyContext';
 import { intlLocale } from '../utils/dateLocale';
-import CategoryBudgets from '../components/CategoryBudgets';
+import SpendingBudgets from '../components/budgets/SpendingBudgets';
 
 // ── Inline Field wrapper ──────────────────────────────────────────────────────
 function Field({ label, children }) {
@@ -335,7 +335,7 @@ export default function Budget() {
         )}
       </section>
 
-      <CategoryBudgets />
+      <SpendingBudgets />
     </div>
   );
 }

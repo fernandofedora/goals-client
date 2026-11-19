@@ -27,7 +27,7 @@ function extractOptions(children) {
   return { options: opts, placeholderText };
 }
 
-const Select = React.forwardRef(({ className, children, value = '', onChange, placeholder, required, name, disabled, searchable, searchPlaceholder = 'Buscar...', noResultsText = 'Sin resultados', maxHeight, searchThreshold = 8, filterFn }, ref) => {
+const Select = React.forwardRef(({ id, className, children, value = '', onChange, placeholder, required, name, disabled, searchable, searchPlaceholder = 'Buscar...', noResultsText = 'Sin resultados', maxHeight, searchThreshold = 8, filterFn }, ref) => {
   const { options, placeholderText } = extractOptions(children);
   const normalizedValue = value == null ? '' : String(value);
   const selectedLabel = (normalizedValue === ''
@@ -67,6 +67,7 @@ const Select = React.forwardRef(({ className, children, value = '', onChange, pl
         onOpenChange={(next)=>{ if (!next && preventCloseRef.current) return; setOpen(next); }}
       >
         <RadixSelect.Trigger
+          id={id}
           ref={ref}
           className={cn(
             'inline-flex items-center justify-between rounded-md border px-3 py-2 text-sm w-full min-h-11 sm:min-h-0 cursor-pointer',

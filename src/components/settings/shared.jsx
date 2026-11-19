@@ -3,7 +3,6 @@ import Input from "../ui/input";
 import Select from "../ui/select";
 import IconButton from "../ui/icon-button";
 import { cn } from "../../lib/utils";
-import { useCurrency } from "../../context/CurrencyContext";
 
 // ── Field wrapper ─────────────────────────────────────────────────────────────
 export function Field({ label, children }) {
@@ -125,7 +124,6 @@ export function CatRow({
   setDeleteCatId,
 }) {
   const { t } = useTranslation();
-  const { symbol: cs, money, privacyMode } = useCurrency();
   // A subcategory takes its parent's type, so the type picker only shows for
   // top-level categories. A parent with children cannot be moved under another.
   const inheritsType = Boolean(editCatForm.parentId);
@@ -195,19 +193,6 @@ export function CatRow({
               }
             />
           </Field>
-          <Field label={t("settings.categories.monthlyBudget")}>
-            <Input
-              type="number"
-              step="0.01"
-              min="0"
-              placeholder={t("settings.categories.noLimit")}
-              className="w-32"
-              value={editCatForm.monthlyBudget}
-              onChange={(e) =>
-                setEditCatForm((v) => ({ ...v, monthlyBudget: e.target.value }))
-              }
-            />
-          </Field>
           <div className="flex gap-1.5 pb-0.5">
             <button
               type="button"
@@ -247,14 +232,6 @@ export function CatRow({
               >
                 {cat.name}
               </span>
-              {cat.monthlyBudget != null && (
-                <span className="text-[11px] font-semibold px-1.5 py-0.5 rounded bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 border border-indigo-100 dark:border-indigo-800 flex-shrink-0">
-                  {privacyMode
-                    ? money(cat.monthlyBudget)
-                    : `${cs}${Number(cat.monthlyBudget).toFixed(0)}`}
-                  {t("settings.categories.perMonth")}
-                </span>
-              )}
             </div>
           </div>
           <div className="flex gap-1">

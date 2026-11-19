@@ -23,7 +23,7 @@ import Budget from './pages/Budget';
 import AddTransaction from './pages/AddTransaction';
 import GraphicsByCategories from './pages/GraphicsByCategories';
 import Cashflow from './pages/Cashflow';
-import BudgetCategory from './pages/BudgetCategory';
+import BudgetDetail from './pages/BudgetDetail';
 import UserManager from './pages/UserManager';
 import VerifyEmail from './pages/VerifyEmail';
 import useTheme from './hooks/useTheme';
@@ -135,10 +135,10 @@ export default function App() {
                     }
                   />
                   <Route
-                    path="/transactions/budget/:categoryId"
+                    path="/transactions/budget/:budgetId"
                     element={
                       <ProtectedRoute>
-                        <BudgetCategory />
+                        <BudgetDetail />
                       </ProtectedRoute>
                     }
                   />

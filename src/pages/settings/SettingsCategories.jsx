@@ -95,19 +95,6 @@ function NewCategoryForm({
           onChange={(e) => setForm((v) => ({ ...v, color: e.target.value }))}
         />
       </Field>
-      <Field label={t('settings.categories.monthlyBudgetDollars')}>
-        <Input
-          type="number"
-          step="0.01"
-          min="0"
-          placeholder={t('settings.categories.noLimit')}
-          className="w-32"
-          value={form.monthlyBudget || ''}
-          onChange={(e) =>
-            setForm((v) => ({ ...v, monthlyBudget: e.target.value }))
-          }
-        />
-      </Field>
       <div className="pb-0.5 flex gap-1.5">
         <Button type="submit" variant="primary">
           {t('common.save')}
@@ -135,7 +122,6 @@ export default function SettingsCategories() {
     name: '',
     type: 'expense',
     color: DEFAULT_COLOR.expense,
-    monthlyBudget: '',
     parentId: '',
   });
   const [deleteCatId, setDeleteCatId] = useState(null);
@@ -186,7 +172,6 @@ export default function SettingsCategories() {
             name: '',
             type,
             color: parent?.color || DEFAULT_COLOR[type],
-            monthlyBudget: '',
             parentId: parent?.id || null,
             parentName: parent?.name || null,
           },
@@ -196,12 +181,11 @@ export default function SettingsCategories() {
   const addCategory = async (e) => {
     e.preventDefault();
     try {
-      const { name, type, color, monthlyBudget, parentId } = newForm;
+      const { name, type, color, parentId } = newForm;
       await api.post('/categories', {
         name,
         type,
         color,
-        monthlyBudget,
         parentId,
       });
       setNewForm(null);
@@ -218,7 +202,6 @@ export default function SettingsCategories() {
       name: cat.name,
       type: cat.type,
       color: cat.color,
-      monthlyBudget: cat.monthlyBudget != null ? String(cat.monthlyBudget) : '',
       parentId: cat.parentId ? String(cat.parentId) : '',
     });
   };
@@ -227,10 +210,6 @@ export default function SettingsCategories() {
     try {
       const payload = {
         ...editCatForm,
-        monthlyBudget:
-          editCatForm.monthlyBudget !== ''
-            ? Number(editCatForm.monthlyBudget)
-            : null,
         parentId: editCatForm.parentId ? Number(editCatForm.parentId) : null,
       };
       await api.put(`/categories/${id}`, payload);
