@@ -6,6 +6,7 @@ import DateInput from '../DateInput';
 import Button from './button';
 import { cn } from '../../lib/utils';
 import { categoryOptions } from '../../utils/categories';
+import TagPicker from './tag-picker';
 
 export default function EditTransactionDialog({
   open,
@@ -139,6 +140,20 @@ export default function EditTransactionDialog({
                   </option>
                 ))}
               </Select>
+            </div>
+
+            <div>
+              <label
+                htmlFor="edit-tx-tags"
+                className="block text-xs font-semibold uppercase tracking-widest text-[var(--muted-foreground)] mb-1.5"
+              >
+                {t('tags.label')}
+              </label>
+              <TagPicker
+                id="edit-tx-tags"
+                value={initial.tagIds || []}
+                onChange={(tagIds) => onSave({ ...initial, tagIds }, true)}
+              />
             </div>
 
             <div className="grid grid-cols-2 gap-4">

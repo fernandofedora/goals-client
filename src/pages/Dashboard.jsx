@@ -3,6 +3,7 @@ import { useTranslation, Trans } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import NetWorthCard from '../components/NetWorthCard';
 import CardLimitAlert from '../components/CardLimitAlert';
+import TopTagsCard from '../components/TopTagsCard';
 import PageHeader from '../components/ui/page-header';
 import { cn } from '../lib/utils';
 import api from '../api';
@@ -943,6 +944,8 @@ export default function Dashboard() {
           )}
         </div>
       </div>
+
+      <TopTagsCard />
 
       {/* ── Budget vs Actual (with Monthly / Category toggle) ── */}
       <div className="bg-white dark:bg-slate-900 rounded-2xl border border-[var(--border)] shadow-sm p-5">

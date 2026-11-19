@@ -36,6 +36,7 @@ const EMPTY_FILTERS = {
   to: '',
   minAmount: '',
   maxAmount: '',
+  tagId: '',
 };
 
 const EMPTY_EDIT = {
@@ -96,6 +97,9 @@ export default function TransactionHistory({
   const linkedCategory = /^\d+$/.test(searchParams.get('categoryId') || '')
     ? searchParams.get('categoryId')
     : '';
+  const linkedTag = /^\d+$/.test(searchParams.get('tagId') || '')
+    ? searchParams.get('tagId')
+    : '';
 
   const [month, setMonth] = useState(
     linkedPeriod?.[1] ?? String(now.getMonth() + 1).padStart(2, '0'),
@@ -103,11 +107,22 @@ export default function TransactionHistory({
   const [year, setYear] = useState(
     linkedPeriod?.[0] ?? String(now.getFullYear()),
   );
+  const [tags, setTags] = useState([]);
+  useEffect(() => {
+    api
+      .get('/tags')
+      .then((res) => setTags(res.data))
+      // No tags: the filter just lists none.
+      .catch(() => setTags([]));
+  }, []);
   const [filters, setFilters] = useState(() => ({
     ...EMPTY_FILTERS,
     categoryId: linkedCategory,
+    tagId: linkedTag,
   }));
-  const [showFilters, setShowFilters] = useState(Boolean(linkedCategory));
+  const [showFilters, setShowFilters] = useState(
+    Boolean(linkedCategory || linkedTag),
+  );
 
   const [data, setData] = useState(null);
   const [failed, setFailed] = useState(false);
@@ -202,6 +217,7 @@ export default function TransactionHistory({
     ['categoryId', nameOf(categories, filters.categoryId)],
     ['accountId', nameOf(accounts, filters.accountId)],
     ['cardId', nameOf(cards, filters.cardId)],
+    ['tagId', nameOf(tags, filters.tagId)],
     ['from', filters.from && `${t('addTransaction.from')}: ${filters.from}`],
     ['to', filters.to && `${t('addTransaction.to')}: ${filters.to}`],
     [
@@ -251,6 +267,7 @@ export default function TransactionHistory({
           : tx.paymentMethod || 'cash',
       cardId: tx.CardId || tx.Card?.id || '',
       accountId: tx.AccountId || '',
+      tagIds: (tx.Tags || []).map((tag) => tag.id),
     });
     setEditError('');
   };
@@ -311,6 +328,7 @@ export default function TransactionHistory({
         categoryId: tx.CategoryId || null,
         cardId: tx.CardId || null,
         accountId: tx.AccountId || null,
+        tagIds: (tx.Tags || []).map((tag) => tag.id),
       });
       toast.success(t('addTransaction.duplicated'));
       load();
@@ -385,6 +403,7 @@ export default function TransactionHistory({
           t('addTransaction.colCategory'),
           t('addTransaction.colAccount'),
           t('addTransaction.colAmount'),
+          t('tags.label'),
         ],
         ...res.data.map((tx) => [
           tx.date,
@@ -393,6 +412,7 @@ export default function TransactionHistory({
           tx.Category?.name ?? '',
           methodLabel(tx, t),
           Number(tx.amount).toFixed(2),
+          (tx.Tags || []).map((tag) => tag.name).join(', '),
         ]),
       ]);
     } catch {
@@ -538,6 +558,20 @@ export default function TransactionHistory({
                 {categoryOptions(categories).map((o) => (
                   <option key={o.id} value={o.id}>
                     {o.label}
+                  </option>
+                ))}
+              </Select>
+            </Field>
+            <Field label={t('tags.filter')}>
+              <Select
+                className="w-full"
+                value={filters.tagId}
+                onChange={onField('tagId')}
+              >
+                <option value="">{t('tags.allTags')}</option>
+                {tags.map((tag) => (
+                  <option key={tag.id} value={tag.id}>
+                    {tag.name}
                   </option>
                 ))}
               </Select>
@@ -775,6 +809,15 @@ export default function TransactionHistory({
                             </>
                           )}
                           <span className="truncate">{methodLabel(tx, t)}</span>
+                          {(tx.Tags || []).map((tag) => (
+                            <span
+                              key={tag.id}
+                              className="hidden sm:inline-flex flex-shrink-0 items-center gap-1 rounded border border-[var(--border)] px-1.5 text-[11px] leading-4 text-[var(--foreground)]"
+                            >
+                              <span className="size-1.5 rounded-full" style={{ background: tag.color }} />
+                              {tag.name}
+                            </span>
+                          ))}
                         </p>
                       </div>
                       <span

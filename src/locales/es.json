@@ -56,14 +56,15 @@
   },
   "settings": {
     "title": "Ajustes",
-    "subtitle": "Administra tu moneda, cuentas, categorías, reglas y tarjetas de crédito",
+    "subtitle": "Administra tu moneda, cuentas, categorías, reglas, etiquetas y tarjetas de crédito",
     "sections": "Secciones de ajustes",
     "sidebar": {
       "currency": "Moneda",
       "accounts": "Cuentas",
       "categories": "Categorías",
       "cards": "Tarjetas de Crédito",
-      "rules": "Reglas"
+      "rules": "Reglas",
+      "tags": "Etiquetas"
     },
     "loadFailed": "No se pudieron cargar los datos",
     "currency": {
@@ -1353,6 +1354,48 @@
     "errors": {
       "CARD_INVALID_LIMIT": "El límite debe ser un número mayor que 0.",
       "CARD_INVALID_DAY": "Los días de corte y de pago van del 1 al 31."
+    }
+  },
+  "tags": {
+    "label": "Etiquetas (opcional)",
+    "placeholder": "Escribe para buscar o crear…",
+    "full": "Máximo 10 etiquetas",
+    "create": "Crear «{{name}}»",
+    "remove": "Quitar {{name}}",
+    "filter": "Etiqueta",
+    "allTags": "Todas las etiquetas",
+    "title": "Etiquetas",
+    "subtitle": "Marcan transacciones de distintas categorías, como un viaje o un proyecto.",
+    "add": "+ Agregar etiqueta",
+    "createButton": "Crear etiqueta",
+    "name": "Nombre",
+    "namePlaceholder": "ej. viaje-2026",
+    "color": "Color",
+    "edit": "Editar {{name}}",
+    "delete": "Eliminar {{name}}",
+    "usedIn_one": "En {{count}} transacción",
+    "usedIn_other": "En {{count}} transacciones",
+    "unused": "Sin usar todavía",
+    "empty": "Aún no tienes etiquetas. Créalas aquí o al registrar una transacción.",
+    "created": "Etiqueta creada",
+    "updated": "Etiqueta actualizada",
+    "deleted": "Etiqueta eliminada",
+    "saveFailed": "No se pudo guardar la etiqueta",
+    "deleteFailed": "No se pudo eliminar la etiqueta",
+    "loadFailed": "No se pudieron cargar las etiquetas.",
+    "deleteTitle": "Eliminar etiqueta",
+    "deleteDescription_one": "Se quitará de {{count}} transacción, que se conserva.",
+    "deleteDescription_other": "Se quitará de {{count}} transacciones, que se conservan.",
+    "topTitle": "Top etiquetas (30 días)",
+    "topSubtitle": "Gasto por etiqueta. Una transacción con dos etiquetas cuenta en ambas.",
+    "movements_one": "{{count}} mov.",
+    "movements_other": "{{count}} mov.",
+    "errors": {
+      "TAG_INVALID_NAME": "El nombre debe tener entre 1 y 40 caracteres, sin comas.",
+      "TAG_INVALID_COLOR": "Color no válido.",
+      "TAG_DUPLICATE": "Ya tienes una etiqueta con ese nombre.",
+      "TAG_LIMIT": "Llegaste al máximo de 100 etiquetas.",
+      "TAGS_INVALID": "Alguna etiqueta no es válida."
     }
   }
 }

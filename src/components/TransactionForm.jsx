@@ -8,6 +8,7 @@ import Input from './ui/input';
 import Button from './ui/button';
 import Select from './ui/select';
 import { cn } from '../lib/utils';
+import TagPicker from './ui/tag-picker';
 import { useCurrency } from '../context/CurrencyContext';
 import { categoryOptions, categoriesForTxType } from '../utils/categories';
 
@@ -29,6 +30,7 @@ const emptyExpense = (date = '', account = null) => ({
         : 'cash',
   cardId: account?.kind === 'card' ? String(account.id) : '',
   accountId: account?.kind === 'bank' ? String(account.id) : '',
+  tagIds: [],
 });
 
 const emptyIncome = (date = '', account = null) => ({
@@ -38,6 +40,7 @@ const emptyIncome = (date = '', account = null) => ({
   date,
   incomeMethod: account?.kind === 'bank' ? 'account' : 'cash',
   accountId: account?.kind === 'bank' ? String(account.id) : '',
+  tagIds: [],
 });
 
 export function Field({ label, labelRight, htmlFor, children }) {
@@ -357,6 +360,14 @@ export default function TransactionForm({
                 })}
               </p>
             )}
+        </Field>
+
+        <Field label={t('tags.label')} htmlFor={`${idp}-tags`}>
+          <TagPicker
+            id={`${idp}-tags`}
+            value={current.tagIds}
+            onChange={(tagIds) => setCurrent((v) => ({ ...v, tagIds }))}
+          />
         </Field>
 
         {/* Expense-only: 3-way payment picker + conditional card or account picker */}

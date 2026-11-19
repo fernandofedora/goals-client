@@ -92,6 +92,28 @@ const SECTIONS = [
     ),
   },
   {
+    to: '/settings/tags',
+    labelKey: 'settings.sidebar.tags',
+    // A hash sign: free labels, distinct from the category tag icon.
+    icon: (
+      <svg
+        width="15"
+        height="15"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
+        <path d="M4 9h16" />
+        <path d="M4 15h16" />
+        <path d="M10 3 8 21" />
+        <path d="M16 3l-2 18" />
+      </svg>
+    ),
+  },
+  {
     to: '/settings/cards',
     labelKey: 'settings.sidebar.cards',
     icon: (
@@ -112,7 +134,7 @@ const SECTIONS = [
   },
 ];
 
-// Phones: 5 equal tabs (icon over label) so none is cut off at the edge.
+// Phones: tabs in rows of three (icon over label) so none is cut off at the edge.
 // md+: vertical sidebar rows.
 const sideLinkClass = ({ isActive }) =>
   cn(
@@ -136,7 +158,7 @@ export default function SettingsLayout() {
         {/* ── Section nav: vertical sidebar on desktop, pill row on mobile ── */}
         <aside className="w-full md:w-48 shrink-0 md:sticky md:top-20">
           <nav
-            className="grid grid-cols-5 md:flex md:flex-col gap-1"
+            className="grid grid-cols-3 md:flex md:flex-col gap-1"
             aria-label={t('settings.sections')}
           >
             {SECTIONS.map((s) => (

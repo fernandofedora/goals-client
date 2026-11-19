@@ -56,14 +56,15 @@
   },
   "settings": {
     "title": "Settings",
-    "subtitle": "Manage your currency, accounts, categories, rules and credit cards",
+    "subtitle": "Manage your currency, accounts, categories, rules, tags and credit cards",
     "sections": "Settings sections",
     "sidebar": {
       "currency": "Currency",
       "accounts": "Accounts",
       "categories": "Categories",
       "cards": "Credit Cards",
-      "rules": "Rules"
+      "rules": "Rules",
+      "tags": "Tags"
     },
     "loadFailed": "Failed to load data",
     "currency": {
@@ -1353,6 +1354,48 @@
     "errors": {
       "CARD_INVALID_LIMIT": "The limit must be a number above 0.",
       "CARD_INVALID_DAY": "Statement and due days go from 1 to 31."
+    }
+  },
+  "tags": {
+    "label": "Tags (optional)",
+    "placeholder": "Type to find or create…",
+    "full": "Up to 10 tags",
+    "create": "Create “{{name}}”",
+    "remove": "Remove {{name}}",
+    "filter": "Tag",
+    "allTags": "All tags",
+    "title": "Tags",
+    "subtitle": "They mark transactions from different categories, like a trip or a project.",
+    "add": "+ Add tag",
+    "createButton": "Create tag",
+    "name": "Name",
+    "namePlaceholder": "e.g. trip-2026",
+    "color": "Color",
+    "edit": "Edit {{name}}",
+    "delete": "Delete {{name}}",
+    "usedIn_one": "On {{count}} transaction",
+    "usedIn_other": "On {{count}} transactions",
+    "unused": "Not used yet",
+    "empty": "No tags yet. Create them here or while recording a transaction.",
+    "created": "Tag created",
+    "updated": "Tag updated",
+    "deleted": "Tag deleted",
+    "saveFailed": "Couldn't save the tag",
+    "deleteFailed": "Couldn't delete the tag",
+    "loadFailed": "Couldn't load your tags.",
+    "deleteTitle": "Delete tag",
+    "deleteDescription_one": "It comes off {{count}} transaction, which is kept.",
+    "deleteDescription_other": "It comes off {{count}} transactions, which are kept.",
+    "topTitle": "Top tags (30 days)",
+    "topSubtitle": "Spending per tag. A transaction with two tags counts for both.",
+    "movements_one": "{{count}} item",
+    "movements_other": "{{count}} items",
+    "errors": {
+      "TAG_INVALID_NAME": "The name must be 1 to 40 characters, no commas.",
+      "TAG_INVALID_COLOR": "Invalid color.",
+      "TAG_DUPLICATE": "You already have a tag with that name.",
+      "TAG_LIMIT": "You reached the limit of 100 tags.",
+      "TAGS_INVALID": "Some tag is not valid."
     }
   }
 }

@@ -195,6 +195,7 @@ export default function AccountDetail() {
       amount: (tx.amount ?? '').toString(),
       date: tx.date,
       paymentMethod: tx.paymentMethod || 'cash',
+      tagIds: (tx.Tags || []).map((tag) => tag.id),
     });
     setEditError('');
   };

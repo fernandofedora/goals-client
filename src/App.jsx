@@ -11,6 +11,7 @@ import SettingsCurrency from './pages/settings/SettingsCurrency';
 import SettingsAccounts from './pages/settings/SettingsAccounts';
 import SettingsCategories from './pages/settings/SettingsCategories';
 import SettingsRules from './pages/settings/SettingsRules';
+import SettingsTags from './pages/settings/SettingsTags';
 import SettingsCards from './pages/settings/SettingsCards';
 import SavingPlan from './pages/SavingPlan';
 import Accounts from './pages/Accounts';
@@ -241,6 +242,7 @@ export default function App() {
                     <Route path="accounts" element={<SettingsAccounts />} />
                     <Route path="categories" element={<SettingsCategories />} />
                     <Route path="rules" element={<SettingsRules />} />
+                    <Route path="tags" element={<SettingsTags />} />
                     <Route path="cards" element={<SettingsCards />} />
                   </Route>
                   <Route
