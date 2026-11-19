@@ -11,6 +11,7 @@ import { cn } from '../lib/utils';
 import TagPicker from './ui/tag-picker';
 import { useCurrency } from '../context/CurrencyContext';
 import { categoryOptions, categoriesForTxType } from '../utils/categories';
+import useLabelledControl from '../hooks/useLabelledControl';
 
 const todayISO = () => {
   const d = new Date();
@@ -44,18 +45,19 @@ const emptyIncome = (date = '', account = null) => ({
 });
 
 export function Field({ label, labelRight, htmlFor, children }) {
+  const [control, autoFor] = useLabelledControl(children);
   return (
     <div className="flex flex-col gap-1.5">
       <div className="flex items-center justify-between">
         <label
-          htmlFor={htmlFor}
+          htmlFor={htmlFor ?? autoFor}
           className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-widest"
         >
           {label}
         </label>
         {labelRight && labelRight}
       </div>
-      {children}
+      {htmlFor ? children : control}
     </div>
   );
 }

@@ -1039,6 +1039,7 @@ export default function UserManager() {
   const [tempPasswordUser, setTempPasswordUser] = useState('');
 
   const searchTimer = useRef(null);
+  const [query, setQuery] = useState('');
 
   const currentUser = (() => {
     try {
@@ -1049,7 +1050,7 @@ export default function UserManager() {
   })();
 
   const fetchUsers = useCallback(
-    async (q = search, p = page, s = statusFilter, r = roleFilter) => {
+    async (q = query, p = page, s = statusFilter, r = roleFilter) => {
       setLoading(true);
       try {
         const params = new URLSearchParams({ page: p, limit: 15 });
@@ -1066,19 +1067,19 @@ export default function UserManager() {
         setLoading(false);
       }
     },
-    [search, page, statusFilter, roleFilter, t],
+    [query, page, statusFilter, roleFilter, t],
   );
 
   useEffect(() => {
     fetchUsers();
-  }, [page, statusFilter, roleFilter]);
+  }, [fetchUsers]);
 
   const handleSearchChange = (val) => {
     setSearch(val);
     clearTimeout(searchTimer.current);
     searchTimer.current = setTimeout(() => {
       setPage(1);
-      fetchUsers(val, 1, statusFilter, roleFilter);
+      setQuery(val);
     }, 400);
   };
 
@@ -1120,7 +1121,7 @@ export default function UserManager() {
       toast.success(t('admin.deletedSuccess', { name: deleteTarget.name }));
       setDeleteTarget(null);
       setPage(1);
-      fetchUsers(search, 1, statusFilter, roleFilter);
+      fetchUsers(query, 1, statusFilter, roleFilter);
     } catch (err) {
       toast.error(translateServerError(err, t, 'admin.deletionFailed'));
     } finally {

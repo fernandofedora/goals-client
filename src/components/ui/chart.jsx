@@ -11,7 +11,8 @@ export function ChartContainer({ config = {}, className, children, ...props }) {
 
     return (
         <div className={cn('relative w-full', className)} style={style} {...props}>
-            <ResponsiveContainer width="100%" height="100%">
+            {/* A first size keeps recharts from measuring -1 before layout. */}
+            <ResponsiveContainer width="100%" height="100%" initialDimension={{ width: 320, height: 200 }}>
                 {children}
             </ResponsiveContainer>
         </div>

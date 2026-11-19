@@ -3,15 +3,19 @@ import Input from "../ui/input";
 import Select from "../ui/select";
 import IconButton from "../ui/icon-button";
 import { cn } from "../../lib/utils";
+import useLabelledControl from "../../hooks/useLabelledControl";
 
 // ── Field wrapper ─────────────────────────────────────────────────────────────
 export function Field({ label, children }) {
+  const [control, htmlFor] = useLabelledControl(children);
   return (
     <div className="flex flex-col gap-1.5">
-      <label className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-widest">
+      <label
+        htmlFor={htmlFor}
+        className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-widest">
         {label}
       </label>
-      {children}
+      {control}
     </div>
   );
 }

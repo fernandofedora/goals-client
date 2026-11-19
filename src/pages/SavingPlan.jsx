@@ -16,15 +16,19 @@ import { getPref, setPref } from '../utils/userStorage';
 import { translateServerError } from '../utils/serverError';
 import { categoryOptions } from '../utils/categories';
 import { intlLocale } from '../utils/dateLocale';
+import useLabelledControl from '../hooks/useLabelledControl';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 function Field({ label, children }) {
+  const [control, htmlFor] = useLabelledControl(children);
   return (
     <div className="flex flex-col gap-1.5">
-      <label className="text-xs font-semibold uppercase tracking-widest text-gray-500 dark:text-gray-400">
+      <label
+        htmlFor={htmlFor}
+        className="text-xs font-semibold uppercase tracking-widest text-gray-500 dark:text-gray-400">
         {label}
       </label>
-      {children}
+      {control}
     </div>
   );
 }

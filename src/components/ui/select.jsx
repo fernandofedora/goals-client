@@ -89,16 +89,7 @@ const Select = React.forwardRef(({ id, className, children, value = '', onChange
             sideOffset={6}
             collisionPadding={10}
             onCloseAutoFocus={(e)=> e.preventDefault()}
-            onOpenAutoFocus={(e)=> { e.preventDefault(); searchRef.current?.focus(); }}
-            onInteractOutside={(e)=> {
-              const target = e.target;
-              if (target && typeof target.closest === 'function' && target.closest('.select-search')) e.preventDefault();
-            }}
             onPointerDownOutside={(e)=> {
-              const target = e.target;
-              if (target && typeof target.closest === 'function' && target.closest('.select-search')) e.preventDefault();
-            }}
-            onFocusOutside={(e)=> {
               const target = e.target;
               if (target && typeof target.closest === 'function' && target.closest('.select-search')) e.preventDefault();
             }}

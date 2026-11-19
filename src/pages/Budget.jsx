@@ -11,15 +11,19 @@ import { toast } from 'sonner';
 import { useCurrency } from '../context/CurrencyContext';
 import { intlLocale } from '../utils/dateLocale';
 import SpendingBudgets from '../components/budgets/SpendingBudgets';
+import useLabelledControl from '../hooks/useLabelledControl';
 
 // ── Inline Field wrapper ──────────────────────────────────────────────────────
 function Field({ label, children }) {
+  const [control, htmlFor] = useLabelledControl(children);
   return (
     <div className="flex flex-col gap-1.5">
-      <label className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-widest">
+      <label
+        htmlFor={htmlFor}
+        className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-widest">
         {label}
       </label>
-      {children}
+      {control}
     </div>
   );
 }

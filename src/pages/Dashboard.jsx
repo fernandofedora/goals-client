@@ -69,6 +69,20 @@ const STAT_TONES = {
   },
 };
 
+// Fallback colors for categories without their own.
+const CATEGORY_COLORS = [
+  '#059669',
+  '#f43f5e',
+  '#f59e0b',
+  '#059669',
+  '#3b82f6',
+  '#8b5cf6',
+  '#ec4899',
+  '#14b8a6',
+  '#f97316',
+  '#84cc16',
+];
+
 export default function Dashboard() {
   const { t } = useTranslation();
   const { symbol: cs, money, privacyMode } = useCurrency();
@@ -316,7 +330,7 @@ export default function Dashboard() {
           setAllTimeSummary(null);
         }
       } catch (err) {
-        setError(err.response?.data?.message || t('dashboard.loadFailed'));
+        setError(err.response?.data?.message || 'loadFailed');
       } finally {
         setLoading(false);
       }
@@ -331,9 +345,10 @@ export default function Dashboard() {
     [],
   );
 
+  const locale = intlLocale();
   const barData = useMemo(() => {
     const monthLabels = Array.from({ length: 12 }, (_, i) =>
-      new Date(0, i).toLocaleString(intlLocale(), { month: 'short' }),
+      new Date(0, i).toLocaleString(locale, { month: 'short' }),
     );
     const isRangeMode =
       filterMode === 'range' && dateRange?.from && dateRange?.to;
@@ -411,7 +426,7 @@ export default function Dashboard() {
     }
 
     return months.map((m) => ({ month: m.label, income: 0, expense: 0 }));
-  }, [selectedYear, period, summary, allTimeSummary, filterMode, dateRange, t]);
+  }, [selectedYear, period, summary, allTimeSummary, filterMode, dateRange, locale]);
 
   const paymentTotals = useMemo(() => {
     const cash = Number(summary?.paymentMethods?.cash || 0);
@@ -474,24 +489,11 @@ export default function Dashboard() {
       (summary?.incomeCategories || [])
         .map((c, i) => ({
           ...c,
-          color: c.color || categoryColors[i % categoryColors.length],
+          color: c.color || CATEGORY_COLORS[i % CATEGORY_COLORS.length],
         }))
         .sort((a, b) => b.amount - a.amount),
     [summary],
   );
-
-  const categoryColors = [
-    '#059669',
-    '#f43f5e',
-    '#f59e0b',
-    '#059669',
-    '#3b82f6',
-    '#8b5cf6',
-    '#ec4899',
-    '#14b8a6',
-    '#f97316',
-    '#84cc16',
-  ];
 
   const onExport = async () => {
     try {
@@ -602,7 +604,7 @@ export default function Dashboard() {
   const catData = (summary?.categories || [])
     .map((c, i) => ({
       ...c,
-      color: c.color || categoryColors[i % categoryColors.length],
+      color: c.color || CATEGORY_COLORS[i % CATEGORY_COLORS.length],
     }))
     .sort((a, b) => b.amount - a.amount);
 
@@ -616,7 +618,7 @@ export default function Dashboard() {
     if (error)
       return (
         <div className="px-3 py-2 rounded-lg bg-rose-50 dark:bg-rose-900/20 text-rose-600 dark:text-rose-400 text-sm">
-          {error}
+          {error === 'loadFailed' ? t('dashboard.loadFailed') : error}
         </div>
       );
     if (!summary) return null;

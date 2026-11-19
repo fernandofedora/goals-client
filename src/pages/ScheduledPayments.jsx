@@ -11,6 +11,7 @@ import { useCurrency } from '../context/CurrencyContext';
 import { intlLocale } from '../utils/dateLocale';
 import { translateServerError } from '../utils/serverError';
 import { categoryOptions, categoriesForTxType } from '../utils/categories';
+import useLabelledControl from '../hooks/useLabelledControl';
 
 const PERIOD_ICONS = {
   daily: '☀️',
@@ -44,13 +45,16 @@ const EMPTY_FORM = {
 
 // ── Field wrapper ─────────────────────────────────────────────────────────────
 function Field({ label, children, required }) {
+  const [control, htmlFor] = useLabelledControl(children);
   return (
     <div className="flex flex-col gap-1.5">
-      <label className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-widest">
+      <label
+        htmlFor={htmlFor}
+        className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-widest">
         {label}
         {required && <span className="text-rose-500 ml-0.5">*</span>}
       </label>
-      {children}
+      {control}
     </div>
   );
 }
