@@ -1207,7 +1207,10 @@
     "investments": "Investments",
     "total": "Total",
     "costNote": "Months before this record value investments at what you paid for them.",
-    "loadFailed": "Couldn't load your net worth."
+    "loadFailed": "Couldn't load your net worth.",
+    "debts": "Card debt",
+    "subtitleDebts": "Your accounts minus your card debt, at the close of each month.",
+    "subtitleInvestmentsDebts": "Your accounts and investments minus your card debt, at the close of each month."
   },
   "import": {
     "open": "Import file",
@@ -1323,5 +1326,33 @@
     "doneSkipped_one": "Done. You skipped {{count}}; it stays in the inbox for later.",
     "doneSkipped_other": "Done. You skipped {{count}}; they stay in the inbox for later.",
     "close": "Close"
+  },
+  "cardCredit": {
+    "section": "Credit details (optional)",
+    "limit": "Credit limit ({{symbol}})",
+    "optional": "Optional",
+    "statementDay": "Statement day",
+    "dueDay": "Due day",
+    "used": "You use {{owed}} of {{limit}}",
+    "available": "Available: {{amount}}",
+    "usageLabel": "Credit limit use",
+    "usage": "{{pct}}% of the limit used",
+    "highUsage": "{{pct}}% of the limit used: better pay soon",
+    "cycle": "Current cycle ({{start}} – {{end}})",
+    "statement": "Statement of {{date}}",
+    "paid": "Paid: {{amount}}",
+    "dueOn": "Due by {{date}}",
+    "toPay": "To pay",
+    "paidOff": "Paid",
+    "paymentsHint": "Card payments are recorded as a transfer with the “Card payment” category: money out of your account and in to the card.",
+    "setupHint": "Add the limit and the statement and due days to see how much of the limit you use, the cycle spending and the next payment.",
+    "setup": "Add credit details",
+    "loadFailed": "Couldn't load the card status.",
+    "alert": "Your {{name}} card uses {{pct}}% of its limit.",
+    "seeCard": "See card",
+    "errors": {
+      "CARD_INVALID_LIMIT": "The limit must be a number above 0.",
+      "CARD_INVALID_DAY": "Statement and due days go from 1 to 31."
+    }
   }
 }

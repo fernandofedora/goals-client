@@ -21,6 +21,7 @@ import { setAccountHidden } from '../utils/hiddenAccounts';
 import { onTransactionsChanged } from '../utils/transactionEvents';
 import { categoriesForTxType } from '../utils/categories';
 import TransferTag from '../components/ui/transfer-tag';
+import CardCreditPanel from '../components/accounts/CardCreditPanel';
 
 const EditIcon = () => (
   <svg
@@ -339,6 +340,14 @@ export default function AccountDetail() {
           </Button>
         </div>
       </header>
+
+      {isCard && (
+        <CardCreditPanel
+          cardId={id}
+          refreshKey={item}
+          onEdit={() => setEditOpen(true)}
+        />
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-4">
         <section

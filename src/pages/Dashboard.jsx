@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useTranslation, Trans } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import NetWorthCard from '../components/NetWorthCard';
+import CardLimitAlert from '../components/CardLimitAlert';
 import PageHeader from '../components/ui/page-header';
 import { cn } from '../lib/utils';
 import api from '../api';
@@ -699,6 +700,7 @@ export default function Dashboard() {
         title={t('nav.dashboard')}
         subtitle={t('dashboard.pageSubtitle')}
       />
+      <CardLimitAlert />
 
       {/* ── Overview ── (creating a transaction lives in the global
           "+ Transacción" button now, so it is not repeated here) */}

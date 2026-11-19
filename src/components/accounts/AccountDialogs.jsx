@@ -7,6 +7,7 @@ import Button from '../ui/button';
 import Input from '../ui/input';
 import Switch from '../ui/switch';
 import { cn } from '../../lib/utils';
+import CardCreditFields from './CardCreditFields';
 
 const BANK_DEFAULTS = {
   name: '',
@@ -14,7 +15,22 @@ const BANK_DEFAULTS = {
   initialBalance: '',
   isExcludedFromTotals: false,
 };
-const CARD_DEFAULTS = { name: '', color: '#0ea5e9', last4: '' };
+const CARD_DEFAULTS = {
+  name: '',
+  color: '#0ea5e9',
+  last4: '',
+  creditLimit: '',
+  statementDay: '',
+  dueDay: '',
+};
+
+// Server error codes for the credit fields → messages under cardCredit.errors.
+const cardError = (err, t, fallback) => {
+  const code = err?.response?.data?.code;
+  return code?.startsWith('CARD_')
+    ? t(`cardCredit.errors.${code}`)
+    : t(fallback);
+};
 
 function Shell({ open, onOpenChange, title, children }) {
   const { t } = useTranslation();
@@ -173,6 +189,10 @@ function CardFields({ form, set }) {
           />
         </Field>
       </div>
+      <p className="text-[13px] font-medium text-[var(--muted-foreground)] pt-1">
+        {t('cardCredit.section')}
+      </p>
+      <CardCreditFields values={form} onChange={set} Field={Field} />
     </>
   );
 }
@@ -241,11 +261,11 @@ export function AddAccountDialog({
       }
       onOpenChange(false);
       onCreated();
-    } catch {
+    } catch (err) {
       toast.error(
         tab === 'bank'
           ? t('accountsPage.accountAddFailed')
-          : t('accountsPage.cardAddFailed'),
+          : cardError(err, t, 'accountsPage.cardAddFailed'),
       );
     } finally {
       setBusy(false);
@@ -346,7 +366,14 @@ export function EditAccountDialog({ open, onOpenChange, kind, item, onSaved }) {
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
-    if (open) setForm(item);
+    if (open) {
+      setForm({
+        ...item,
+        creditLimit: item?.creditLimit ?? '',
+        statementDay: item?.statementDay ?? '',
+        dueDay: item?.dueDay ?? '',
+      });
+    }
   }, [open, item]);
 
   const isCard = kind === 'card';
@@ -359,6 +386,9 @@ export function EditAccountDialog({ open, onOpenChange, kind, item, onSaved }) {
           name: form.name,
           color: form.color,
           last4: form.last4,
+          creditLimit: form.creditLimit,
+          statementDay: form.statementDay,
+          dueDay: form.dueDay,
         });
       } else {
         await api.put(`/accounts/${item.id}`, {
@@ -374,10 +404,10 @@ export function EditAccountDialog({ open, onOpenChange, kind, item, onSaved }) {
       );
       onOpenChange(false);
       onSaved();
-    } catch {
+    } catch (err) {
       toast.error(
         isCard
-          ? t('accountsPage.cardUpdateFailed')
+          ? cardError(err, t, 'accountsPage.cardUpdateFailed')
           : t('accountsPage.accountUpdateFailed'),
       );
     } finally {

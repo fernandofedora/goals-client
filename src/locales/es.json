@@ -1207,7 +1207,10 @@
     "investments": "Inversiones",
     "total": "Total",
     "costNote": "Los meses anteriores a este registro valoran las inversiones a lo que pagaste por ellas.",
-    "loadFailed": "No se pudo cargar tu patrimonio."
+    "loadFailed": "No se pudo cargar tu patrimonio.",
+    "debts": "Deuda de tarjetas",
+    "subtitleDebts": "Tus cuentas menos la deuda de tus tarjetas, al cierre de cada mes.",
+    "subtitleInvestmentsDebts": "Tus cuentas e inversiones menos la deuda de tus tarjetas, al cierre de cada mes."
   },
   "import": {
     "open": "Importar archivo",
@@ -1323,5 +1326,33 @@
     "doneSkipped_one": "Listo. Saltaste {{count}}; quedará en la bandeja para después.",
     "doneSkipped_other": "Listo. Saltaste {{count}}; quedarán en la bandeja para después.",
     "close": "Cerrar"
+  },
+  "cardCredit": {
+    "section": "Datos de crédito (opcional)",
+    "limit": "Límite de crédito ({{symbol}})",
+    "optional": "Opcional",
+    "statementDay": "Día de corte",
+    "dueDay": "Día de pago",
+    "used": "Usas {{owed}} de {{limit}}",
+    "available": "Disponible: {{amount}}",
+    "usageLabel": "Uso del límite de crédito",
+    "usage": "{{pct}}% del límite usado",
+    "highUsage": "{{pct}}% del límite usado: conviene pagar pronto",
+    "cycle": "Ciclo actual ({{start}} – {{end}})",
+    "statement": "Corte del {{date}}",
+    "paid": "Pagado: {{amount}}",
+    "dueOn": "Por pagar antes del {{date}}",
+    "toPay": "Por pagar",
+    "paidOff": "Pagado",
+    "paymentsHint": "Los pagos de la tarjeta se registran como transferencia con la categoría «Pago de tarjeta»: una salida en tu cuenta y una entrada en la tarjeta.",
+    "setupHint": "Agrega el límite y los días de corte y de pago para ver cuánto usas del límite, el gasto del ciclo y el próximo pago.",
+    "setup": "Agregar datos de crédito",
+    "loadFailed": "No se pudo cargar el estado de la tarjeta.",
+    "alert": "Tu tarjeta {{name}} usa el {{pct}}% de su límite.",
+    "seeCard": "Ver tarjeta",
+    "errors": {
+      "CARD_INVALID_LIMIT": "El límite debe ser un número mayor que 0.",
+      "CARD_INVALID_DAY": "Los días de corte y de pago van del 1 al 31."
+    }
   }
 }

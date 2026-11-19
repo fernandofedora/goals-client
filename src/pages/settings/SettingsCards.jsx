@@ -12,23 +12,31 @@ import {
   EditIcon,
   TrashIcon,
 } from '../../components/settings/shared';
+import CardCreditFields from '../../components/accounts/CardCreditFields';
+
+const EMPTY_CARD = {
+  name: '',
+  color: '#0ea5e9',
+  last4: '',
+  creditLimit: '',
+  statementDay: '',
+  dueDay: '',
+};
+
+// Server error codes for the credit fields → messages under cardCredit.errors.
+const cardError = (err, t, fallback) => {
+  const code = err?.response?.data?.code;
+  return code?.startsWith('CARD_') ? t(`cardCredit.errors.${code}`) : t(fallback);
+};
 
 export default function SettingsCards() {
   const { t } = useTranslation();
   const [cards, setCards] = useState([]);
 
-  const [cardForm, setCardForm] = useState({
-    name: '',
-    color: '#0ea5e9',
-    last4: '',
-  });
+  const [cardForm, setCardForm] = useState(EMPTY_CARD);
   const [showCardForm, setShowCardForm] = useState(false);
   const [editingCardId, setEditingCardId] = useState(null);
-  const [editCardForm, setEditCardForm] = useState({
-    name: '',
-    color: '#0ea5e9',
-    last4: '',
-  });
+  const [editCardForm, setEditCardForm] = useState(EMPTY_CARD);
   const [deleteCardId, setDeleteCardId] = useState(null);
 
   const load = useCallback(async () => {
@@ -48,18 +56,25 @@ export default function SettingsCards() {
     e.preventDefault();
     try {
       await api.post('/cards', cardForm);
-      setCardForm({ name: '', color: '#0ea5e9', last4: '' });
+      setCardForm(EMPTY_CARD);
       setShowCardForm(false);
       toast.success(t('settings.cards.added'));
       load();
-    } catch {
-      toast.error(t('settings.cards.addFailed'));
+    } catch (err) {
+      toast.error(cardError(err, t, 'settings.cards.addFailed'));
     }
   };
 
   const startEditCard = (card) => {
     setEditingCardId(card.id);
-    setEditCardForm({ name: card.name, color: card.color, last4: card.last4 });
+    setEditCardForm({
+      name: card.name,
+      color: card.color,
+      last4: card.last4,
+      creditLimit: card.creditLimit ?? '',
+      statementDay: card.statementDay ?? '',
+      dueDay: card.dueDay ?? '',
+    });
   };
   const cancelEditCard = () => setEditingCardId(null);
   const saveEditCard = async (id) => {
@@ -68,8 +83,8 @@ export default function SettingsCards() {
       setEditingCardId(null);
       toast.success(t('settings.cards.updated'));
       load();
-    } catch {
-      toast.error(t('settings.cards.updateFailed'));
+    } catch (err) {
+      toast.error(cardError(err, t, 'settings.cards.updateFailed'));
     }
   };
 
@@ -151,6 +166,14 @@ export default function SettingsCards() {
                 }
               />
             </Field>
+            <div className="w-full grid gap-3 sm:grid-cols-[minmax(0,16rem)_minmax(0,14rem)]">
+              <CardCreditFields
+                values={cardForm}
+                onChange={(patch) => setCardForm((v) => ({ ...v, ...patch }))}
+                Field={Field}
+                idPrefix="new-card"
+              />
+            </div>
             <div className="pb-0.5">
               <Button type="submit" variant="primary">
                 {t('settings.cards.saveCard')}
@@ -215,6 +238,17 @@ export default function SettingsCards() {
                           }
                         />
                       </Field>
+                      <div className="w-full grid gap-2">
+                        <CardCreditFields
+                          values={editCardForm}
+                          onChange={(patch) =>
+                            setEditCardForm((v) => ({ ...v, ...patch }))
+                          }
+                          Field={Field}
+                          idPrefix={`card-${card.id}`}
+                          inputClassName="bg-white/20 border-white/30 text-white placeholder-white/60"
+                        />
+                      </div>
                       <div className="flex gap-1.5 pb-0.5">
                         <button
                           type="button"

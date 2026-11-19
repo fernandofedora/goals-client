@@ -21,6 +21,8 @@ import { cn } from '../lib/utils';
 // apart, and both carry a legend label.
 const ACCOUNTS_COLOR = '#059669';
 const INVESTMENTS_COLOR = '#0284c7';
+// Card debt hangs below zero, so it reads as what pulls the total down.
+const DEBTS_COLOR = '#e11d48';
 
 const shortMonth = (key) =>
   monthFromPeriod(key).toLocaleDateString(intlLocale(), { month: 'short' });
@@ -47,7 +49,7 @@ function Change({ label, change, money }) {
   );
 }
 
-function MonthTooltip({ active, payload, money, t, withInvestments }) {
+function MonthTooltip({ active, payload, money, t, withInvestments, withDebts }) {
   if (!active || !payload?.length) return null;
   const p = payload[0].payload;
   return (
@@ -73,6 +75,16 @@ function MonthTooltip({ active, payload, money, t, withInvestments }) {
           </span>
           <span className="tabular-nums text-[var(--foreground)]">
             {money(p.investments)}
+          </span>
+        </div>
+      )}
+      {withDebts && (
+        <div className="flex justify-between gap-6">
+          <span className="text-[var(--muted-foreground)]">
+            {t('netWorth.debts')}
+          </span>
+          <span className="tabular-nums text-[var(--foreground)]">
+            −{money(p.debts || 0)}
           </span>
         </div>
       )}
@@ -114,6 +126,10 @@ export default function NetWorthCard() {
   }, [tick]);
 
   const withInvestments = Boolean(data?.includesInvestments);
+  const withDebts = Boolean(
+    data && (data.current.debts > 0 || data.history.some((h) => h.debts > 0)),
+  );
+  const rows = (data?.history ?? []).map((h) => ({ ...h, debtsBar: -(h.debts || 0) }));
 
   return (
     <section className="bg-white dark:bg-slate-900 rounded-2xl border border-[var(--border)] shadow-sm p-5">
@@ -123,9 +139,15 @@ export default function NetWorthCard() {
             {t('netWorth.title')}
           </h2>
           <p className="text-xs text-[var(--muted-foreground)] mt-0.5">
-            {withInvestments
-              ? t('netWorth.subtitleWithInvestments')
-              : t('netWorth.subtitle')}
+            {t(
+              withInvestments
+                ? withDebts
+                  ? 'netWorth.subtitleInvestmentsDebts'
+                  : 'netWorth.subtitleWithInvestments'
+                : withDebts
+                  ? 'netWorth.subtitleDebts'
+                  : 'netWorth.subtitle',
+            )}
           </p>
         </div>
         {status === 'ready' && (
@@ -166,7 +188,8 @@ export default function NetWorthCard() {
               initialDimension={{ width: 640, height: 224 }}
             >
               <BarChart
-                data={data.history}
+                data={rows}
+                stackOffset="sign"
                 margin={{ top: 4, right: 4, bottom: 0, left: 0 }}
               >
                 <CartesianGrid vertical={false} stroke="var(--border)" />
@@ -197,6 +220,7 @@ export default function NetWorthCard() {
                       money={money}
                       t={t}
                       withInvestments={withInvestments}
+                      withDebts={withDebts}
                     />
                   }
                 />
@@ -217,6 +241,15 @@ export default function NetWorthCard() {
                     stroke="var(--card)"
                     strokeWidth={1}
                     radius={[4, 4, 0, 0]}
+                    isAnimationActive={false}
+                  />
+                )}
+                {withDebts && (
+                  <Bar
+                    dataKey="debtsBar"
+                    stackId="nw"
+                    fill={DEBTS_COLOR}
+                    radius={[0, 0, 4, 4]}
                     isAnimationActive={false}
                   />
                 )}
@@ -243,6 +276,18 @@ export default function NetWorthCard() {
                 {t('netWorth.investments')}
                 <span className="tabular-nums text-[var(--foreground)]">
                   {money(data.current.investments)}
+                </span>
+              </li>
+            )}
+            {withDebts && (
+              <li className="flex items-center gap-1.5">
+                <span
+                  className="size-2.5 rounded-sm"
+                  style={{ background: DEBTS_COLOR }}
+                />
+                {t('netWorth.debts')}
+                <span className="tabular-nums text-[var(--foreground)]">
+                  −{money(data.current.debts)}
                 </span>
               </li>
             )}
