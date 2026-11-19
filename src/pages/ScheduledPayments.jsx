@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import api from '../api';
 import Button from '../components/ui/button';
+import PageHeader from '../components/ui/page-header';
 import Input from '../components/ui/input';
 import Select from '../components/ui/select';
 import { toast } from 'sonner';
@@ -9,6 +10,8 @@ import { cn } from '../lib/utils';
 import { useCurrency } from '../context/CurrencyContext';
 import { intlLocale } from '../utils/dateLocale';
 import { translateServerError } from '../utils/serverError';
+import { categoryOptions, categoriesForTxType } from '../utils/categories';
+import useLabelledControl from '../hooks/useLabelledControl';
 
 const PERIOD_ICONS = {
   daily: '☀️',
@@ -42,13 +45,16 @@ const EMPTY_FORM = {
 
 // ── Field wrapper ─────────────────────────────────────────────────────────────
 function Field({ label, children, required }) {
+  const [control, htmlFor] = useLabelledControl(children);
   return (
     <div className="flex flex-col gap-1.5">
-      <label className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-widest">
+      <label
+        htmlFor={htmlFor}
+        className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-widest">
         {label}
         {required && <span className="text-rose-500 ml-0.5">*</span>}
       </label>
-      {children}
+      {control}
     </div>
   );
 }
@@ -125,7 +131,7 @@ export default function ScheduledPayments() {
   const [formState, setFormState] = useState(EMPTY_FORM);
   const [methodError, setMethodError] = useState(false);
   const [deleteTargetId, setDeleteTargetId] = useState(null);
-  const { symbol: cs } = useCurrency();
+  const { symbol: cs, money } = useCurrency();
 
   // ── Data loading (parallel) ───────────────────────────────────────────────
   const load = useCallback(
@@ -357,36 +363,29 @@ export default function ScheduledPayments() {
         </div>
       )}
 
-      {/* Header */}
-      <section className="bg-white dark:bg-slate-900 rounded-2xl border border-[var(--border)] shadow-sm overflow-hidden">
-        <div className="px-5 pt-5 pb-4 border-b border-[var(--border)] flex items-start justify-between gap-4 flex-wrap">
-          <div>
-            <h1 className="text-base font-semibold tracking-tight">
-              {t('scheduledPayments.title')}
-            </h1>
-            <p className="text-xs text-gray-400 mt-0.5">
-              {t('scheduledPayments.subtitle')}
-            </p>
-          </div>
-          {/* Summary pills */}
+      <PageHeader
+        title={t('scheduledPayments.title')}
+        subtitle={t('scheduledPayments.subtitle')}
+        actions={
           <div className="flex gap-2 flex-wrap text-xs font-semibold items-center">
             <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-400">
               {t('scheduledPayments.activeCount', { count: activeCount })}
             </span>
             <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400">
               {t('scheduledPayments.perMonth', {
-                amount: `${cs}${totalMonthly.toFixed(2)}`,
+                amount: money(totalMonthly),
               })}
             </span>
             <Button
+              variant="custom"
               onClick={openNew}
               className="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold"
             >
               {t('scheduledPayments.newPayment')}
             </Button>
           </div>
-        </div>
-      </section>
+        }
+      />
 
       {/* Cards grid */}
       {loading ? (
@@ -429,6 +428,7 @@ export default function ScheduledPayments() {
             {t('scheduledPayments.emptyHint')}
           </p>
           <Button
+            variant="custom"
             onClick={openNew}
             className="mt-2 bg-indigo-600 hover:bg-indigo-700 text-white"
           >
@@ -494,8 +494,7 @@ export default function ScheduledPayments() {
                     )}
                   >
                     {isExpense ? '−' : '+'}
-                    {cs}
-                    {Number(payment.amount).toFixed(2)}
+                    {money(payment.amount)}
                   </div>
 
                   {/* Next Due Date — always shown, prominent */}
@@ -565,14 +564,14 @@ export default function ScheduledPayments() {
                   <div className="flex gap-1.5">
                     <button
                       onClick={() => openEdit(payment)}
-                      className="px-3 py-1.5 text-xs rounded-lg border border-[var(--border)] text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-800 font-medium transition-colors"
+                      className="min-h-11 sm:min-h-0 px-3 py-1.5 text-xs rounded-lg border border-[var(--border)] text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-800 font-medium transition-colors"
                     >
                       {t('scheduledPayments.edit')}
                     </button>
                     <button
                       onClick={() => handleStatusChange(payment)}
                       className={cn(
-                        'px-3 py-1.5 text-xs rounded-lg font-medium transition-colors',
+                        'min-h-11 sm:min-h-0 px-3 py-1.5 text-xs rounded-lg font-medium transition-colors',
                         isActive
                           ? 'border border-amber-300 dark:border-amber-700 text-amber-600 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950/30'
                           : 'border border-emerald-300 dark:border-emerald-700 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/30',
@@ -585,7 +584,7 @@ export default function ScheduledPayments() {
                   </div>
                   <button
                     onClick={() => setDeleteTargetId(payment.id)}
-                    className="px-3 py-1.5 text-xs rounded-lg text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/30 font-medium transition-colors"
+                    className="min-h-11 sm:min-h-0 px-3 py-1.5 text-xs rounded-lg text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/30 font-medium transition-colors"
                   >
                     {t('scheduledPayments.delete')}
                   </button>
@@ -710,13 +709,13 @@ export default function ScheduledPayments() {
               required
             >
               <option value="">{t('scheduledPayments.selectCategory')}</option>
-              {categories
-                .filter((c) => c.type === formState.type)
-                .map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.name}
-                  </option>
-                ))}
+              {categoryOptions(
+                categoriesForTxType(categories, formState.type),
+              ).map((o) => (
+                <option key={o.id} value={o.id}>
+                  {o.label}
+                </option>
+              ))}
             </Select>
           </Field>
 
@@ -820,6 +819,7 @@ export default function ScheduledPayments() {
               {t('scheduledPayments.cancel')}
             </button>
             <Button
+              variant="custom"
               type="submit"
               className="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold"
             >

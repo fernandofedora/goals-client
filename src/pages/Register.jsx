@@ -5,7 +5,7 @@ import api from '../api';
 import { translateServerError } from '../utils/serverError';
 
 export default function Register() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -17,7 +17,9 @@ export default function Register() {
     e.preventDefault();
     setError('');
     try {
-      await api.post('/auth/register', { name, email, password });
+      // The suggested categories are created in this language.
+      const language = i18n.language?.startsWith('es') ? 'es' : 'en';
+      await api.post('/auth/register', { name, email, password, language });
       setSuccess(true);
     } catch (err) {
       setError(translateServerError(err, t, 'auth.register.failed'));

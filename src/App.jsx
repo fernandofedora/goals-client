@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
-import Navbar from './components/Navbar';
+import AppShell from './components/AppShell';
 import ErrorBoundary from './components/ErrorBoundary';
 import Login from './pages/Login';
 import Register from './pages/Register';
@@ -10,21 +10,26 @@ import SettingsLayout from './pages/settings/SettingsLayout';
 import SettingsCurrency from './pages/settings/SettingsCurrency';
 import SettingsAccounts from './pages/settings/SettingsAccounts';
 import SettingsCategories from './pages/settings/SettingsCategories';
+import SettingsRules from './pages/settings/SettingsRules';
+import SettingsTags from './pages/settings/SettingsTags';
 import SettingsCards from './pages/settings/SettingsCards';
 import SavingPlan from './pages/SavingPlan';
 import Accounts from './pages/Accounts';
+import AccountDetail from './pages/AccountDetail';
 import Profile from './pages/Profile';
 import ScheduledPayments from './pages/ScheduledPayments';
 import Investments from './pages/Investments';
 import Budget from './pages/Budget';
 import AddTransaction from './pages/AddTransaction';
 import GraphicsByCategories from './pages/GraphicsByCategories';
+import Cashflow from './pages/Cashflow';
+import BudgetDetail from './pages/BudgetDetail';
 import UserManager from './pages/UserManager';
 import VerifyEmail from './pages/VerifyEmail';
 import useTheme from './hooks/useTheme';
 import { Toaster } from './components/ui/sonner';
-import { CurrencyProvider } from './context/CurrencyContext';
-import { LanguageProvider } from './context/LanguageContext';
+import { CurrencyProvider } from './context/CurrencyProvider';
+import { LanguageProvider } from './context/LanguageProvider';
 import { isTokenExpired, clearSession } from './utils/session';
 import { currentUserId } from './utils/userStorage';
 import useInvestmentsAccess from './hooks/useInvestmentsAccess';
@@ -67,6 +72,11 @@ function InvestmentsRoute({ children }) {
   return <Navigate to="/" replace />;
 }
 
+// Login, register and similar pages have no navigation.
+function PublicFrame({ children }) {
+  return <div className="max-w-6xl mx-auto px-4 py-6">{children}</div>;
+}
+
 export default function App() {
   const location = useLocation();
   const hideNavbar = [
@@ -76,6 +86,7 @@ export default function App() {
     '/verify-email',
   ].some((path) => location.pathname.startsWith(path));
   const { theme, toggleTheme } = useTheme();
+  const Frame = hideNavbar ? PublicFrame : AppShell;
 
   // Re-key the CurrencyProvider by the authenticated identity. App re-renders on
   // every navigation (useLocation), and login/logout always navigate, so when
@@ -93,10 +104,7 @@ export default function App() {
       <CurrencyProvider key={authUserId}>
         <LanguageProvider>
           <div className="min-h-screen bg-[var(--background)] text-[var(--foreground)]">
-            {!hideNavbar && (
-              <Navbar theme={theme} onToggleTheme={toggleTheme} />
-            )}
-            <div className="max-w-6xl mx-auto px-4 py-6">
+            <Frame theme={theme} onToggleTheme={toggleTheme}>
               <ErrorBoundary key={location.pathname}>
                 <Routes>
                   <Route path="/login" element={<Login />} />
@@ -123,6 +131,14 @@ export default function App() {
                     element={
                       <ProtectedRoute>
                         <Budget />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/transactions/budget/:budgetId"
+                    element={
+                      <ProtectedRoute>
+                        <BudgetDetail />
                       </ProtectedRoute>
                     }
                   />
@@ -159,6 +175,14 @@ export default function App() {
                     }
                   />
                   <Route
+                    path="/plans/accounts/:kind/:id"
+                    element={
+                      <ProtectedRoute>
+                        <AccountDetail />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
                     path="/plans/scheduled-payments"
                     element={
                       <ProtectedRoute>
@@ -177,6 +201,14 @@ export default function App() {
                   <Route
                     path="/graphics"
                     element={<Navigate to="/graphics/categories" replace />}
+                  />
+                  <Route
+                    path="/graphics/cashflow"
+                    element={
+                      <ProtectedRoute>
+                        <Cashflow />
+                      </ProtectedRoute>
+                    }
                   />
                   <Route
                     path="/graphics/categories"
@@ -209,6 +241,8 @@ export default function App() {
                     <Route path="currency" element={<SettingsCurrency />} />
                     <Route path="accounts" element={<SettingsAccounts />} />
                     <Route path="categories" element={<SettingsCategories />} />
+                    <Route path="rules" element={<SettingsRules />} />
+                    <Route path="tags" element={<SettingsTags />} />
                     <Route path="cards" element={<SettingsCards />} />
                   </Route>
                   <Route
@@ -222,7 +256,7 @@ export default function App() {
                   <Route path="*" element={<Navigate to="/" replace />} />
                 </Routes>
               </ErrorBoundary>
-            </div>
+            </Frame>
           </div>
         </LanguageProvider>
       </CurrencyProvider>

@@ -5,43 +5,30 @@ import Input from '../components/ui/input';
 import Button from '../components/ui/button';
 import Select from '../components/ui/select';
 import ConfirmDialog from '../components/ui/confirm-dialog';
+import IconButton from '../components/ui/icon-button';
+import PageHeader from '../components/ui/page-header';
 import { toast } from 'sonner';
-import { cn } from '../lib/utils';
 import { useCurrency } from '../context/CurrencyContext';
 import { intlLocale } from '../utils/dateLocale';
+import SpendingBudgets from '../components/budgets/SpendingBudgets';
+import useLabelledControl from '../hooks/useLabelledControl';
 
 // ── Inline Field wrapper ──────────────────────────────────────────────────────
 function Field({ label, children }) {
+  const [control, htmlFor] = useLabelledControl(children);
   return (
     <div className="flex flex-col gap-1.5">
-      <label className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-widest">
+      <label
+        htmlFor={htmlFor}
+        className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-widest">
         {label}
       </label>
-      {children}
+      {control}
     </div>
   );
 }
 
 // ── Small icon buttons ────────────────────────────────────────────────────────
-function IconButton({ onClick, title, danger, children }) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      title={title}
-      aria-label={title}
-      className={cn(
-        'inline-flex items-center justify-center w-8 h-8 rounded-lg transition-colors',
-        danger
-          ? 'text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/40'
-          : 'text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-slate-700',
-      )}
-    >
-      {children}
-    </button>
-  );
-}
-
 export default function Budget() {
   const { t } = useTranslation();
   const [budget, setBudget] = useState({ month: '', year: '', amount: '' });
@@ -53,7 +40,7 @@ export default function Budget() {
     amount: '',
   });
   const [deleteBudgetId, setDeleteBudgetId] = useState(null);
-  const { symbol: cs } = useCurrency();
+  const { symbol: cs, money } = useCurrency();
 
   const load = useCallback(async () => {
     try {
@@ -138,17 +125,12 @@ export default function Budget() {
         onCancel={() => setDeleteBudgetId(null)}
       />
 
+      <PageHeader title={t('budget.title')} subtitle={t('budget.subtitle')} />
+
       {/* ── Budget Card ───────────────────────────────────────────────────── */}
       <section className="bg-white dark:bg-slate-900 rounded-2xl border border-[var(--border)] shadow-sm overflow-hidden">
-        <div className="px-5 pt-5 pb-4 border-b border-[var(--border)]">
-          <h2 className="text-base font-semibold tracking-tight">
-            {t('budget.title')}
-          </h2>
-          <p className="text-xs text-gray-400 mt-0.5">{t('budget.subtitle')}</p>
-        </div>
-
         <form
-          className="px-5 pt-4 pb-5 flex flex-wrap gap-3 items-end"
+          className="p-5 flex flex-wrap gap-3 items-end"
           onSubmit={setMonthlyBudget}
         >
           <Field label={t('budget.month')}>
@@ -295,8 +277,7 @@ export default function Budget() {
                       </div>
                       <div className="flex items-center gap-3">
                         <span className="text-base font-semibold tabular-nums text-gray-800 dark:text-gray-100">
-                          {cs}
-                          {Number(b.amount).toFixed(2)}
+                          {money(b.amount)}
                         </span>
                         <div className="flex gap-1">
                           <IconButton
@@ -357,6 +338,8 @@ export default function Budget() {
           </div>
         )}
       </section>
+
+      <SpendingBudgets />
     </div>
   );
 }

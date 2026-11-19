@@ -17,7 +17,7 @@ import {
 export default function SettingsAccounts() {
   const { t } = useTranslation();
   const [accounts, setAccounts] = useState([]);
-  const { symbol: cs } = useCurrency();
+  const { money } = useCurrency();
 
   const [accountForm, setAccountForm] = useState({
     name: '',
@@ -256,8 +256,8 @@ export default function SettingsAccounts() {
                           </span>
                         </div>
                         <p className="text-[13px] text-white/80 mt-0.5">
-                          {t('settings.accounts.initial')}: {cs}
-                          {parseFloat(account.initialBalance ?? 0).toFixed(2)}
+                          {t('settings.accounts.initial')}:{' '}
+                          {money(account.initialBalance)}
                         </p>
                       </div>
                       <div className="flex gap-1">
@@ -265,7 +265,8 @@ export default function SettingsAccounts() {
                           type="button"
                           onClick={() => startEditAccount(account)}
                           title={t('settings.accounts.editAccount')}
-                          className="inline-flex items-center justify-center w-8 h-8 rounded-lg transition-colors text-white/80 hover:bg-white/20"
+                          aria-label={t('settings.accounts.editAccount')}
+                          className="inline-flex items-center justify-center size-11 sm:size-8 rounded-lg transition-colors cursor-pointer text-white/80 hover:bg-white/20 active:bg-white/30"
                         >
                           <EditIcon />
                         </button>
@@ -273,7 +274,8 @@ export default function SettingsAccounts() {
                           type="button"
                           onClick={() => setDeleteAccountId(account.id)}
                           title={t('settings.accounts.deleteAccount')}
-                          className="inline-flex items-center justify-center w-8 h-8 rounded-lg transition-colors text-white/80 hover:bg-white/20"
+                          aria-label={t('settings.accounts.deleteAccount')}
+                          className="inline-flex items-center justify-center size-11 sm:size-8 rounded-lg transition-colors cursor-pointer text-white/80 hover:bg-white/20 active:bg-white/30"
                         >
                           <TrashIcon />
                         </button>

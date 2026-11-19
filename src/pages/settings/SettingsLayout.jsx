@@ -1,6 +1,7 @@
 import { NavLink, Outlet } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { cn } from '../../lib/utils';
+import PageHeader from '../../components/ui/page-header';
 
 const SECTIONS = [
   {
@@ -68,6 +69,51 @@ const SECTIONS = [
     ),
   },
   {
+    to: '/settings/rules',
+    labelKey: 'settings.sidebar.rules',
+    // Shuffle: rules route each transaction to a category.
+    icon: (
+      <svg
+        width="15"
+        height="15"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
+        <path d="M16 3h5v5" />
+        <path d="M4 20 21 3" />
+        <path d="M21 16v5h-5" />
+        <path d="m15 15 6 6" />
+        <path d="M4 4l5 5" />
+      </svg>
+    ),
+  },
+  {
+    to: '/settings/tags',
+    labelKey: 'settings.sidebar.tags',
+    // A hash sign: free labels, distinct from the category tag icon.
+    icon: (
+      <svg
+        width="15"
+        height="15"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
+        <path d="M4 9h16" />
+        <path d="M4 15h16" />
+        <path d="M10 3 8 21" />
+        <path d="M16 3l-2 18" />
+      </svg>
+    ),
+  },
+  {
     to: '/settings/cards',
     labelKey: 'settings.sidebar.cards',
     icon: (
@@ -88,9 +134,11 @@ const SECTIONS = [
   },
 ];
 
+// Phones: tabs in rows of three (icon over label) so none is cut off at the edge.
+// md+: vertical sidebar rows.
 const sideLinkClass = ({ isActive }) =>
   cn(
-    'flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-150 whitespace-nowrap',
+    'flex flex-col md:flex-row items-center justify-center md:justify-start gap-1 md:gap-2.5 min-h-11 px-1 md:px-3 py-1.5 md:py-2 rounded-lg text-xs md:text-sm leading-tight font-medium text-center md:text-left transition-all duration-150 md:whitespace-nowrap',
     isActive
       ? 'bg-[var(--muted)] text-[var(--foreground)] shadow-sm'
       : 'text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:bg-[var(--muted)]',
@@ -100,18 +148,17 @@ export default function SettingsLayout() {
   const { t } = useTranslation();
   return (
     <div className="max-w-5xl mx-auto p-4">
-      <div className="mb-5">
-        <h1 className="text-2xl font-semibold tracking-tight">
-          {t('settings.title')}
-        </h1>
-        <p className="text-sm text-gray-400 mt-0.5">{t('settings.subtitle')}</p>
-      </div>
+      <PageHeader
+        className="mb-5"
+        title={t('settings.title')}
+        subtitle={t('settings.subtitle')}
+      />
 
       <div className="flex flex-col md:flex-row gap-5 items-start">
         {/* ── Section nav: vertical sidebar on desktop, pill row on mobile ── */}
         <aside className="w-full md:w-48 shrink-0 md:sticky md:top-20">
           <nav
-            className="flex md:flex-col gap-1 overflow-x-auto md:overflow-visible pb-1 md:pb-0"
+            className="grid grid-cols-3 md:flex md:flex-col gap-1"
             aria-label={t('settings.sections')}
           >
             {SECTIONS.map((s) => (
