@@ -1,6 +1,11 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Link, useParams, useSearchParams } from 'react-router-dom';
+import {
+  Link,
+  useNavigate,
+  useParams,
+  useSearchParams,
+} from 'react-router-dom';
 import {
   Area,
   CartesianGrid,
@@ -38,6 +43,17 @@ const shortDate = (iso) => {
 };
 
 const MIN_OFFSET = -60;
+
+/** Periods back from this month to an old link's "YYYY-MM" (0 if unusable). */
+function legacyOffset(period) {
+  const match = /^(\d{4})-(\d{2})$/.exec(period || '');
+  if (!match) return 0;
+  const now = new Date();
+  const back =
+    (Number(match[1]) - now.getFullYear()) * 12 +
+    (Number(match[2]) - 1 - now.getMonth());
+  return back <= 0 && back >= MIN_OFFSET ? back : 0;
+}
 
 function Chevron({ dir }) {
   return (
@@ -159,6 +175,7 @@ export default function BudgetDetail() {
   const { money } = useCurrency();
   const { budgetId } = useParams();
   const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
   const raw = Number(searchParams.get('offset') || 0);
   const offset =
     Number.isInteger(raw) && raw <= 0 && raw >= MIN_OFFSET ? raw : 0;
@@ -174,7 +191,32 @@ export default function BudgetDetail() {
       .catch(() => setCategories([]));
   }, []);
 
+  // Links from before flexible budgets carry a category id and ?period=YYYY-MM.
+  const legacyPeriod = searchParams.get('period');
+  const isLegacy = legacyPeriod !== null;
+
   useEffect(() => {
+    if (!isLegacy) return undefined;
+    let alive = true;
+    api
+      .get(`/spending-budgets/by-category/${budgetId}`)
+      .then(({ data: found }) => {
+        if (!alive) return;
+        const next =
+          found.periodType === 'monthly' ? legacyOffset(legacyPeriod) : 0;
+        navigate(
+          `/transactions/budget/${found.id}${next ? `?offset=${next}` : ''}`,
+          { replace: true },
+        );
+      })
+      .catch(() => alive && setStatus('missing'));
+    return () => {
+      alive = false;
+    };
+  }, [isLegacy, legacyPeriod, budgetId, navigate]);
+
+  useEffect(() => {
+    if (isLegacy) return undefined;
     let alive = true;
     setStatus('loading');
     api
@@ -191,7 +233,7 @@ export default function BudgetDetail() {
     return () => {
       alive = false;
     };
-  }, [budgetId, offset]);
+  }, [budgetId, offset, isLegacy]);
 
   const categoryById = useMemo(
     () => new Map(categories.map((c) => [c.id, c])),
