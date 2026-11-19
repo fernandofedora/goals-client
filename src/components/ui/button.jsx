@@ -7,7 +7,10 @@ const Button = React.forwardRef(({ className, type = 'button', variant = 'primar
     secondary: 'bg-[var(--secondary)] text-[var(--secondary-foreground)] hover:opacity-90',
     outline: 'border border-[var(--border)] bg-[var(--background)] text-[var(--foreground)] hover:bg-[var(--muted)]',
     subtle: 'bg-[var(--muted)] text-[var(--foreground)] hover:opacity-90',
-    destructive: 'bg-[var(--destructive)] text-[var(--destructive-foreground)] hover:opacity-90'
+    destructive: 'bg-[var(--destructive)] text-[var(--destructive-foreground)] hover:opacity-90',
+    // No colors: the caller's className sets them. cn() does not merge
+    // conflicting utilities, so overriding a variant's bg is unreliable.
+    custom: ''
   };
   return (
     <button
@@ -15,9 +18,9 @@ const Button = React.forwardRef(({ className, type = 'button', variant = 'primar
       type={type}
       className={cn(
         'inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium',
-        'px-3 py-2 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ring)]',
+        'min-h-11 sm:min-h-0 px-3 py-2 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ring)]',
         'disabled:pointer-events-none disabled:opacity-50',
-        variants[variant] || variants.primary,
+        variants[variant] ?? variants.primary,
         className
       )}
       {...props}

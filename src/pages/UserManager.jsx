@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 import { intlLocale } from '../utils/dateLocale';
 import { translateServerError } from '../utils/serverError';
 import { avatarColor, userInitials } from '../utils/avatar';
+import PageHeader from '../components/ui/page-header';
 
 // ─── Icons ────────────────────────────────────────────────────────────────────
 const ShieldIcon = () => (
@@ -1038,6 +1039,7 @@ export default function UserManager() {
   const [tempPasswordUser, setTempPasswordUser] = useState('');
 
   const searchTimer = useRef(null);
+  const [query, setQuery] = useState('');
 
   const currentUser = (() => {
     try {
@@ -1048,7 +1050,7 @@ export default function UserManager() {
   })();
 
   const fetchUsers = useCallback(
-    async (q = search, p = page, s = statusFilter, r = roleFilter) => {
+    async (q = query, p = page, s = statusFilter, r = roleFilter) => {
       setLoading(true);
       try {
         const params = new URLSearchParams({ page: p, limit: 15 });
@@ -1065,19 +1067,19 @@ export default function UserManager() {
         setLoading(false);
       }
     },
-    [search, page, statusFilter, roleFilter, t],
+    [query, page, statusFilter, roleFilter, t],
   );
 
   useEffect(() => {
     fetchUsers();
-  }, [page, statusFilter, roleFilter]);
+  }, [fetchUsers]);
 
   const handleSearchChange = (val) => {
     setSearch(val);
     clearTimeout(searchTimer.current);
     searchTimer.current = setTimeout(() => {
       setPage(1);
-      fetchUsers(val, 1, statusFilter, roleFilter);
+      setQuery(val);
     }, 400);
   };
 
@@ -1119,7 +1121,7 @@ export default function UserManager() {
       toast.success(t('admin.deletedSuccess', { name: deleteTarget.name }));
       setDeleteTarget(null);
       setPage(1);
-      fetchUsers(search, 1, statusFilter, roleFilter);
+      fetchUsers(query, 1, statusFilter, roleFilter);
     } catch (err) {
       toast.error(translateServerError(err, t, 'admin.deletionFailed'));
     } finally {
@@ -1129,41 +1131,11 @@ export default function UserManager() {
 
   return (
     <div style={{ maxWidth: 1100, margin: '0 auto' }}>
-      {/* ── Header ───────────────────────────────────── */}
-      <div style={{ marginBottom: 28 }}>
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 12,
-            marginBottom: 6,
-          }}
-        >
-          <span style={{ color: '#f59e0b' }}>
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="28"
-              height="28"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-            </svg>
-          </span>
-          <h1 style={{ margin: 0, fontSize: 26, fontWeight: 800 }}>
-            {t('admin.title')}
-          </h1>
-        </div>
-        <p
-          style={{ margin: 0, color: 'var(--muted-foreground)', fontSize: 14 }}
-        >
-          {t('admin.usersRegistered', { count: total })}
-        </p>
-      </div>
+      <PageHeader
+        className="mb-7"
+        title={t('admin.title')}
+        subtitle={t('admin.usersRegistered', { count: total })}
+      />
 
       {/* ── Toolbar ──────────────────────────────────── */}
       <div

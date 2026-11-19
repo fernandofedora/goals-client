@@ -1,5 +1,6 @@
 import { ALL_CURRENCIES } from '../../context/CurrencyContext';
 import { intlLocale } from '../../utils/dateLocale';
+import { isPrivacyOn, PRIVACY_MASK } from '../../utils/privacy';
 
 // Formatting helpers for the investments module. Amounts here can be in any
 // currency (the asset's or the user's), so they take an explicit code instead
@@ -24,6 +25,7 @@ export function formatMoney(
 ) {
   const n = Number(value);
   if (value == null || !Number.isFinite(n)) return fallback;
+  if (isPrivacyOn()) return PRIVACY_MASK;
   const sign = n < 0 ? '-' : '';
   return `${sign}${currencySymbol(code)}${numberFormat(decimals, decimals).format(Math.abs(n))}`;
 }
@@ -32,6 +34,7 @@ export function formatMoney(
 export function formatSignedMoney(value, code, opts) {
   const n = Number(value);
   if (value == null || !Number.isFinite(n)) return opts?.fallback ?? '—';
+  if (isPrivacyOn()) return PRIVACY_MASK;
   return (n > 0 ? '+' : '') + formatMoney(n, code, opts);
 }
 

@@ -1,18 +1,8 @@
-import {
-  createContext,
-  useContext,
-  useState,
-  useCallback,
-  useMemo,
-  useEffect,
-} from 'react';
+import { useState, useCallback, useMemo, useEffect } from 'react';
 import api from '../api';
 import i18n, { SUPPORTED_LANGUAGES, DEFAULT_LANGUAGE } from '../i18n';
 import { getPref, setPref } from '../utils/userStorage';
-
-const PREF_KEY = 'language';
-
-const LanguageContext = createContext(null);
+import { LanguageContext, PREF_KEY } from './LanguageContext';
 
 /**
  * LanguageProvider — mirrors CurrencyContext's per-user sync model on top of
@@ -86,14 +76,4 @@ export function LanguageProvider({ children }) {
       {children}
     </LanguageContext.Provider>
   );
-}
-
-/**
- * useLanguage() — returns { language, setLanguage }
- */
-export function useLanguage() {
-  const ctx = useContext(LanguageContext);
-  if (!ctx)
-    throw new Error('useLanguage must be used within a LanguageProvider');
-  return ctx;
 }

@@ -395,6 +395,7 @@ export default function PurchaseDialog({
                 {t('common.cancel')}
               </Button>
               <Button
+                variant="custom"
                 type="submit"
                 disabled={saving || (!isEdit && loadingQuote)}
                 className="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold dark:bg-indigo-600 dark:text-white dark:hover:bg-indigo-700"

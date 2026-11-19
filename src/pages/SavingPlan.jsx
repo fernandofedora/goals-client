@@ -5,6 +5,8 @@ import Button from '../components/ui/button';
 import Input from '../components/ui/input';
 import Select from '../components/ui/select';
 import ConfirmDialog from '../components/ui/confirm-dialog';
+import IconButton from '../components/ui/icon-button';
+import PageHeader from '../components/ui/page-header';
 import { toast } from 'sonner';
 import DateInput from '../components/DateInput';
 import { formatAmount } from '../utils/format';
@@ -12,35 +14,22 @@ import { cn } from '../lib/utils';
 import { useCurrency } from '../context/CurrencyContext';
 import { getPref, setPref } from '../utils/userStorage';
 import { translateServerError } from '../utils/serverError';
+import { categoryOptions } from '../utils/categories';
+import { intlLocale } from '../utils/dateLocale';
+import useLabelledControl from '../hooks/useLabelledControl';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 function Field({ label, children }) {
+  const [control, htmlFor] = useLabelledControl(children);
   return (
     <div className="flex flex-col gap-1.5">
-      <label className="text-xs font-semibold uppercase tracking-widest text-gray-500 dark:text-gray-400">
+      <label
+        htmlFor={htmlFor}
+        className="text-xs font-semibold uppercase tracking-widest text-gray-500 dark:text-gray-400">
         {label}
       </label>
-      {children}
+      {control}
     </div>
-  );
-}
-
-function IconButton({ onClick, title, danger, children }) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      title={title}
-      aria-label={title}
-      className={cn(
-        'inline-flex items-center justify-center w-8 h-8 rounded-lg transition-colors',
-        danger
-          ? 'text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/40'
-          : 'text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-slate-700',
-      )}
-    >
-      {children}
-    </button>
   );
 }
 
@@ -51,12 +40,12 @@ function ProgressRing({ pct, size = 120, stroke = 10 }) {
   const filled = (circ * Math.min(pct, 100)) / 100;
   const color =
     pct >= 100
-      ? '#10b981'
+      ? '#059669'
       : pct >= 75
-        ? '#6366f1'
+        ? '#059669'
         : pct >= 40
-          ? '#6366f1'
-          : '#6366f1';
+          ? '#059669'
+          : '#059669';
 
   return (
     <svg
@@ -110,6 +99,56 @@ function Card({ title, subtitle, action, children, noPad }) {
 }
 
 // ── SVG icons ─────────────────────────────────────────────────────────────────
+const EMPTY_PLAN_FORM = {
+  name: '',
+  targetAmount: '',
+  linkedCategoryId: '',
+  targetDate: '',
+  initialAmount: '',
+};
+
+const formFromPlan = (p) => ({
+  name: p.name || '',
+  targetAmount: String(p.targetAmount || ''),
+  linkedCategoryId: String(p.linkedCategoryId || ''),
+  targetDate: p.targetDate || '',
+  initialAmount: Number(p.initialAmount) > 0 ? String(p.initialAmount) : '',
+});
+
+const formatDay = (iso) =>
+  new Date(`${iso}T00:00:00`).toLocaleDateString(intlLocale(), {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+  });
+
+// Soft tints with -700 text keep 4.5:1 on both the tab and the card.
+const STATUS_TONES = {
+  on_track:
+    'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800',
+  ahead:
+    'bg-sky-50 text-sky-700 border-sky-200 dark:bg-sky-950/40 dark:text-sky-300 dark:border-sky-800',
+  behind:
+    'bg-amber-50 text-amber-800 border-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800',
+  completed:
+    'bg-emerald-600 text-white border-emerald-600 dark:bg-emerald-500 dark:text-emerald-950 dark:border-emerald-500',
+};
+
+function GoalStatusBadge({ status }) {
+  const { t } = useTranslation();
+  if (!status) return null;
+  return (
+    <span
+      className={cn(
+        'inline-flex items-center px-2 py-0.5 rounded-md border text-[11px] font-semibold leading-4',
+        STATUS_TONES[status],
+      )}
+    >
+      {t(`savings.status.${status}`)}
+    </span>
+  );
+}
+
 const EditIcon = () => (
   <svg
     width="14"
@@ -150,14 +189,36 @@ export default function SavingPlan() {
   const { symbol: cs } = useCurrency();
   const fmt = (v) => formatAmount(v, { currencySymbol: cs });
 
+  // Edit / delete for a manual contribution (shared by the mobile list and the table).
+  const renderContrActions = (r) => (
+    <div className="flex items-center justify-end gap-1 flex-shrink-0">
+      <IconButton
+        onClick={() => {
+          setEditingContrId(r.c.id);
+          setContrForm({
+            amount: String(r.c.amount),
+            date: r.c.date,
+            note: r.c.note || '',
+          });
+        }}
+        title={t('savings.editContribution')}
+      >
+        <EditIcon />
+      </IconButton>
+      <IconButton
+        onClick={() => setConfirm({ open: true, id: r.c.id })}
+        title={t('savings.deleteContribution')}
+        danger
+      >
+        <TrashIcon />
+      </IconButton>
+    </div>
+  );
+
   const [categories, setCategories] = useState([]);
   const [plans, setPlans] = useState([]);
   const [selectedPlanId, setSelectedPlanId] = useState('');
-  const [planForm, setPlanForm] = useState({
-    name: '',
-    targetAmount: '',
-    linkedCategoryId: '',
-  });
+  const [planForm, setPlanForm] = useState(EMPTY_PLAN_FORM);
   const [summary, setSummary] = useState(null);
   const [contrForm, setContrForm] = useState({
     amount: '',
@@ -195,11 +256,7 @@ export default function SavingPlan() {
           const chosen =
             p.find((x) => String(x.id) === String(savedId)) || p[0];
           setSelectedPlanId(String(chosen.id));
-          setPlanForm({
-            name: chosen.name || '',
-            targetAmount: String(chosen.targetAmount || ''),
-            linkedCategoryId: String(chosen.linkedCategoryId || ''),
-          });
+          setPlanForm(formFromPlan(chosen));
         }
       } catch (err) {
         console.error(err);
@@ -229,11 +286,7 @@ export default function SavingPlan() {
   // sync planForm when switching plans
   useEffect(() => {
     if (!currentPlan) return;
-    setPlanForm({
-      name: currentPlan.name || '',
-      targetAmount: String(currentPlan.targetAmount || ''),
-      linkedCategoryId: String(currentPlan.linkedCategoryId || ''),
-    });
+    setPlanForm(formFromPlan(currentPlan));
   }, [currentPlan]);
 
   // reset contribution form + pagination when switching plans
@@ -271,6 +324,10 @@ export default function SavingPlan() {
         linkedCategoryId: planForm.linkedCategoryId
           ? Number(planForm.linkedCategoryId)
           : null,
+        targetDate: planForm.targetDate || null,
+        initialAmount: planForm.initialAmount
+          ? Number(planForm.initialAmount)
+          : 0,
       };
       const res = await api.post('/savings/plans', body);
       setPlans((prev) => [res.data, ...prev]);
@@ -296,6 +353,10 @@ export default function SavingPlan() {
         linkedCategoryId: planForm.linkedCategoryId
           ? Number(planForm.linkedCategoryId)
           : null,
+        targetDate: planForm.targetDate || null,
+        initialAmount: planForm.initialAmount
+          ? Number(planForm.initialAmount)
+          : 0,
       };
       const res = await api.put(`/savings/plans/${selectedPlanId}`, body);
       setPlans((prev) =>
@@ -396,7 +457,7 @@ export default function SavingPlan() {
   const progressPct = summary
     ? Math.min(Math.round(summary.progressPercent), 100)
     : 0;
-  const totalSaved = summary ? summary.totalManual + summary.totalAuto : 0;
+  const totalSaved = summary ? (summary.initialAmount || 0) + summary.totalManual + summary.totalAuto : 0;
 
   const rows = useMemo(() => {
     if (!summary) return [];
@@ -448,35 +509,31 @@ export default function SavingPlan() {
         onConfirm={deletePlan}
       />
 
-      {/* ── Page header ──────────────────────────────────────────────────── */}
-      <div className="flex items-start justify-between gap-4 flex-wrap">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">
-            {t('savings.title')}
-          </h1>
-          <p className="text-sm text-gray-400 mt-0.5">
-            {t('savings.subtitle')}
-          </p>
-        </div>
-        <Button
-          variant={showNewPlan ? 'outline' : 'secondary'}
-          onClick={() => {
-            if (showNewPlan) {
-              setShowNewPlan(false);
-              const savedId = getPref('savingPlan.selectedPlanId');
-              const chosen =
-                plans.find((x) => String(x.id) === String(savedId)) || plans[0];
-              if (chosen) setSelectedPlanId(String(chosen.id));
-            } else {
-              setShowNewPlan(true);
-              setSelectedPlanId('');
-              setPlanForm({ name: '', targetAmount: '', linkedCategoryId: '' });
-            }
-          }}
-        >
-          {showNewPlan ? t('savings.cancel') : t('savings.newPlan')}
-        </Button>
-      </div>
+      <PageHeader
+        title={t('savings.title')}
+        subtitle={t('savings.subtitle')}
+        actions={
+          <Button
+            variant={showNewPlan ? 'outline' : 'secondary'}
+            onClick={() => {
+              if (showNewPlan) {
+                setShowNewPlan(false);
+                const savedId = getPref('savingPlan.selectedPlanId');
+                const chosen =
+                  plans.find((x) => String(x.id) === String(savedId)) ||
+                  plans[0];
+                if (chosen) setSelectedPlanId(String(chosen.id));
+              } else {
+                setShowNewPlan(true);
+                setSelectedPlanId('');
+                setPlanForm(EMPTY_PLAN_FORM);
+              }
+            }}
+          >
+            {showNewPlan ? t('savings.cancel') : t('savings.newPlan')}
+          </Button>
+        }
+      />
 
       {/* ── New plan form ─────────────────────────────────────────────────── */}
       {showNewPlan && (
@@ -514,16 +571,36 @@ export default function SavingPlan() {
                   name="linkedCategoryId"
                 >
                   <option value="">{t('savings.noCategory')}</option>
-                  {categories.map((c) => (
-                    <option key={c.id} value={String(c.id)}>
-                      {c.name}
+                  {categoryOptions(categories).map((o) => (
+                    <option key={o.id} value={String(o.id)}>
+                      {o.label}
                     </option>
                   ))}
                 </Select>
               </Field>
+              <Field label={t('savings.targetDate')}>
+                <DateInput
+                  name="targetDate"
+                  value={planForm.targetDate}
+                  onChange={onPlanField}
+                  placeholder={t('savings.noTargetDate')}
+                />
+              </Field>
+              <Field label={t('savings.initialAmount', { symbol: cs })}>
+                <Input
+                  name="initialAmount"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={planForm.initialAmount}
+                  onChange={onPlanField}
+                  placeholder="0.00"
+                />
+              </Field>
             </div>
             <div className="mt-4 flex justify-end">
               <Button
+                variant="custom"
                 type="submit"
                 disabled={loading}
                 className="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-6"
@@ -547,13 +624,20 @@ export default function SavingPlan() {
                 setShowNewPlan(false);
               }}
               className={cn(
-                'px-4 py-2 rounded-xl text-sm font-medium transition-all border',
+                'inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all border cursor-pointer',
                 String(p.id) === selectedPlanId
                   ? 'bg-indigo-600 text-white border-indigo-600 shadow-sm'
                   : 'bg-white dark:bg-slate-900 text-gray-600 dark:text-gray-300 border-[var(--border)] hover:border-indigo-400',
               )}
             >
               {p.name}
+              <GoalStatusBadge
+                status={
+                  String(p.id) === selectedPlanId
+                    ? summary?.status
+                    : p.progress?.status
+                }
+              />
             </button>
           ))}
         </div>
@@ -624,6 +708,23 @@ export default function SavingPlan() {
                         )?.name || t('savings.linkedCategoryFallback')}
                       </span>
                     )}
+                    {currentPlan.targetDate && (
+                      <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-gray-600 dark:text-gray-300">
+                        <GoalStatusBadge status={summary?.status} />
+                        <span>
+                          {t('savings.dueOn', {
+                            date: formatDay(currentPlan.targetDate),
+                          })}
+                        </span>
+                        {summary?.suggestedMonthly > 0 && (
+                          <span className="font-medium text-gray-800 dark:text-gray-100">
+                            {t('savings.suggestedMonthly', {
+                              amount: fmt(summary.suggestedMonthly),
+                            })}
+                          </span>
+                        )}
+                      </div>
+                    )}
                   </div>
 
                   {/* Progress bar */}
@@ -669,8 +770,24 @@ export default function SavingPlan() {
                   </div>
 
                   {/* Mini stats row */}
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                  <div
+                    className={cn(
+                      'grid grid-cols-2 gap-3',
+                      summary?.initialAmount > 0
+                        ? 'sm:grid-cols-4'
+                        : 'sm:grid-cols-3',
+                    )}
+                  >
                     {[
+                      ...(summary?.initialAmount > 0
+                        ? [
+                            {
+                              label: t('savings.initial'),
+                              value: fmt(summary.initialAmount),
+                              color: 'text-gray-700 dark:text-gray-200',
+                            },
+                          ]
+                        : []),
                       {
                         label: t('savings.manual'),
                         value: fmt(summary?.totalManual ?? 0),
@@ -748,15 +865,37 @@ export default function SavingPlan() {
                     name="linkedCategoryId"
                   >
                     <option value="">{t('savings.noCategory')}</option>
-                    {categories.map((c) => (
-                      <option key={c.id} value={String(c.id)}>
-                        {c.name}
+                    {categoryOptions(categories).map((o) => (
+                      <option key={o.id} value={String(o.id)}>
+                        {o.label}
                       </option>
                     ))}
                   </Select>
                 </Field>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <Field label={t('savings.targetDate')}>
+                    <DateInput
+                      name="targetDate"
+                      value={planForm.targetDate}
+                      onChange={onPlanField}
+                      placeholder={t('savings.noTargetDate')}
+                    />
+                  </Field>
+                  <Field label={t('savings.initialAmount', { symbol: cs })}>
+                    <Input
+                      name="initialAmount"
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      value={planForm.initialAmount}
+                      onChange={onPlanField}
+                      placeholder="0.00"
+                    />
+                  </Field>
+                </div>
                 <div className="flex gap-2 pt-1">
                   <Button
+                    variant="custom"
                     type="submit"
                     disabled={loading}
                     className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold"
@@ -826,6 +965,7 @@ export default function SavingPlan() {
                   {editingContrId ? (
                     <>
                       <Button
+                        variant="custom"
                         type="submit"
                         disabled={loading}
                         className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold"
@@ -850,6 +990,7 @@ export default function SavingPlan() {
                     </>
                   ) : (
                     <Button
+                      variant="custom"
                       type="submit"
                       disabled={loading}
                       className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold"
@@ -893,7 +1034,43 @@ export default function SavingPlan() {
                 </div>
               </div>
 
-              <div className="overflow-x-auto">
+              {/* Mobile list (< sm): the table pushed Amount off-screen */}
+              {rows.length > 0 && (
+                <ul className="sm:hidden divide-y divide-[var(--border)]">
+                  {paginated.map((r) => (
+                    <li
+                      key={r.key}
+                      className="px-4 py-3 flex items-center gap-3"
+                    >
+                      <div className="flex-1 min-w-0 space-y-1">
+                        <p
+                          className="text-sm font-medium text-gray-800 dark:text-gray-100 truncate"
+                          title={r.desc}
+                        >
+                          {r.desc}
+                        </p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 tabular-nums">
+                          {r.date} ·{' '}
+                          {r.type === 'auto'
+                            ? t('savings.auto')
+                            : t('savings.manual')}
+                        </p>
+                      </div>
+                      <span className="text-sm font-semibold tabular-nums whitespace-nowrap text-emerald-600 dark:text-emerald-400">
+                        +{fmt(r.amount)}
+                      </span>
+                      {r.type === 'manual' && renderContrActions(r)}
+                    </li>
+                  ))}
+                </ul>
+              )}
+
+              <div
+                className={cn(
+                  'overflow-x-auto',
+                  rows.length > 0 && 'hidden sm:block',
+                )}
+              >
                 {rows.length === 0 ? (
                   <div className="flex flex-col items-center justify-center py-14 gap-2 text-center">
                     <span className="text-3xl opacity-30">📭</span>
@@ -960,30 +1137,7 @@ export default function SavingPlan() {
                           </td>
                           <td className="px-4 py-3 text-right">
                             {r.type === 'manual' ? (
-                              <div className="flex items-center justify-end gap-1">
-                                <IconButton
-                                  onClick={() => {
-                                    setEditingContrId(r.c.id);
-                                    setContrForm({
-                                      amount: String(r.c.amount),
-                                      date: r.c.date,
-                                      note: r.c.note || '',
-                                    });
-                                  }}
-                                  title={t('savings.editContribution')}
-                                >
-                                  <EditIcon />
-                                </IconButton>
-                                <IconButton
-                                  onClick={() =>
-                                    setConfirm({ open: true, id: r.c.id })
-                                  }
-                                  title={t('savings.deleteContribution')}
-                                  danger
-                                >
-                                  <TrashIcon />
-                                </IconButton>
-                              </div>
+                              renderContrActions(r)
                             ) : (
                               <span className="text-gray-300 dark:text-gray-600 text-xs">
                                 —
@@ -1006,7 +1160,7 @@ export default function SavingPlan() {
                     <button
                       onClick={() => setPage((p) => Math.max(1, p - 1))}
                       disabled={page <= 1}
-                      className="px-3 py-1.5 text-xs rounded-lg border border-[var(--border)] text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-800 disabled:opacity-40 font-medium"
+                      className="min-h-11 sm:min-h-0 px-3 py-1.5 text-xs rounded-lg border border-[var(--border)] text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-800 disabled:opacity-40 font-medium"
                     >
                       {t('savings.prev')}
                     </button>
@@ -1015,7 +1169,7 @@ export default function SavingPlan() {
                         setPage((p) => Math.min(totalPages, p + 1))
                       }
                       disabled={page >= totalPages}
-                      className="px-3 py-1.5 text-xs rounded-lg border border-[var(--border)] text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-800 disabled:opacity-40 font-medium"
+                      className="min-h-11 sm:min-h-0 px-3 py-1.5 text-xs rounded-lg border border-[var(--border)] text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-800 disabled:opacity-40 font-medium"
                     >
                       {t('savings.next')}
                     </button>

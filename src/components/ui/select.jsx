@@ -27,7 +27,7 @@ function extractOptions(children) {
   return { options: opts, placeholderText };
 }
 
-const Select = React.forwardRef(({ className, children, value = '', onChange, placeholder, required, name, disabled, searchable, searchPlaceholder = 'Buscar...', noResultsText = 'Sin resultados', maxHeight, searchThreshold = 8, filterFn }, ref) => {
+const Select = React.forwardRef(({ id, className, children, value = '', onChange, placeholder, required, name, disabled, searchable, searchPlaceholder = 'Buscar...', noResultsText = 'Sin resultados', maxHeight, searchThreshold = 8, filterFn }, ref) => {
   const { options, placeholderText } = extractOptions(children);
   const normalizedValue = value == null ? '' : String(value);
   const selectedLabel = (normalizedValue === ''
@@ -67,9 +67,10 @@ const Select = React.forwardRef(({ className, children, value = '', onChange, pl
         onOpenChange={(next)=>{ if (!next && preventCloseRef.current) return; setOpen(next); }}
       >
         <RadixSelect.Trigger
+          id={id}
           ref={ref}
           className={cn(
-            'inline-flex items-center justify-between rounded-md border px-3 py-2 text-sm w-full',
+            'inline-flex items-center justify-between rounded-md border px-3 py-2 text-sm w-full min-h-11 sm:min-h-0 cursor-pointer',
             'border-[var(--border)] bg-[var(--background)] text-[var(--foreground)]',
             'focus:outline-none focus:ring-2 focus:ring-[var(--ring)]',
             'disabled:cursor-not-allowed disabled:opacity-50'
@@ -88,16 +89,7 @@ const Select = React.forwardRef(({ className, children, value = '', onChange, pl
             sideOffset={6}
             collisionPadding={10}
             onCloseAutoFocus={(e)=> e.preventDefault()}
-            onOpenAutoFocus={(e)=> { e.preventDefault(); searchRef.current?.focus(); }}
-            onInteractOutside={(e)=> {
-              const target = e.target;
-              if (target && typeof target.closest === 'function' && target.closest('.select-search')) e.preventDefault();
-            }}
             onPointerDownOutside={(e)=> {
-              const target = e.target;
-              if (target && typeof target.closest === 'function' && target.closest('.select-search')) e.preventDefault();
-            }}
-            onFocusOutside={(e)=> {
               const target = e.target;
               if (target && typeof target.closest === 'function' && target.closest('.select-search')) e.preventDefault();
             }}

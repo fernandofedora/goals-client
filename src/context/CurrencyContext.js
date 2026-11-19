@@ -1,6 +1,5 @@
-import { createContext, useContext, useState, useCallback, useMemo, useEffect } from 'react';
-import api from '../api';
-import { getPref, setPref } from '../utils/userStorage';
+import { createContext, useContext } from 'react';
+import { getPref } from '../utils/userStorage';
 
 /**
  * Comprehensive world currencies list – display-only, no exchange rates.
@@ -168,85 +167,34 @@ export const ALL_CURRENCIES = [
  * Subset of ALL_CURRENCIES for the most commonly used ones.
  */
 export const POPULAR_CODES = ['USD', 'EUR', 'GBP', 'NIO', 'MXN', 'COP'];
-export const POPULAR_CURRENCIES = POPULAR_CODES.map(c => ALL_CURRENCIES.find(x => x.code === c));
+export const POPULAR_CURRENCIES = POPULAR_CODES.map((c) =>
+  ALL_CURRENCIES.find((x) => x.code === c),
+);
 
 // Build a Map for O(1) lookups (js-set-map-lookups)
-const currencyMap = new Map(ALL_CURRENCIES.map(c => [c.code, c]));
+export const currencyMap = new Map(ALL_CURRENCIES.map((c) => [c.code, c]));
 
-const PREF_KEY = 'currency';
-const DEFAULT_CODE = 'USD';
+export const PREF_KEY = 'currency';
+export const DEFAULT_CODE = 'USD';
+export const PRIVACY_KEY = 'privacyMode';
 
-function getInitialCurrency() {
+export function getInitialCurrency() {
   // Per-user preference (scoped by the active account); falls back to USD.
   const saved = getPref(PREF_KEY);
   return currencyMap.get(saved) || currencyMap.get(DEFAULT_CODE);
 }
 
-const CurrencyContext = createContext(null);
-
-export function CurrencyProvider({ children }) {
-  // Read from localStorage synchronously to avoid FOUC (rerender-lazy-state-init)
-  const [currency, setCurrencyState] = useState(getInitialCurrency);
-
-  // Persist to localStorage + server whenever the user changes it (rerender-functional-setstate)
-  const setCurrency = useCallback(async (code) => {
-    const match = currencyMap.get(code);
-    if (!match) return;
-    setCurrencyState(match);
-    setPref(PREF_KEY, code);
-
-    // Fire-and-forget server persistence; don't block the UI
-    try {
-      await api.put('/user/profile', { currency: code });
-    } catch {
-      // Non-critical — localStorage acts as the primary source
-    }
-  }, []);
-
-  // Sync from server on mount — the server is the source of truth per user.
-  // The provider is remounted whenever the authenticated identity changes
-  // (App.jsx keys it by user id), so this re-runs for each logged-in user and
-  // never carries another account's choice over. Overwrites the cached value
-  // only when the server differs, preserving the "instant load" from cache.
-  useEffect(() => {
-    const token = localStorage.getItem('token');
-    if (!token) return; // not logged in yet
-    api.get('/user/me')
-      .then(res => {
-        const serverCode = res.data?.currency || DEFAULT_CODE;
-        if (serverCode !== currency.code) {
-          const match = currencyMap.get(serverCode);
-          if (match) {
-            setCurrencyState(match);
-            setPref(PREF_KEY, serverCode);
-          }
-        }
-      })
-      .catch(() => { /* ignore — fall back to the cached preference */ });
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
-
-  // Stable context value to avoid unnecessary re-renders (rerender-memo)
-  const value = useMemo(() => ({
-    currency,       // { code, symbol, name }
-    symbol: currency.symbol,
-    code: currency.code,
-    setCurrency,
-  }), [currency, setCurrency]);
-
-  return (
-    <CurrencyContext.Provider value={value}>
-      {children}
-    </CurrencyContext.Provider>
-  );
-}
+export const CurrencyContext = createContext(null);
 
 /**
- * useCurrency() — returns { symbol, code, currency, setCurrency }
+ * useCurrency() — returns { symbol, code, currency, setCurrency,
+ *                           privacyMode, togglePrivacy, money }
  * Example: const { symbol } = useCurrency();
  *          <span>{symbol}{amount.toFixed(2)}</span>
  */
 export function useCurrency() {
   const ctx = useContext(CurrencyContext);
-  if (!ctx) throw new Error('useCurrency must be used within a CurrencyProvider');
+  if (!ctx)
+    throw new Error('useCurrency must be used within a CurrencyProvider');
   return ctx;
 }

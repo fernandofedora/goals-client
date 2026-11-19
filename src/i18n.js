@@ -9,7 +9,7 @@ export const DEFAULT_LANGUAGE = 'en';
 
 // Synchronous init from the per-user localStorage preference avoids a language
 // flash on reload. The server is still the source of truth and is re-synced by
-// LanguageContext on mount (see src/context/LanguageContext.jsx).
+// LanguageContext on mount (see src/context/LanguageProvider.jsx).
 const initial = getPref('language');
 i18next.use(initReactI18next).init({
   resources: {
