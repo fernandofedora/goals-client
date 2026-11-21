@@ -56,6 +56,9 @@ const SERVER_MESSAGE_KEYS = {
   'Two-factor session expired': 'errors.server.twoFactorExpired',
   'Two-factor is not available': 'errors.server.twoFactorUnavailable',
   'Two-factor is already on': 'errors.server.twoFactorAlreadyOn',
+  'No tenías tantas acciones para vender en esa fecha':
+    'errors.server.investmentNotEnoughShares',
+  'Indica el monto recibido': 'errors.server.investmentDividendAmount',
   'Current and new password required':
     'errors.server.currentAndNewPasswordRequired',
   'Weak password': 'errors.server.weakPassword',

@@ -625,7 +625,9 @@
       "value": "Total value",
       "invested": "Invested",
       "gain": "Gain / Loss",
-      "today": "Today"
+      "today": "Today",
+      "realized": "Realized gain",
+      "dividendsSub": "Includes {{amount}} in dividends"
     },
     "table": {
       "asset": "Asset",
@@ -635,11 +637,13 @@
       "value": "Value",
       "gain": "G/L",
       "weight": "Weight",
-      "addPurchase": "+ Buy",
-      "history": "Purchases",
+      "addPurchase": "+ Movement",
+      "history": "Movements",
       "noPurchases": "No purchases",
       "noPrice": "No price",
-      "fxUnavailable": "No exchange rate"
+      "fxUnavailable": "No exchange rate",
+      "soldOut": "Sold",
+      "realized": "Cashed {{amount}}"
     },
     "empty": {
       "title": "You don't have any investments yet",
@@ -663,17 +667,37 @@
       "amountRequired": "Enter the amount invested.",
       "priceRequired": "No price available; enter the price per share.",
       "saved": "Purchase recorded",
-      "updated": "Purchase updated",
-      "saveFailed": "Could not save the purchase."
+      "updated": "Movement updated",
+      "saveFailed": "Could not save the purchase.",
+      "typeLabel": "Kind of movement",
+      "typeBuy": "Buy",
+      "typeSell": "Sell",
+      "typeDividend": "Dividend",
+      "titleBuy": "Add purchase",
+      "titleSell": "Record a sale",
+      "titleDividend": "Record a dividend",
+      "titleEditBuy": "Edit purchase",
+      "titleEditSell": "Edit sale",
+      "titleEditDividend": "Edit dividend",
+      "amountSell": "Amount received from the sale",
+      "amountDividend": "Amount received",
+      "previewSell": "{{amount}} for {{shares}} shares at {{price}}",
+      "dateSell": "Sale date",
+      "dateDividend": "Payment date",
+      "held": "You have {{shares}} shares",
+      "sellAll": "Sell all",
+      "savedBuy": "Purchase recorded",
+      "savedSell": "Sale recorded",
+      "savedDividend": "Dividend recorded"
     },
     "history": {
-      "title": "Purchase history",
-      "empty": "This investment has no recorded purchases.",
+      "title": "Movement history",
+      "empty": "This holding has no movements yet.",
       "sharesAt": "{{shares}} shares at {{price}}",
-      "deleteTitle": "Delete this purchase?",
-      "deleteHint": "The investment's shares and cost will be recalculated.",
-      "deleted": "Purchase deleted",
-      "deleteFailed": "Could not delete the purchase.",
+      "deleteTitle": "Delete this movement?",
+      "deleteHint": "Shares, cost and realized gain will be recalculated.",
+      "deleted": "Movement deleted",
+      "deleteFailed": "Couldn't delete the movement.",
       "loadFailed": "Could not load the history."
     },
     "attribution": {
@@ -1197,7 +1221,9 @@
       "invalidCode": "That code isn't valid. Check the app and try again.",
       "twoFactorExpired": "The step took too long. Sign in again.",
       "twoFactorUnavailable": "Two-step verification is not available yet.",
-      "twoFactorAlreadyOn": "Two-step verification is already on."
+      "twoFactorAlreadyOn": "Two-step verification is already on.",
+      "investmentNotEnoughShares": "You didn't have that many shares to sell on that date.",
+      "investmentDividendAmount": "Enter the amount received."
     }
   },
   "quickAdd": {

@@ -28,6 +28,20 @@ import { translateServerError } from '../utils/serverError';
 const REFRESH_MS = 60 * 1000;
 const BANNER_PREF = 'investments.betaBannerDismissed';
 
+/** "Cashed: +$X" under a holding's open gain, when it had sales or dividends. */
+function RealizedLine({ holding: h }) {
+  const { t } = useTranslation();
+  const cashed = (h.realizedUser || 0) + (h.dividendsUser || 0);
+  if (!cashed) return null;
+  return (
+    <p className={cn('text-xs', gainClass(cashed))}>
+      {t('investments.table.realized', {
+        amount: formatSignedMoney(cashed, h.displayCurrency),
+      })}
+    </p>
+  );
+}
+
 function SummaryTile({ label, value, sub, valueClass }) {
   return (
     <div className="bg-white dark:bg-slate-900 rounded-2xl border border-[var(--border)] shadow-sm px-4 py-3">
@@ -185,6 +199,7 @@ export default function Investments() {
   const holdings = data?.holdings || [];
   const totals = data?.totals;
   const currency = data?.currency;
+  const hasRealized = Boolean(totals && (totals.realized || totals.dividends));
   const showsFx = holdings.some((h) => h.displayCurrency !== h.quoteCurrency);
 
   return (
@@ -287,7 +302,12 @@ export default function Investments() {
 
       {/* Summary */}
       {totals && holdings.length > 0 && (
-        <section className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        <section
+          className={cn(
+            'grid grid-cols-2 gap-3',
+            hasRealized ? 'lg:grid-cols-5' : 'lg:grid-cols-4',
+          )}
+        >
           <SummaryTile
             label={t('investments.summary.value')}
             value={formatMoney(totals.value, currency)}
@@ -308,6 +328,23 @@ export default function Investments() {
             sub={formatPercent(totals.dayChangePercent)}
             valueClass={gainClass(totals.dayChange)}
           />
+          {hasRealized && (
+            <SummaryTile
+              label={t('investments.summary.realized')}
+              value={formatSignedMoney(
+                totals.realized + totals.dividends,
+                currency,
+              )}
+              sub={
+                totals.dividends
+                  ? t('investments.summary.dividendsSub', {
+                      amount: formatMoney(totals.dividends, currency),
+                    })
+                  : undefined
+              }
+              valueClass={gainClass(totals.realized + totals.dividends)}
+            />
+          )}
         </section>
       )}
 
@@ -397,6 +434,10 @@ export default function Investments() {
                         <span className="text-xs text-[var(--muted-foreground)]">
                           {t('investments.table.noPurchases')}
                         </span>
+                      ) : h.soldOut ? (
+                        <span className="text-xs text-[var(--muted-foreground)]">
+                          {t('investments.table.soldOut')}
+                        </span>
                       ) : (
                         formatShares(h.shares)
                       )}
@@ -446,6 +487,7 @@ export default function Investments() {
                         {formatSignedMoney(h.gainUser, h.displayCurrency)}
                       </p>
                       <p className="text-xs">{formatPercent(h.gainPercent)}</p>
+                      <RealizedLine holding={h} />
                     </td>
                     <td className="px-3 py-3 text-right tabular-nums text-[var(--muted-foreground)]">
                       {h.weight != null ? `${h.weight}%` : '—'}
@@ -483,13 +525,16 @@ export default function Investments() {
                         {formatSignedMoney(h.gainUser, h.displayCurrency)} (
                         {formatPercent(h.gainPercent)})
                       </p>
+                      <RealizedLine holding={h} />
                     </div>
                   </div>
                   <div className="flex justify-between text-xs text-[var(--muted-foreground)] tabular-nums">
                     <span>
                       {h.purchasesCount === 0
                         ? t('investments.table.noPurchases')
-                        : `${formatShares(h.shares)} ${t('investments.table.sharesShort')}`}
+                        : h.soldOut
+                          ? t('investments.table.soldOut')
+                          : `${formatShares(h.shares)} ${t('investments.table.sharesShort')}`}
                     </span>
                     <span>
                       {h.priceUnavailable
