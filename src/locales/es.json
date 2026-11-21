@@ -1518,5 +1518,9 @@
     "errorBody": "Puede que esté incompleto. Puedes desactivar el resumen desde tu perfil, en Notificaciones.",
     "toProfile": "Ir a mi perfil",
     "toLogin": "Iniciar sesión"
+  },
+  "pwa": {
+    "updateAvailable": "Hay una versión nueva de Goals",
+    "reload": "Recargar"
   }
 }

@@ -29,6 +29,7 @@ import VerifyEmail from './pages/VerifyEmail';
 import Unsubscribe from './pages/Unsubscribe';
 import useTheme from './hooks/useTheme';
 import { Toaster } from './components/ui/sonner';
+import PwaUpdatePrompt from './components/PwaUpdatePrompt';
 import { CurrencyProvider } from './context/CurrencyProvider';
 import { LanguageProvider } from './context/LanguageProvider';
 import { isTokenExpired, clearSession } from './utils/session';
@@ -264,6 +265,7 @@ export default function App() {
         </LanguageProvider>
       </CurrencyProvider>
       <Toaster />
+      <PwaUpdatePrompt />
     </>
   );
 }

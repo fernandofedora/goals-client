@@ -1518,5 +1518,9 @@
     "errorBody": "It may be incomplete. You can turn the summary off in your profile, under Notifications.",
     "toProfile": "Go to my profile",
     "toLogin": "Sign in"
+  },
+  "pwa": {
+    "updateAvailable": "A new version of Goals is available",
+    "reload": "Reload"
   }
 }
