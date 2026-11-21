@@ -242,15 +242,19 @@
     "sessionExpired": "Your session expired. Please log in again.",
     "email": "Email",
     "password": "Password",
+    "showPassword": "Show password",
+    "hidePassword": "Hide password",
+    "sending": "Sending…",
+    "signingIn": "Signing in…",
+    "creatingAccount": "Creating account…",
+    "updatingPassword": "Updating…",
     "login": {
       "title": "Login",
       "signIn": "Sign In",
       "noAccount": "No account?",
       "createOne": "Create one",
       "forgotPassword": "Forgot password?",
-      "failed": "Login failed",
-      "showPassword": "Show password",
-      "hidePassword": "Hide password"
+      "failed": "Login failed"
     },
     "register": {
       "title": "Create account",
@@ -275,7 +279,8 @@
       "passwordsDoNotMatch": "Passwords do not match",
       "updatedRedirect": "Password updated successfully. You can sign in.",
       "sendFailed": "Could not send the recovery email",
-      "updateFailed": "Could not update the password"
+      "updateFailed": "Could not update the password",
+      "sendAgain": "Send the link again"
     },
     "verify": {
       "verifying": "Verifying your account...",

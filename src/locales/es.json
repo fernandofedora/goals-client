@@ -242,15 +242,19 @@
     "sessionExpired": "Tu sesión expiró. Por favor, inicia sesión de nuevo.",
     "email": "Correo electrónico",
     "password": "Contraseña",
+    "showPassword": "Mostrar contraseña",
+    "hidePassword": "Ocultar contraseña",
+    "sending": "Enviando…",
+    "signingIn": "Entrando…",
+    "creatingAccount": "Creando cuenta…",
+    "updatingPassword": "Actualizando…",
     "login": {
       "title": "Iniciar Sesión",
       "signIn": "Iniciar Sesión",
       "noAccount": "¿No tienes cuenta?",
       "createOne": "Crea una",
       "forgotPassword": "¿Olvidaste tu contraseña?",
-      "failed": "Error al iniciar sesión",
-      "showPassword": "Mostrar contraseña",
-      "hidePassword": "Ocultar contraseña"
+      "failed": "Error al iniciar sesión"
     },
     "register": {
       "title": "Crear cuenta",
@@ -275,7 +279,8 @@
       "passwordsDoNotMatch": "Las contraseñas no coinciden",
       "updatedRedirect": "Contraseña actualizada correctamente. Puedes iniciar sesión.",
       "sendFailed": "No se pudo enviar el correo de recuperación",
-      "updateFailed": "No se pudo actualizar la contraseña"
+      "updateFailed": "No se pudo actualizar la contraseña",
+      "sendAgain": "Enviar el enlace de nuevo"
     },
     "verify": {
       "verifying": "Verificando tu cuenta...",

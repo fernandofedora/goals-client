@@ -6,6 +6,7 @@ import {
   translateServerError,
   translateServerMessage,
 } from '../utils/serverError';
+import PasswordInput from '../components/auth/PasswordInput';
 
 export default function ResetPassword() {
   const navigate = useNavigate();
@@ -19,21 +20,31 @@ export default function ResetPassword() {
   const [confirm, setConfirm] = useState('');
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  // Each request mails a new link and voids the previous one, so the form
+  // goes away once a link is on its way.
+  const [sent, setSent] = useState(false);
 
   const submitEmail = async (e) => {
     e.preventDefault();
+    if (submitting) return;
     setError('');
     setMessage('');
+    setSubmitting(true);
     try {
       const { data } = await api.post('/auth/reset-start', { email });
       setMessage(translateServerMessage(data.message, t));
+      setSent(true);
     } catch (err) {
       setError(translateServerError(err, t, 'auth.reset.sendFailed'));
+    } finally {
+      setSubmitting(false);
     }
   };
 
   const submitPassword = async (e) => {
     e.preventDefault();
+    if (submitting) return;
     setError('');
     setMessage('');
     if (password.length < 8) {
@@ -44,12 +55,15 @@ export default function ResetPassword() {
       setError(t('auth.reset.passwordsDoNotMatch'));
       return;
     }
+    setSubmitting(true);
     try {
       await api.post('/auth/reset-password', { token, password });
       setMessage(t('auth.reset.updatedRedirect'));
+      // Stays disabled until the redirect.
       setTimeout(() => navigate('/login'), 1500);
     } catch (err) {
       setError(translateServerError(err, t, 'auth.reset.updateFailed'));
+      setSubmitting(false);
     }
   };
 
@@ -69,7 +83,20 @@ export default function ResetPassword() {
         </div>
       )}
 
-      {step === 1 && (
+      {step === 1 && sent && (
+        <button
+          type="button"
+          className="text-sm text-indigo-600 dark:text-indigo-400 hover:underline"
+          onClick={() => {
+            setSent(false);
+            setMessage('');
+          }}
+        >
+          {t('auth.reset.sendAgain')}
+        </button>
+      )}
+
+      {step === 1 && !sent && (
         <form className="space-y-3" onSubmit={submitEmail}>
           <input
             className="w-full border border-gray-300 dark:border-slate-600 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white dark:bg-slate-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-300"
@@ -80,37 +107,35 @@ export default function ResetPassword() {
             required
           />
           <button
-            className="w-full px-4 py-2 rounded-md bg-indigo-600 text-white hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600 transition-colors"
+            className="w-full px-4 py-2 rounded-md bg-indigo-600 text-white hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
             type="submit"
+            disabled={submitting}
           >
-            {t('auth.reset.verifyEmail')}
+            {submitting ? t('auth.sending') : t('auth.reset.verifyEmail')}
           </button>
         </form>
       )}
 
       {step === 2 && (
         <form className="space-y-3" onSubmit={submitPassword}>
-          <input
-            className="w-full border border-gray-300 dark:border-slate-600 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white dark:bg-slate-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-300"
-            type="password"
+          <PasswordInput
             placeholder={t('auth.reset.newPassword')}
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            required
+            autoComplete="new-password"
           />
-          <input
-            className="w-full border border-gray-300 dark:border-slate-600 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white dark:bg-slate-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-300"
-            type="password"
+          <PasswordInput
             placeholder={t('auth.reset.confirmPassword')}
             value={confirm}
             onChange={(e) => setConfirm(e.target.value)}
-            required
+            autoComplete="new-password"
           />
           <button
-            className="w-full px-4 py-2 rounded-md bg-emerald-600 text-white hover:bg-emerald-700 dark:bg-emerald-600 dark:hover:bg-emerald-500 transition-colors"
+            className="w-full px-4 py-2 rounded-md bg-emerald-600 text-white hover:bg-emerald-700 dark:bg-emerald-600 dark:hover:bg-emerald-500 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
             type="submit"
+            disabled={submitting}
           >
-            {t('auth.reset.updatePassword')}
+            {submitting ? t('auth.updatingPassword') : t('auth.reset.updatePassword')}
           </button>
         </form>
       )}

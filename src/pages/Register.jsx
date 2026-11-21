@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { useTranslation, Trans } from 'react-i18next';
 import api from '../api';
 import { translateServerError } from '../utils/serverError';
+import PasswordInput from '../components/auth/PasswordInput';
 
 export default function Register() {
   const { t, i18n } = useTranslation();
@@ -10,12 +11,15 @@ export default function Register() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [submitting, setSubmitting] = useState(false);
 
   const [success, setSuccess] = useState(false);
 
   const onSubmit = async (e) => {
     e.preventDefault();
+    if (submitting) return;
     setError('');
+    setSubmitting(true);
     try {
       // The suggested categories are created in this language.
       const language = i18n.language?.startsWith('es') ? 'es' : 'en';
@@ -23,6 +27,8 @@ export default function Register() {
       setSuccess(true);
     } catch (err) {
       setError(translateServerError(err, t, 'auth.register.failed'));
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -90,19 +96,18 @@ export default function Register() {
           onChange={(e) => setEmail(e.target.value)}
           required
         />
-        <input
-          className="w-full border border-gray-300 dark:border-slate-600 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white dark:bg-slate-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-300"
-          type="password"
+        <PasswordInput
           placeholder={t('auth.password')}
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          required
+          autoComplete="new-password"
         />
         <button
-          className="w-full px-4 py-2 rounded-md bg-indigo-600 text-white hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600 transition-colors"
+          className="w-full px-4 py-2 rounded-md bg-indigo-600 text-white hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
           type="submit"
+          disabled={submitting}
         >
-          {t('auth.register.signUp')}
+          {submitting ? t('auth.creatingAccount') : t('auth.register.signUp')}
         </button>
       </form>
       <p className="text-sm text-gray-600 dark:text-gray-400 mt-3">
