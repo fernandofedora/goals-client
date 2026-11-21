@@ -26,6 +26,7 @@ import Cashflow from './pages/Cashflow';
 import BudgetDetail from './pages/BudgetDetail';
 import UserManager from './pages/UserManager';
 import VerifyEmail from './pages/VerifyEmail';
+import Unsubscribe from './pages/Unsubscribe';
 import useTheme from './hooks/useTheme';
 import { Toaster } from './components/ui/sonner';
 import { CurrencyProvider } from './context/CurrencyProvider';
@@ -84,6 +85,7 @@ export default function App() {
     '/register',
     '/reset-password',
     '/verify-email',
+    '/unsubscribe',
   ].some((path) => location.pathname.startsWith(path));
   const { theme, toggleTheme } = useTheme();
   const Frame = hideNavbar ? PublicFrame : AppShell;
@@ -114,6 +116,7 @@ export default function App() {
                     path="/verify-email/:token"
                     element={<VerifyEmail />}
                   />
+                  <Route path="/unsubscribe" element={<Unsubscribe />} />
                   <Route
                     path="/"
                     element={

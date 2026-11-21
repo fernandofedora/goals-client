@@ -978,7 +978,11 @@
     "budgetAlertsDesc": "We email you when a category's spending this month reaches 80% and 100% of its budget.",
     "budgetAlertsOn": "Budget alerts turned on",
     "budgetAlertsOff": "Budget alerts turned off",
-    "budgetAlertsFailed": "Couldn't save the preference"
+    "budgetAlertsFailed": "Couldn't save the preference",
+    "monthlySummary": "Monthly summary",
+    "monthlySummaryDesc": "On the 1st we email you how last month went: income, expenses, where you spent the most and your goals.",
+    "monthlySummaryOn": "Monthly summary turned on",
+    "monthlySummaryOff": "Monthly summary turned off"
   },
   "admin": {
     "title": "User Manager",
@@ -1505,5 +1509,14 @@
     "description": "What you typed in this transaction hasn't been saved. If you close now, it will be lost.",
     "confirm": "Discard",
     "keepEditing": "Keep editing"
+  },
+  "unsubscribe": {
+    "working": "One moment…",
+    "doneTitle": "You won't get the monthly summary anymore",
+    "doneBody": "You can turn it back on any time in your profile, under Notifications.",
+    "errorTitle": "We couldn't process the link",
+    "errorBody": "It may be incomplete. You can turn the summary off in your profile, under Notifications.",
+    "toProfile": "Go to my profile",
+    "toLogin": "Sign in"
   }
 }
