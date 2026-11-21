@@ -139,7 +139,10 @@
       "suggestedAdded_one": "Added {{count}} suggested category",
       "suggestedAdded_other": "Added {{count}} suggested categories",
       "suggestedNone": "You already have all the suggested categories",
-      "suggestedFailed": "Couldn't add the suggested categories"
+      "suggestedFailed": "Couldn't add the suggested categories",
+      "invalidName": "The name must be 1 to 50 characters",
+      "invalidType": "Invalid category type",
+      "invalidColor": "Invalid color"
     },
     "cards": {
       "title": "Credit Cards",
@@ -408,7 +411,13 @@
     "listFailed": "We could not load your transactions.",
     "colAccount": "Account or card",
     "createRule": "Create rule from this transaction",
-    "suggestedByRule": "Suggested by rule “{{name}}”"
+    "suggestedByRule": "Suggested by rule “{{name}}”",
+    "categoryName": "New category name",
+    "categoryNamePlaceholder": "e.g. Pets",
+    "categoryParent": "Inside (optional)",
+    "noParent": "None (top-level category)",
+    "createCategory": "Create",
+    "categoryCreated": "Category “{{name}}” created and selected"
   },
   "budget": {
     "title": "Monthly Budget",
@@ -1134,7 +1143,7 @@
     "title": "New transaction",
     "saveAndAddAnother": "Save and add another",
     "loading": "Loading categories and accounts…",
-    "loadFailed": "We could not load your categories and accounts. Close and try again.",
+    "loadFailed": "We could not load your categories and accounts.",
     "titleFor": "New transaction · {{name}}"
   },
   "cashflow": {
@@ -1485,5 +1494,11 @@
       "BUDGET_CATCHALL_TAKEN": "You already have a general budget.",
       "BUDGET_LIMIT": "You reached the limit of 50 budgets."
     }
+  },
+  "discardChanges": {
+    "title": "Discard changes?",
+    "description": "What you typed in this transaction hasn't been saved. If you close now, it will be lost.",
+    "confirm": "Discard",
+    "keepEditing": "Keep editing"
   }
 }

@@ -38,12 +38,14 @@ function ConfirmDialog({
           )}
           <div className="flex justify-end gap-2">
             <button
+              type="button"
               className="px-3 py-2 rounded-md border border-[var(--border)] bg-[var(--background)] text-[var(--foreground)] hover:bg-[var(--muted)]"
               onClick={onCancel}
             >
               {cancelLabel}
             </button>
             <button
+              type="button"
               className="px-3 py-2 rounded-md bg-[var(--destructive)] text-[var(--destructive-foreground)] hover:opacity-90"
               onClick={onConfirm}
             >

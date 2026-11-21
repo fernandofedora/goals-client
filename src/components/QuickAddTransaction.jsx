@@ -5,11 +5,14 @@ import api from '../api';
 import TransactionForm from './TransactionForm';
 import { cn } from '../lib/utils';
 import { emitTransactionsChanged } from '../utils/transactionEvents';
+import useDiscardGuard from '../hooks/useDiscardGuard';
+import Button from './ui/button';
 
 /**
  * Global "+ Transacción" dialog (opened from the navbar, the mobile floating
  * button or the `N` shortcut). Loads the pickers' data each time it opens so
- * categories/cards created elsewhere are always there.
+ * categories/cards created elsewhere are always there. Closing with unsaved
+ * input (X, click outside, Escape) asks first.
  */
 export default function QuickAddTransaction({
   open,
@@ -19,6 +22,17 @@ export default function QuickAddTransaction({
   const { t } = useTranslation();
   const [data, setData] = useState(null); // { categories, cards, accounts }
   const [loadError, setLoadError] = useState(false);
+  const [reloadKey, setReloadKey] = useState(0);
+  const [dirty, setDirty] = useState(false);
+
+  const close = () => {
+    setDirty(false);
+    onOpenChange(false);
+  };
+  const { requestClose, discardDialog } = useDiscardGuard({
+    dirty,
+    onClose: close,
+  });
 
   useEffect(() => {
     if (!open) return;
@@ -43,7 +57,7 @@ export default function QuickAddTransaction({
     return () => {
       cancelled = true;
     };
-  }, [open]);
+  }, [open, reloadKey]);
 
   const accountName =
     account &&
@@ -54,69 +68,93 @@ export default function QuickAddTransaction({
 
   const onCreated = ({ addAnother }) => {
     emitTransactionsChanged();
-    if (!addAnother) onOpenChange(false);
+    if (!addAnother) close();
   };
 
   return (
-    <Dialog.Root open={open} onOpenChange={onOpenChange}>
-      <Dialog.Portal>
-        <Dialog.Overlay className="fixed inset-0 bg-black/40 z-50" />
-        <Dialog.Content
-          className={cn(
-            'fixed z-50 bg-white dark:bg-slate-900 border border-[var(--border)] shadow-xl overflow-y-auto',
-            // Phones: bottom sheet within thumb reach. sm+: centered dialog.
-            'inset-x-0 bottom-0 max-h-[92dvh] rounded-t-2xl p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))]',
-            'sm:inset-x-auto sm:bottom-auto sm:left-1/2 sm:top-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2 sm:w-[95vw] sm:max-w-lg sm:max-h-[90vh] sm:rounded-xl sm:p-6',
-          )}
-          aria-describedby={undefined}
-        >
-          <div className="flex items-start justify-between gap-3 mb-4">
-            <Dialog.Title className="text-lg font-bold text-gray-900 dark:text-white">
-              {accountName
-                ? t('quickAdd.titleFor', { name: accountName })
-                : t('quickAdd.title')}
-            </Dialog.Title>
-            <Dialog.Close
-              className="-mr-2 -mt-2 inline-flex items-center justify-center size-11 rounded-lg text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-slate-800 transition-colors cursor-pointer"
-              aria-label={t('common.close')}
-            >
-              <svg
-                width="20"
-                height="20"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                aria-hidden="true"
+    <>
+      <Dialog.Root
+        open={open}
+        onOpenChange={(next) => (next ? onOpenChange(true) : requestClose())}
+      >
+        <Dialog.Portal>
+          <Dialog.Overlay className="fixed inset-0 bg-black/40 z-50" />
+          <Dialog.Content
+            className={cn(
+              'fixed z-50 bg-white dark:bg-slate-900 border border-[var(--border)] shadow-xl overflow-y-auto',
+              // Phones: bottom sheet within thumb reach. sm+: centered dialog.
+              'inset-x-0 bottom-0 max-h-[92dvh] rounded-t-2xl p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))]',
+              'sm:inset-x-auto sm:bottom-auto sm:left-1/2 sm:top-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2 sm:w-[95vw] sm:max-w-lg sm:max-h-[90vh] sm:rounded-xl sm:p-6',
+            )}
+            aria-describedby={undefined}
+            onEscapeKeyDown={(e) => {
+              // Inline editors (e.g. the new-category form) use Escape themselves.
+              if (
+                e.target instanceof Element &&
+                e.target.closest('[data-escape-local]')
+              ) {
+                e.preventDefault();
+              }
+            }}
+          >
+            <div className="flex items-start justify-between gap-3 mb-4">
+              <Dialog.Title className="text-lg font-bold text-gray-900 dark:text-white">
+                {accountName
+                  ? t('quickAdd.titleFor', { name: accountName })
+                  : t('quickAdd.title')}
+              </Dialog.Title>
+              <Dialog.Close
+                className="-mr-2 -mt-2 inline-flex items-center justify-center size-11 rounded-lg text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                aria-label={t('common.close')}
               >
-                <line x1="18" y1="6" x2="6" y2="18" />
-                <line x1="6" y1="6" x2="18" y2="18" />
-              </svg>
-            </Dialog.Close>
-          </div>
+                <svg
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden="true"
+                >
+                  <line x1="18" y1="6" x2="6" y2="18" />
+                  <line x1="6" y1="6" x2="18" y2="18" />
+                </svg>
+              </Dialog.Close>
+            </div>
 
-          {loadError ? (
-            <p className="py-8 text-center text-sm text-rose-600 dark:text-rose-400">
-              {t('quickAdd.loadFailed')}
-            </p>
-          ) : !data ? (
-            <p className="py-8 text-center text-sm text-gray-500 dark:text-gray-400">
-              {t('quickAdd.loading')}
-            </p>
-          ) : (
-            <TransactionForm
-              variant="dialog"
-              account={account}
-              categories={data.categories}
-              cards={data.cards}
-              accounts={data.accounts}
-              onCreated={onCreated}
-            />
-          )}
-        </Dialog.Content>
-      </Dialog.Portal>
-    </Dialog.Root>
+            {loadError ? (
+              <div className="py-8 flex flex-col items-center gap-3 text-center">
+                <p className="text-sm text-rose-600 dark:text-rose-400">
+                  {t('quickAdd.loadFailed')}
+                </p>
+                <Button
+                  variant="outline"
+                  onClick={() => setReloadKey((n) => n + 1)}
+                >
+                  {t('common.retry')}
+                </Button>
+              </div>
+            ) : !data ? (
+              <p className="py-8 text-center text-sm text-gray-500 dark:text-gray-400">
+                {t('quickAdd.loading')}
+              </p>
+            ) : (
+              <TransactionForm
+                variant="dialog"
+                account={account}
+                categories={data.categories}
+                cards={data.cards}
+                accounts={data.accounts}
+                onCreated={onCreated}
+                onDirtyChange={setDirty}
+              />
+            )}
+          </Dialog.Content>
+        </Dialog.Portal>
+      </Dialog.Root>
+      {discardDialog}
+    </>
   );
 }
