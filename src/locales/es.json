@@ -292,6 +292,18 @@
       "errorTitle": "Error de verificación",
       "backToLogin": "Volver al inicio de sesión",
       "failed": "Error al verificar la cuenta"
+    },
+    "twoFactor": {
+      "title": "Verificación en dos pasos",
+      "codeHint": "Ingresa el código de 6 dígitos de tu app autenticadora.",
+      "recoveryHint": "Ingresa uno de los códigos de recuperación que guardaste al activarla. Cada uno sirve una vez.",
+      "codeLabel": "Código de verificación",
+      "recoveryLabel": "Código de recuperación",
+      "verify": "Verificar",
+      "useRecovery": "Usar un código de recuperación",
+      "useApp": "Usar la app autenticadora",
+      "back": "Volver",
+      "failed": "No se pudo verificar el código"
     }
   },
   "transactions": {
@@ -982,7 +994,38 @@
     "monthlySummary": "Resumen mensual",
     "monthlySummaryDesc": "El día 1 te enviamos cómo te fue el mes anterior: ingresos, gastos, en qué gastaste más y tus metas.",
     "monthlySummaryOn": "Resumen mensual activado",
-    "monthlySummaryOff": "Resumen mensual desactivado"
+    "monthlySummaryOff": "Resumen mensual desactivado",
+    "twoFactor": {
+      "title": "Verificación en dos pasos",
+      "subtitle": "Un código de tu teléfono en cada inicio de sesión",
+      "on": "Activada",
+      "off": "Desactivada",
+      "onDesc": "Al iniciar sesión te pedimos un código de tu app autenticadora. Códigos de recuperación disponibles: {{count}}.",
+      "offDesc": "Suma a tu contraseña un código de una app como Google Authenticator o 1Password.",
+      "unavailable": "Todavía no está disponible en este servidor.",
+      "turnOn": "Activar",
+      "turnOff": "Desactivar",
+      "enableTitle": "Activar la verificación en dos pasos",
+      "disableTitle": "Desactivar la verificación en dos pasos",
+      "passwordHint": "Confirma tu contraseña para continuar.",
+      "continue": "Continuar",
+      "step1": "Escanea el código QR con tu app autenticadora o escribe la clave de abajo.",
+      "step2": "Ingresa el código de 6 dígitos que muestra la app.",
+      "qrAlt": "Código QR para agregar Goals a tu app autenticadora",
+      "manualKey": "¿No puedes escanearlo? Escribe esta clave:",
+      "confirm": "Confirmar y activar",
+      "codesTitle": "Guarda tus códigos de recuperación",
+      "codesHint": "Si pierdes el teléfono, cada uno de estos códigos te deja entrar una vez. Es la única vez que te los mostramos.",
+      "copy": "Copiar",
+      "download": "Descargar",
+      "copied": "Códigos copiados",
+      "copyFailed": "No se pudieron copiar; descárgalos",
+      "codesFileTitle": "códigos de recuperación",
+      "saved": "Ya los guardé",
+      "disableHint": "Ingresa tu contraseña y un código de la app (o un código de recuperación).",
+      "disabled": "Verificación en dos pasos desactivada",
+      "failed": "No se pudo completar el paso"
+    }
   },
   "admin": {
     "title": "Gestor de Usuarios",
@@ -1051,7 +1094,12 @@
     "investmentsAccess": "Módulo de Inversiones (beta)",
     "investmentsAccessDesc": "Permite a este usuario ver y usar el módulo de Inversiones.",
     "investmentsAccessSuperAdmin": "Los Super Admin siempre tienen acceso.",
-    "investmentsAccessWarning": "Los datos de mercado de Finnhub (plan gratis) son solo para uso personal. Dale acceso únicamente a tu propia cuenta; para otras personas se necesita autorización de Finnhub."
+    "investmentsAccessWarning": "Los datos de mercado de Finnhub (plan gratis) son solo para uso personal. Dale acceso únicamente a tu propia cuenta; para otras personas se necesita autorización de Finnhub.",
+    "twoFactor": "Verificación en dos pasos",
+    "twoFactorDesc": "Activada para este usuario. Restablécela solo si perdió el teléfono y los códigos de recuperación.",
+    "twoFactorReset": "Restablecer",
+    "twoFactorConfirm": "¿Restablecer la verificación en dos pasos de {{name}}? Entrará solo con la contraseña hasta que la vuelva a activar.",
+    "twoFactorResetDone": "Verificación en dos pasos restablecida"
   },
   "language": {
     "label": "Idioma",
@@ -1145,7 +1193,11 @@
       "investmentFutureDate": "La fecha no puede ser futura.",
       "investmentNotFound": "Inversión no encontrada.",
       "purchaseNotFound": "Compra no encontrada.",
-      "investmentsNoAccess": "No tienes acceso al módulo de Inversiones."
+      "investmentsNoAccess": "No tienes acceso al módulo de Inversiones.",
+      "invalidCode": "Ese código no es válido. Revisa la app e inténtalo de nuevo.",
+      "twoFactorExpired": "Pasó demasiado tiempo. Vuelve a iniciar sesión.",
+      "twoFactorUnavailable": "La verificación en dos pasos todavía no está disponible.",
+      "twoFactorAlreadyOn": "La verificación en dos pasos ya está activada."
     }
   },
   "quickAdd": {

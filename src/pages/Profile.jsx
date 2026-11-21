@@ -5,6 +5,7 @@ import Button from '../components/ui/button';
 import Input from '../components/ui/input';
 import Alert from '../components/ui/alert';
 import Switch from '../components/ui/switch';
+import TwoFactorSection from '../components/profile/TwoFactorSection';
 import { cn } from '../lib/utils';
 import { intlLocale } from '../utils/dateLocale';
 import { translateServerError } from '../utils/serverError';
@@ -690,6 +691,15 @@ export default function Profile() {
               />
               <StatRow label={t('profile.email')} value={email} />
             </div>
+          </Card>
+
+          <Card
+            icon="🛡️"
+            accent={heroColor}
+            title={t('profile.twoFactor.title')}
+            subtitle={t('profile.twoFactor.subtitle')}
+          >
+            <TwoFactorSection />
           </Card>
 
           <Card
