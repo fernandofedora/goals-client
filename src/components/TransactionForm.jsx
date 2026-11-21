@@ -1,5 +1,4 @@
 import { useEffect, useId, useRef, useState } from 'react';
-import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import api from '../api';
@@ -10,7 +9,12 @@ import Select from './ui/select';
 import { cn } from '../lib/utils';
 import TagPicker from './ui/tag-picker';
 import { useCurrency } from '../context/CurrencyContext';
-import { categoryOptions, categoriesForTxType } from '../utils/categories';
+import {
+  categoryOptions,
+  categoriesForTxType,
+  categoryErrorKey,
+  DEFAULT_CATEGORY_COLOR,
+} from '../utils/categories';
 import useLabelledControl from '../hooks/useLabelledControl';
 
 const todayISO = () => {
@@ -43,6 +47,15 @@ const emptyIncome = (date = '', account = null) => ({
   accountId: account?.kind === 'bank' ? String(account.id) : '',
   tagIds: [],
 });
+
+// True once the user typed or picked something worth asking about before
+// throwing it away. The payment method alone doesn't count.
+const hasInput = (v, empty) =>
+  v.description.trim() !== '' ||
+  v.amount !== '' ||
+  v.categoryId !== empty.categoryId ||
+  v.tagIds.length > 0 ||
+  v.date !== empty.date;
 
 export function Field({ label, labelRight, htmlFor, children }) {
   const [control, autoFor] = useLabelledControl(children);
@@ -98,6 +111,105 @@ const PlusCircle = () => (
 );
 
 /**
+ * Creates a category without leaving the transaction form. A <div>, not a
+ * <form>: it sits inside the transaction form, so Enter and Escape are handled
+ * here (the dialog skips Escape for anything inside [data-escape-local]).
+ */
+function NewCategoryInline({ type, categories, onCreated, onCancel }) {
+  const { t } = useTranslation();
+  const idp = useId();
+  const inputRef = useRef(null);
+  const [name, setName] = useState('');
+  const [parentId, setParentId] = useState('');
+  const [saving, setSaving] = useState(false);
+  const parents = categories.filter((c) => !c.parentId && c.type === type);
+
+  useEffect(() => {
+    inputRef.current?.focus();
+  }, []);
+
+  const create = async () => {
+    const trimmed = name.trim();
+    if (!trimmed) {
+      inputRef.current?.focus();
+      return;
+    }
+    if (saving) return;
+    setSaving(true);
+    const parent = parents.find((c) => String(c.id) === parentId);
+    try {
+      const { data } = await api.post('/categories', {
+        name: trimmed,
+        type,
+        color: parent?.color || DEFAULT_CATEGORY_COLOR[type],
+        parentId: parent?.id ?? null,
+      });
+      onCreated(data);
+    } catch (err) {
+      toast.error(t(categoryErrorKey(err, 'settings.categories.addFailed')));
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div
+      data-escape-local
+      role="group"
+      aria-label={t('addTransaction.categoryName')}
+      className="mt-2 flex flex-col gap-3 rounded-lg border border-[var(--border)] bg-[var(--muted)] p-3"
+      onKeyDown={(e) => {
+        // The parent select's list is portaled out of this div but its
+        // events still bubble here: let that Escape just close the list.
+        if (e.key === 'Escape' && e.currentTarget.contains(e.target)) {
+          onCancel();
+        }
+      }}
+    >
+      <Field label={t('addTransaction.categoryName')} htmlFor={`${idp}-name`}>
+        <Input
+          ref={inputRef}
+          id={`${idp}-name`}
+          value={name}
+          maxLength={50}
+          placeholder={t('addTransaction.categoryNamePlaceholder')}
+          onChange={(e) => setName(e.target.value)}
+          onKeyDown={(e) => {
+            // Enter here must not submit the transaction form around it.
+            if (e.key === 'Enter') {
+              e.preventDefault();
+              create();
+            }
+          }}
+        />
+      </Field>
+      {parents.length > 0 && (
+        <Field label={t('addTransaction.categoryParent')}>
+          <Select
+            value={parentId}
+            onChange={(e) => setParentId(e.target.value)}
+          >
+            <option value="">{t('addTransaction.noParent')}</option>
+            {parents.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.name}
+              </option>
+            ))}
+          </Select>
+        </Field>
+      )}
+      <div className="flex justify-end gap-2">
+        <Button variant="outline" onClick={onCancel} disabled={saving}>
+          {t('common.cancel')}
+        </Button>
+        <Button onClick={create} disabled={saving}>
+          {t('addTransaction.createCategory')}
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+/**
  * Expense / income creation form, shared by the "Agregar transacción" page and
  * the global quick-add dialog.
  *
@@ -106,6 +218,7 @@ const PlusCircle = () => (
  *                    another" so several entries can go in without reopening.
  *
  * onCreated({ addAnother }) runs after a successful POST.
+ * onDirtyChange(bool) reports whether there is unsaved input.
  * account ({ kind: 'bank' | 'card', id }) preselects where the money moves.
  */
 export default function TransactionForm({
@@ -113,6 +226,7 @@ export default function TransactionForm({
   cards = [],
   accounts = [],
   onCreated,
+  onDirtyChange,
   variant = 'page',
   account = null,
 }) {
@@ -130,9 +244,34 @@ export default function TransactionForm({
   );
   const [income, setIncome] = useState(() => emptyIncome(initialDate, account));
   const [submitting, setSubmitting] = useState(false);
+  // Categories created from this form, until the parent reloads its list.
+  const [createdCats, setCreatedCats] = useState([]);
+  const [creatingCategory, setCreatingCategory] = useState(false);
+  const newCategoryBtnRef = useRef(null);
 
-  const expenseCats = categoriesForTxType(categories, 'expense');
-  const incomeCats = categoriesForTxType(categories, 'income');
+  const allCats = [
+    ...categories,
+    ...createdCats.filter((c) => !categories.some((x) => x.id === c.id)),
+  ];
+  const expenseCats = categoriesForTxType(allCats, 'expense');
+  const incomeCats = categoriesForTxType(allCats, 'income');
+
+  const dirty =
+    hasInput(expense, emptyExpense(initialDate, account)) ||
+    hasInput(income, emptyIncome(initialDate, account));
+  useEffect(() => {
+    onDirtyChange?.(dirty);
+  }, [dirty, onDirtyChange]);
+  // A reload or closed tab would lose the entry too.
+  useEffect(() => {
+    if (!dirty) return undefined;
+    const warn = (e) => {
+      e.preventDefault();
+      e.returnValue = '';
+    };
+    window.addEventListener('beforeunload', warn);
+    return () => window.removeEventListener('beforeunload', warn);
+  }, [dirty]);
   const current = txMode === 'expense' ? expense : income;
   const setCurrent = txMode === 'expense' ? setExpense : setIncome;
   const patch = (field) => (e) =>
@@ -158,7 +297,10 @@ export default function TransactionForm({
         });
         if (!alive) return;
         setSuggestion(data);
-        setCurrent((v) => ({ ...v, categoryId: data ? String(data.categoryId) : '' }));
+        setCurrent((v) => ({
+          ...v,
+          categoryId: data ? String(data.categoryId) : '',
+        }));
       } catch {
         // A failed suggestion just leaves the category for the user.
       }
@@ -168,6 +310,24 @@ export default function TransactionForm({
       clearTimeout(timer);
     };
   }, [description, amount, txMode, categoryId, suggestedId, setCurrent]);
+
+  // Selected one render after it joins the list: if the value arrives together
+  // with its option, Radix's hidden native select doesn't have the option yet,
+  // falls back to '' and reports that as a change, clearing the pick.
+  const [pendingCategoryId, setPendingCategoryId] = useState(null);
+  useEffect(() => {
+    if (pendingCategoryId === null) return;
+    setPendingCategoryId(null);
+    setSuggestion(null);
+    setCurrent((v) => ({ ...v, categoryId: pendingCategoryId }));
+  }, [pendingCategoryId, setCurrent]);
+
+  const onCategoryCreated = (cat) => {
+    setCreatedCats((v) => [...v, cat]);
+    setPendingCategoryId(String(cat.id));
+    setCreatingCategory(false);
+    toast.success(t('addTransaction.categoryCreated', { name: cat.name }));
+  };
 
   const buildPayload = () => {
     if (txMode === 'expense') {
@@ -325,44 +485,61 @@ export default function TransactionForm({
         </div>
 
         {/* Category */}
-        <Field
-          label={t('transactions.category')}
-          labelRight={
-            <Link
-              to="/settings/categories"
-              // py-3/-my-3: 44px touch area without growing the label row
-              className="py-3 -my-3 text-[11px] font-medium text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300 transition-colors"
-            >
-              {t('addTransaction.newCategory')}
-            </Link>
-          }
-        >
-          <Select
-            value={current.categoryId}
-            onChange={(e) => {
-              setSuggestion(null);
-              patch('categoryId')(e);
-            }}
-            required
+        <div>
+          <Field
+            label={t('transactions.category')}
+            labelRight={
+              <button
+                ref={newCategoryBtnRef}
+                type="button"
+                aria-expanded={creatingCategory}
+                onClick={() => setCreatingCategory((v) => !v)}
+                // py-3/-my-3: 44px touch area without growing the label row
+                className="py-3 -my-3 text-[11px] font-medium text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300 transition-colors cursor-pointer"
+              >
+                {t('addTransaction.newCategory')}
+              </button>
+            }
           >
-            <option value="">{t('addTransaction.selectCategory')}</option>
-            {categoryOptions(
-              txMode === 'expense' ? expenseCats : incomeCats,
-            ).map((o) => (
-              <option key={o.id} value={o.id}>
-                {o.label}
-              </option>
-            ))}
-          </Select>
-          {suggestion &&
-            String(current.categoryId) === String(suggestion.categoryId) && (
-              <p className="mt-1 text-xs text-[var(--muted-foreground)]">
-                {t('addTransaction.suggestedByRule', {
-                  name: suggestion.ruleName,
-                })}
-              </p>
-            )}
-        </Field>
+            <Select
+              value={current.categoryId}
+              onChange={(e) => {
+                setSuggestion(null);
+                patch('categoryId')(e);
+              }}
+              required
+            >
+              <option value="">{t('addTransaction.selectCategory')}</option>
+              {categoryOptions(
+                txMode === 'expense' ? expenseCats : incomeCats,
+              ).map((o) => (
+                <option key={o.id} value={o.id}>
+                  {o.label}
+                </option>
+              ))}
+            </Select>
+            {suggestion &&
+              String(current.categoryId) === String(suggestion.categoryId) && (
+                <p className="mt-1 text-xs text-[var(--muted-foreground)]">
+                  {t('addTransaction.suggestedByRule', {
+                    name: suggestion.ruleName,
+                  })}
+                </p>
+              )}
+          </Field>
+          {creatingCategory && (
+            <NewCategoryInline
+              key={txMode}
+              type={txMode}
+              categories={allCats}
+              onCreated={onCategoryCreated}
+              onCancel={() => {
+                setCreatingCategory(false);
+                newCategoryBtnRef.current?.focus();
+              }}
+            />
+          )}
+        </div>
 
         <Field label={t('tags.label')} htmlFor={`${idp}-tags`}>
           <TagPicker

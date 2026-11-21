@@ -93,3 +93,25 @@ export const ruleKeyword = (description) =>
     .split(/[^a-z0-9ñ]+/)
     .find((w) => w.length >= 3 && !/^\d+$/.test(w) && !GENERIC_WORDS.has(w)) ||
   null;
+
+/** Color a new category gets when the user doesn't pick one. */
+export const DEFAULT_CATEGORY_COLOR = {
+  expense: '#3b82f6',
+  income: '#16a34a',
+  transfer: '#64748b',
+};
+
+// Server error codes from /api/categories → messages under settings.categories.
+const CATEGORY_ERROR_KEYS = {
+  CATEGORY_HAS_CHILDREN: 'settings.categories.hasChildren',
+  CATEGORY_IN_USE: 'settings.categories.inUse',
+  CATEGORY_TOO_DEEP: 'settings.categories.tooDeep',
+  CATEGORY_INVALID_PARENT: 'settings.categories.invalidParent',
+  CATEGORY_INVALID_NAME: 'settings.categories.invalidName',
+  CATEGORY_INVALID_TYPE: 'settings.categories.invalidType',
+  CATEGORY_INVALID_COLOR: 'settings.categories.invalidColor',
+};
+
+/** i18n key for a failed /api/categories request. */
+export const categoryErrorKey = (err, fallback) =>
+  CATEGORY_ERROR_KEYS[err?.response?.data?.code] || fallback;

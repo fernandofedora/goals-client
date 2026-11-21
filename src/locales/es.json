@@ -139,7 +139,10 @@
       "suggestedAdded_one": "Se agregó {{count}} categoría sugerida",
       "suggestedAdded_other": "Se agregaron {{count}} categorías sugeridas",
       "suggestedNone": "Ya tienes todas las categorías sugeridas",
-      "suggestedFailed": "No se pudieron agregar las categorías sugeridas"
+      "suggestedFailed": "No se pudieron agregar las categorías sugeridas",
+      "invalidName": "El nombre debe tener entre 1 y 50 caracteres",
+      "invalidType": "Tipo de categoría no válido",
+      "invalidColor": "Color no válido"
     },
     "cards": {
       "title": "Tarjetas de Crédito",
@@ -413,7 +416,13 @@
     "listFailed": "No pudimos cargar tus transacciones.",
     "colAccount": "Cuenta o tarjeta",
     "createRule": "Crear regla desde esta transacción",
-    "suggestedByRule": "Sugerida por la regla «{{name}}»"
+    "suggestedByRule": "Sugerida por la regla «{{name}}»",
+    "categoryName": "Nombre de la nueva categoría",
+    "categoryNamePlaceholder": "ej. Mascotas",
+    "categoryParent": "Dentro de (opcional)",
+    "noParent": "Ninguna (categoría principal)",
+    "createCategory": "Crear",
+    "categoryCreated": "Categoría «{{name}}» creada y seleccionada"
   },
   "budget": {
     "title": "Presupuesto Mensual",
@@ -1139,7 +1148,7 @@
     "title": "Nueva transacción",
     "saveAndAddAnother": "Guardar y agregar otra",
     "loading": "Cargando categorías y cuentas…",
-    "loadFailed": "No pudimos cargar tus categorías y cuentas. Cierra y vuelve a intentarlo.",
+    "loadFailed": "No pudimos cargar tus categorías y cuentas.",
     "titleFor": "Nueva transacción · {{name}}"
   },
   "cashflow": {
@@ -1490,5 +1499,11 @@
       "BUDGET_CATCHALL_TAKEN": "Ya tienes un presupuesto general.",
       "BUDGET_LIMIT": "Llegaste al máximo de 50 presupuestos."
     }
+  },
+  "discardChanges": {
+    "title": "¿Descartar los cambios?",
+    "description": "Lo que escribiste en esta transacción no se ha guardado. Si cierras ahora, se perderá.",
+    "confirm": "Descartar",
+    "keepEditing": "Seguir editando"
   }
 }

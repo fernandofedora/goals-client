@@ -19,6 +19,10 @@ export default function Register() {
     e.preventDefault();
     if (submitting) return;
     setError('');
+    if (password.length < 8) {
+      setError(t('auth.reset.passwordTooShort'));
+      return;
+    }
     setSubmitting(true);
     try {
       // The suggested categories are created in this language.
