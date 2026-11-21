@@ -89,9 +89,9 @@ export function SectionCard({
 // ── Empty state ───────────────────────────────────────────────────────────────
 export function EmptyState({ message }) {
   return (
-    <div className="flex flex-col items-center justify-center py-12 text-center gap-2">
-      <span className="text-3xl opacity-30">📭</span>
-      <p className="text-sm text-gray-400">{message}</p>
+    <div className="flex flex-col items-center justify-center py-12 px-6 sm:px-10 text-center gap-2">
+      <span className="text-3xl opacity-30" aria-hidden="true">📭</span>
+      <p className="text-sm text-gray-500 dark:text-gray-400 max-w-md">{message}</p>
     </div>
   );
 }
