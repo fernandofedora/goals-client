@@ -11,13 +11,11 @@ import {
   EmptyState,
   CatRow,
 } from '../../components/settings/shared';
-import { categoryTree } from '../../utils/categories';
-
-const DEFAULT_COLOR = {
-  expense: '#3b82f6',
-  income: '#16a34a',
-  transfer: '#64748b',
-};
+import {
+  categoryTree,
+  categoryErrorKey as errorKey,
+  DEFAULT_CATEGORY_COLOR as DEFAULT_COLOR,
+} from '../../utils/categories';
 
 // Per-type look and copy of each section (and of its inline "new" form).
 const SECTIONS = {
@@ -43,16 +41,6 @@ const SECTIONS = {
     placeholder: 'settings.categories.transferNamePlaceholder',
   },
 };
-
-// Server error codes from /api/categories → messages under settings.categories.
-const ERROR_KEYS = {
-  CATEGORY_HAS_CHILDREN: 'settings.categories.hasChildren',
-  CATEGORY_IN_USE: 'settings.categories.inUse',
-  CATEGORY_TOO_DEEP: 'settings.categories.tooDeep',
-  CATEGORY_INVALID_PARENT: 'settings.categories.invalidParent',
-};
-const errorKey = (err, fallback) =>
-  ERROR_KEYS[err?.response?.data?.code] || fallback;
 
 // Inline form shared by "+ Agregar" (top level) and "+ Subcategoría".
 function NewCategoryForm({
