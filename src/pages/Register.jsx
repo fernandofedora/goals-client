@@ -16,6 +16,10 @@ export default function Register() {
   const onSubmit = async (e) => {
     e.preventDefault();
     setError('');
+    if (password.length < 8) {
+      setError(t('auth.reset.passwordTooShort'));
+      return;
+    }
     try {
       // The suggested categories are created in this language.
       const language = i18n.language?.startsWith('es') ? 'es' : 'en';
