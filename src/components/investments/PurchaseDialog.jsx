@@ -24,8 +24,11 @@ const positive = (v) => {
   return v !== '' && Number.isFinite(n) && n > 0 ? n : null;
 };
 
+const TYPES = ['buy', 'sell', 'dividend'];
+const KEY = { buy: 'Buy', sell: 'Sell', dividend: 'Dividend' };
+
 /**
- * Create / add / edit a purchase.
+ * Create / add / edit a movement (buy, sell or dividend).
  * - mode 'new':  asset = catalog entry from the search ({providerSymbol, symbol, name, currency})
  * - mode 'add':  asset = existing holding (adds a purchase to it)
  * - mode 'edit': asset = holding, purchase = the purchase being corrected. Keeps
@@ -46,6 +49,7 @@ export default function PurchaseDialog({
   const [loadingQuote, setLoadingQuote] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+  const [type, setType] = useState('buy');
 
   const quoteCurrency = asset?.quoteCurrency || asset?.currency;
   const isEdit = mode === 'edit';
@@ -57,10 +61,12 @@ export default function PurchaseDialog({
     setError('');
     setQuoteInfo(null);
     if (isEdit && purchase) {
+      setType(purchase.type || 'buy');
       setForm({
         amount: String(purchase.amountQuote),
         amountCurrency: 'quote',
-        pricePerShare: String(purchase.pricePerShare),
+        pricePerShare:
+          purchase.type === 'dividend' ? '' : String(purchase.pricePerShare),
         shares: '',
         date: purchase.date,
         note: purchase.note || '',
@@ -68,6 +74,7 @@ export default function PurchaseDialog({
       setShowAdvanced(true);
       return undefined;
     }
+    setType('buy');
     setForm({ ...EMPTY, date: todayStr() });
     setShowAdvanced(false);
     let cancelled = false;
@@ -93,9 +100,18 @@ export default function PurchaseDialog({
     ? Number(purchase?.pricePerShare)
     : quoteInfo?.quote?.price || null;
 
+  const isDividend = type === 'dividend';
+  const isSell = type === 'sell';
+  const held = Number(asset?.shares) || 0;
+
   // Live preview, same math as the server's buildPurchase().
   const preview = useMemo(() => {
     const amount = positive(form.amount);
+    if (isDividend) {
+      if (!amount) return null;
+      const amountQuote = amountCurrency === 'quote' ? amount : amount / fxRate;
+      return { amountQuote, amountUser: amountQuote * fxRate, dividend: true };
+    }
     const priceIn = positive(form.pricePerShare);
     const sharesIn = positive(form.shares);
     let amountQuote = null;
@@ -107,7 +123,12 @@ export default function PurchaseDialog({
     if (!price) return null;
     const shares = sharesIn || amountQuote / price;
     return { amountQuote, amountUser: amountQuote * fxRate, price, shares };
-  }, [form, amountCurrency, fxRate, currentPrice]);
+  }, [form, amountCurrency, fxRate, currentPrice, isDividend]);
+
+  const sellAll = () => {
+    setForm((f) => ({ ...f, amount: '', shares: String(held) }));
+    setShowAdvanced(true);
+  };
 
   const set = (name) => (e) =>
     setForm((f) => ({ ...f, [name]: e.target.value }));
@@ -117,7 +138,7 @@ export default function PurchaseDialog({
     setError('');
     if (!preview) {
       setError(
-        currentPrice || positive(form.pricePerShare)
+        isDividend || currentPrice || positive(form.pricePerShare)
           ? t('investments.purchase.amountRequired')
           : t('investments.purchase.priceRequired'),
       );
@@ -131,6 +152,7 @@ export default function PurchaseDialog({
       shares: form.shares === '' ? undefined : Number(form.shares),
       date: form.date || undefined,
       note: form.note.trim() || undefined,
+      ...(mode === 'add' ? { type } : {}),
     };
     setSaving(true);
     try {
@@ -147,7 +169,7 @@ export default function PurchaseDialog({
       toast.success(
         isEdit
           ? t('investments.purchase.updated')
-          : t('investments.purchase.saved'),
+          : t(`investments.purchase.saved${KEY[type]}`),
       );
       onOpenChange(false);
       onSaved?.();
@@ -160,8 +182,8 @@ export default function PurchaseDialog({
 
   const title = {
     new: t('investments.purchase.titleNew'),
-    add: t('investments.purchase.titleAdd'),
-    edit: t('investments.purchase.titleEdit'),
+    add: t(`investments.purchase.title${KEY[type]}`),
+    edit: t(`investments.purchase.titleEdit${KEY[type]}`),
   }[mode];
 
   return (
@@ -235,13 +257,62 @@ export default function PurchaseDialog({
           )}
 
           <form onSubmit={handleSubmit} className="mt-5 space-y-4">
+            {/* Kind of movement (only when adding to an existing holding) */}
+            {mode === 'add' && (
+              <div
+                role="radiogroup"
+                aria-label={t('investments.purchase.typeLabel')}
+                className="grid grid-cols-3 rounded-lg border border-[var(--border)] p-0.5 bg-gray-50 dark:bg-slate-800/50"
+              >
+                {TYPES.map((value) => (
+                  <button
+                    key={value}
+                    type="button"
+                    role="radio"
+                    aria-checked={type === value}
+                    disabled={value === 'sell' && held <= 0}
+                    onClick={() => {
+                      setType(value);
+                      setError('');
+                    }}
+                    className={cn(
+                      'py-1.5 rounded-md text-sm font-semibold transition-colors disabled:opacity-40 disabled:cursor-not-allowed',
+                      type === value
+                        ? 'bg-indigo-600 text-white'
+                        : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white',
+                    )}
+                  >
+                    {t(`investments.purchase.type${KEY[value]}`)}
+                  </button>
+                ))}
+              </div>
+            )}
+            {isSell && mode === 'add' && (
+              <div className="flex items-center justify-between gap-3 text-sm">
+                <span className="text-[var(--muted-foreground)]">
+                  {t('investments.purchase.held', {
+                    shares: formatShares(held),
+                  })}
+                </span>
+                <button
+                  type="button"
+                  onClick={sellAll}
+                  className="font-medium text-indigo-600 dark:text-indigo-400 hover:underline"
+                >
+                  {t('investments.purchase.sellAll')}
+                </button>
+              </div>
+            )}
+
             {/* Amount + currency toggle */}
             <div className="flex flex-col gap-1.5">
               <label
                 htmlFor="inv-amount"
                 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-widest"
               >
-                {t('investments.purchase.amount')}
+                {t(
+                  `investments.purchase.amount${isSell ? 'Sell' : isDividend ? 'Dividend' : ''}`,
+                )}
               </label>
               <div className="flex gap-2">
                 <Input
@@ -288,7 +359,8 @@ export default function PurchaseDialog({
               aria-live="polite"
             >
               {preview &&
-                t('investments.purchase.preview', {
+                !preview.dividend &&
+                t(`investments.purchase.preview${isSell ? 'Sell' : ''}`, {
                   amount: sameCurrency
                     ? formatMoney(preview.amountQuote, quoteCurrency)
                     : `${formatMoney(preview.amountUser, userSideCurrency)} ≈ ${formatMoney(preview.amountQuote, quoteCurrency)}`,
@@ -308,50 +380,56 @@ export default function PurchaseDialog({
             </button>
             {showAdvanced && (
               <div className="space-y-4 rounded-xl border border-[var(--border)] p-4">
-                <p className="text-xs text-[var(--muted-foreground)]">
-                  {t('investments.purchase.advancedHint')}
-                </p>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div className="flex flex-col gap-1.5">
-                    <label
-                      htmlFor="inv-price"
-                      className="text-xs font-semibold text-gray-500 dark:text-gray-400"
-                    >
-                      {t('investments.purchase.pricePerShare', {
-                        currency: quoteCurrency,
-                      })}
-                    </label>
-                    <Input
-                      id="inv-price"
-                      type="number"
-                      inputMode="decimal"
-                      min="0"
-                      step="any"
-                      value={form.pricePerShare}
-                      onChange={set('pricePerShare')}
-                    />
+                {!isDividend && (
+                  <p className="text-xs text-[var(--muted-foreground)]">
+                    {t('investments.purchase.advancedHint')}
+                  </p>
+                )}
+                {!isDividend && (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="flex flex-col gap-1.5">
+                      <label
+                        htmlFor="inv-price"
+                        className="text-xs font-semibold text-gray-500 dark:text-gray-400"
+                      >
+                        {t('investments.purchase.pricePerShare', {
+                          currency: quoteCurrency,
+                        })}
+                      </label>
+                      <Input
+                        id="inv-price"
+                        type="number"
+                        inputMode="decimal"
+                        min="0"
+                        step="any"
+                        value={form.pricePerShare}
+                        onChange={set('pricePerShare')}
+                      />
+                    </div>
+                    <div className="flex flex-col gap-1.5">
+                      <label
+                        htmlFor="inv-shares"
+                        className="text-xs font-semibold text-gray-500 dark:text-gray-400"
+                      >
+                        {t('investments.purchase.shares')}
+                      </label>
+                      <Input
+                        id="inv-shares"
+                        type="number"
+                        inputMode="decimal"
+                        min="0"
+                        step="any"
+                        value={form.shares}
+                        onChange={set('shares')}
+                      />
+                    </div>
                   </div>
-                  <div className="flex flex-col gap-1.5">
-                    <label
-                      htmlFor="inv-shares"
-                      className="text-xs font-semibold text-gray-500 dark:text-gray-400"
-                    >
-                      {t('investments.purchase.shares')}
-                    </label>
-                    <Input
-                      id="inv-shares"
-                      type="number"
-                      inputMode="decimal"
-                      min="0"
-                      step="any"
-                      value={form.shares}
-                      onChange={set('shares')}
-                    />
-                  </div>
-                </div>
+                )}
                 <div className="flex flex-col gap-1.5">
                   <span className="text-xs font-semibold text-gray-500 dark:text-gray-400">
-                    {t('investments.purchase.date')}
+                    {t(
+                      `investments.purchase.date${isSell ? 'Sell' : isDividend ? 'Dividend' : ''}`,
+                    )}
                   </span>
                   <DateInput
                     value={form.date}

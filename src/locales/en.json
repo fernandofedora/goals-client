@@ -292,6 +292,18 @@
       "errorTitle": "Verification error",
       "backToLogin": "Back to sign in",
       "failed": "Could not verify the account"
+    },
+    "twoFactor": {
+      "title": "Two-step verification",
+      "codeHint": "Enter the 6-digit code from your authenticator app.",
+      "recoveryHint": "Enter one of the recovery codes you saved when you turned this on. Each one works once.",
+      "codeLabel": "Verification code",
+      "recoveryLabel": "Recovery code",
+      "verify": "Verify",
+      "useRecovery": "Use a recovery code",
+      "useApp": "Use the authenticator app",
+      "back": "Back",
+      "failed": "Couldn't verify the code"
     }
   },
   "transactions": {
@@ -613,7 +625,9 @@
       "value": "Total value",
       "invested": "Invested",
       "gain": "Gain / Loss",
-      "today": "Today"
+      "today": "Today",
+      "realized": "Realized gain",
+      "dividendsSub": "Includes {{amount}} in dividends"
     },
     "table": {
       "asset": "Asset",
@@ -623,11 +637,15 @@
       "value": "Value",
       "gain": "G/L",
       "weight": "Weight",
-      "addPurchase": "+ Buy",
-      "history": "Purchases",
+      "addPurchase": "+ Movement",
+      "history": "Movements",
       "noPurchases": "No purchases",
       "noPrice": "No price",
-      "fxUnavailable": "No exchange rate"
+      "fxUnavailable": "No exchange rate",
+      "soldOut": "Sold",
+      "realized": "Cashed {{amount}}",
+      "fxEstimated": "Cost at today's rate",
+      "fxEstimatedHint": "Some movements are from before the exchange-rate history (March 2024) or their date's rate couldn't be loaded, so their cost uses today's rate."
     },
     "empty": {
       "title": "You don't have any investments yet",
@@ -651,18 +669,44 @@
       "amountRequired": "Enter the amount invested.",
       "priceRequired": "No price available; enter the price per share.",
       "saved": "Purchase recorded",
-      "updated": "Purchase updated",
-      "saveFailed": "Could not save the purchase."
+      "updated": "Movement updated",
+      "saveFailed": "Could not save the purchase.",
+      "typeLabel": "Kind of movement",
+      "typeBuy": "Buy",
+      "typeSell": "Sell",
+      "typeDividend": "Dividend",
+      "titleBuy": "Add purchase",
+      "titleSell": "Record a sale",
+      "titleDividend": "Record a dividend",
+      "titleEditBuy": "Edit purchase",
+      "titleEditSell": "Edit sale",
+      "titleEditDividend": "Edit dividend",
+      "amountSell": "Amount received from the sale",
+      "amountDividend": "Amount received",
+      "previewSell": "{{amount}} for {{shares}} shares at {{price}}",
+      "dateSell": "Sale date",
+      "dateDividend": "Payment date",
+      "held": "You have {{shares}} shares",
+      "sellAll": "Sell all",
+      "savedBuy": "Purchase recorded",
+      "savedSell": "Sale recorded",
+      "savedDividend": "Dividend recorded"
     },
     "history": {
-      "title": "Purchase history",
-      "empty": "This investment has no recorded purchases.",
-      "sharesAt": "{{shares}} shares at {{price}}",
-      "deleteTitle": "Delete this purchase?",
-      "deleteHint": "The investment's shares and cost will be recalculated.",
-      "deleted": "Purchase deleted",
-      "deleteFailed": "Could not delete the purchase.",
-      "loadFailed": "Could not load the history."
+      "title": "Evolution",
+      "rangeLabel": "Period",
+      "ranges": {
+        "1m": "1M",
+        "3m": "3M",
+        "6m": "6M",
+        "1y": "1Y",
+        "all": "All"
+      },
+      "value": "Value",
+      "invested": "Invested",
+      "gain": "Gain/loss",
+      "loadFailed": "Couldn't load the evolution.",
+      "empty": "The chart adds one point per day, starting today. Come back tomorrow to see how your portfolio moves."
     },
     "attribution": {
       "prices": "Market data:",
@@ -680,7 +724,12 @@
       "other": "Other ({{count}})",
       "aria": "Portfolio allocation: {{items}}"
     },
-    "noAccess": "You don't have access to the Investments module. It is a closed beta; a Super Admin can enable it for your account."
+    "noAccess": "You don't have access to the Investments module. It is a closed beta; a Super Admin can enable it for your account.",
+    "split": {
+      "price": "Price {{amount}}",
+      "fx": "FX {{amount}}",
+      "hint": "Of the open gain, how much came from the price and how much from the exchange rate since you bought."
+    }
   },
   "savings": {
     "title": "Savings Plans",
@@ -978,7 +1027,42 @@
     "budgetAlertsDesc": "We email you when a category's spending this month reaches 80% and 100% of its budget.",
     "budgetAlertsOn": "Budget alerts turned on",
     "budgetAlertsOff": "Budget alerts turned off",
-    "budgetAlertsFailed": "Couldn't save the preference"
+    "budgetAlertsFailed": "Couldn't save the preference",
+    "monthlySummary": "Monthly summary",
+    "monthlySummaryDesc": "On the 1st we email you how last month went: income, expenses, where you spent the most and your goals.",
+    "monthlySummaryOn": "Monthly summary turned on",
+    "monthlySummaryOff": "Monthly summary turned off",
+    "twoFactor": {
+      "title": "Two-step verification",
+      "subtitle": "A code from your phone on every sign-in",
+      "on": "On",
+      "off": "Off",
+      "onDesc": "Signing in asks for a code from your authenticator app. Recovery codes left: {{count}}.",
+      "offDesc": "Add a code from an app like Google Authenticator or 1Password to your password.",
+      "unavailable": "Not available on this server yet.",
+      "turnOn": "Turn on",
+      "turnOff": "Turn off",
+      "enableTitle": "Turn on two-step verification",
+      "disableTitle": "Turn off two-step verification",
+      "passwordHint": "Confirm your password to continue.",
+      "continue": "Continue",
+      "step1": "Scan the QR code with your authenticator app, or type the key below.",
+      "step2": "Enter the 6-digit code the app shows.",
+      "qrAlt": "QR code to add Goals to your authenticator app",
+      "manualKey": "Can't scan it? Type this key:",
+      "confirm": "Confirm and turn on",
+      "codesTitle": "Save your recovery codes",
+      "codesHint": "If you lose your phone, each of these codes lets you sign in once. This is the only time we'll show them.",
+      "copy": "Copy",
+      "download": "Download",
+      "copied": "Codes copied",
+      "copyFailed": "Couldn't copy; download them instead",
+      "codesFileTitle": "recovery codes",
+      "saved": "I've saved them",
+      "disableHint": "Enter your password and a code from the app (or a recovery code).",
+      "disabled": "Two-step verification turned off",
+      "failed": "Couldn't complete the step"
+    }
   },
   "admin": {
     "title": "User Manager",
@@ -1047,7 +1131,12 @@
     "investmentsAccess": "Investments module (beta)",
     "investmentsAccessDesc": "Lets this user see and use the Investments module.",
     "investmentsAccessSuperAdmin": "Super Admins always have access.",
-    "investmentsAccessWarning": "Finnhub market data (free plan) is for personal use only. Grant access only to your own account; other people require Finnhub authorization."
+    "investmentsAccessWarning": "Finnhub market data (free plan) is for personal use only. Grant access only to your own account; other people require Finnhub authorization.",
+    "twoFactor": "Two-step verification",
+    "twoFactorDesc": "On for this user. Reset it only if they lost their phone and recovery codes.",
+    "twoFactorReset": "Reset",
+    "twoFactorConfirm": "Reset two-step verification for {{name}}? They will sign in with the password only until they turn it on again.",
+    "twoFactorResetDone": "Two-step verification reset"
   },
   "language": {
     "label": "Language",
@@ -1141,7 +1230,13 @@
       "investmentFutureDate": "The date cannot be in the future.",
       "investmentNotFound": "Investment not found.",
       "purchaseNotFound": "Purchase not found.",
-      "investmentsNoAccess": "You don't have access to the Investments module."
+      "investmentsNoAccess": "You don't have access to the Investments module.",
+      "invalidCode": "That code isn't valid. Check the app and try again.",
+      "twoFactorExpired": "The step took too long. Sign in again.",
+      "twoFactorUnavailable": "Two-step verification is not available yet.",
+      "twoFactorAlreadyOn": "Two-step verification is already on.",
+      "investmentNotEnoughShares": "You didn't have that many shares to sell on that date.",
+      "investmentDividendAmount": "Enter the amount received."
     }
   },
   "quickAdd": {
@@ -1505,5 +1600,18 @@
     "description": "What you typed in this transaction hasn't been saved. If you close now, it will be lost.",
     "confirm": "Discard",
     "keepEditing": "Keep editing"
+  },
+  "unsubscribe": {
+    "working": "One moment…",
+    "doneTitle": "You won't get the monthly summary anymore",
+    "doneBody": "You can turn it back on any time in your profile, under Notifications.",
+    "errorTitle": "We couldn't process the link",
+    "errorBody": "It may be incomplete. You can turn the summary off in your profile, under Notifications.",
+    "toProfile": "Go to my profile",
+    "toLogin": "Sign in"
+  },
+  "pwa": {
+    "updateAvailable": "A new version of Goals is available",
+    "reload": "Reload"
   }
 }

@@ -8,7 +8,15 @@ import { cn } from '../../lib/utils';
 import { translateServerError } from '../../utils/serverError';
 import { formatDate, formatMoney, formatShares } from './format';
 
-/** Purchase history of one holding, with edit (delegated) and delete. */
+const TYPE_KEY = { buy: 'Buy', sell: 'Sell', dividend: 'Dividend' };
+const TYPE_BADGE = {
+  buy: 'bg-gray-100 text-gray-700 dark:bg-slate-800 dark:text-gray-200',
+  sell: 'bg-amber-100 text-amber-800 dark:bg-amber-950/50 dark:text-amber-300',
+  dividend:
+    'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-300',
+};
+
+/** Movement history of one holding, with edit (delegated) and delete. */
 export default function PurchasesDialog({
   open,
   onOpenChange,
@@ -116,15 +124,30 @@ export default function PurchasesDialog({
                       className="py-3 flex flex-wrap items-center gap-x-4 gap-y-1"
                     >
                       <div className="flex-1 min-w-[10rem]">
-                        <p className="text-sm font-semibold">
+                        <p className="text-sm font-semibold flex items-center gap-2">
                           {formatDate(p.date)}
+                          <span
+                            className={cn(
+                              'px-1.5 py-0.5 rounded text-[11px] font-semibold',
+                              TYPE_BADGE[p.type || 'buy'],
+                            )}
+                          >
+                            {t(
+                              `investments.purchase.type${TYPE_KEY[p.type || 'buy']}`,
+                            )}
+                          </span>
                         </p>
-                        <p className="text-xs text-[var(--muted-foreground)]">
-                          {t('investments.history.sharesAt', {
-                            shares: formatShares(p.shares),
-                            price: formatMoney(p.pricePerShare, quoteCurrency),
-                          })}
-                        </p>
+                        {p.type !== 'dividend' && (
+                          <p className="text-xs text-[var(--muted-foreground)]">
+                            {t('investments.history.sharesAt', {
+                              shares: formatShares(p.shares),
+                              price: formatMoney(
+                                p.pricePerShare,
+                                quoteCurrency,
+                              ),
+                            })}
+                          </p>
+                        )}
                         {p.note && (
                           <p className="text-xs text-[var(--muted-foreground)] italic truncate">
                             {p.note}

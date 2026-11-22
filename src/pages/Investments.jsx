@@ -7,6 +7,7 @@ import SymbolSearch from '../components/investments/SymbolSearch';
 import PurchaseDialog from '../components/investments/PurchaseDialog';
 import PurchasesDialog from '../components/investments/PurchasesDialog';
 import AllocationBar from '../components/investments/AllocationBar';
+import PortfolioHistoryChart from '../components/investments/PortfolioHistoryChart';
 import {
   formatDate,
   formatMoney,
@@ -28,7 +29,63 @@ import { translateServerError } from '../utils/serverError';
 const REFRESH_MS = 60 * 1000;
 const BANNER_PREF = 'investments.betaBannerDismissed';
 
-function SummaryTile({ label, value, sub, valueClass }) {
+/** "Cashed: +$X" under a holding's open gain, when it had sales or dividends. */
+function RealizedLine({ holding: h }) {
+  const { t } = useTranslation();
+  const cashed = (h.realizedUser || 0) + (h.dividendsUser || 0);
+  if (!cashed) return null;
+  return (
+    <p className={cn('text-xs', gainClass(cashed))}>
+      {t('investments.table.realized', {
+        amount: formatSignedMoney(cashed, h.displayCurrency),
+      })}
+    </p>
+  );
+}
+
+/**
+ * "Price +$X · FX +$Y" under an open gain shown in a converted currency, so
+ * the user sees how much came from the stock and how much from the rate.
+ */
+function GainSplit({ price, fx, currency, className }) {
+  const { t } = useTranslation();
+  if (price == null || fx == null) return null;
+  return (
+    <p
+      className={cn('text-xs text-[var(--muted-foreground)]', className)}
+      title={t('investments.split.hint')}
+    >
+      {/* Each half wraps as a whole, never "· Cambio" / "+C$…" apart. */}
+      <span className="whitespace-nowrap">
+        {t('investments.split.price', {
+          amount: formatSignedMoney(price, currency),
+        })}
+      </span>
+      {' · '}
+      <span className="whitespace-nowrap">
+        {t('investments.split.fx', { amount: formatSignedMoney(fx, currency) })}
+      </span>
+    </p>
+  );
+}
+
+/** Some old movement had no rate for its date: its cost uses today's. */
+function FxEstimatedNote({ holding: h }) {
+  const { t } = useTranslation();
+  if (!h.costFxEstimated) return null;
+  return (
+    <p
+      className="text-xs text-amber-700 dark:text-amber-400"
+      title={t('investments.table.fxEstimatedHint')}
+    >
+      {t('investments.table.fxEstimated')}
+    </p>
+  );
+}
+
+const isConverted = (h) => h.displayCurrency !== h.quoteCurrency;
+
+function SummaryTile({ label, value, sub, valueClass, children }) {
   return (
     <div className="bg-white dark:bg-slate-900 rounded-2xl border border-[var(--border)] shadow-sm px-4 py-3">
       <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-widest">
@@ -40,6 +97,7 @@ function SummaryTile({ label, value, sub, valueClass }) {
       {sub && (
         <p className={cn('text-xs mt-0.5 tabular-nums', valueClass)}>{sub}</p>
       )}
+      {children}
     </div>
   );
 }
@@ -185,7 +243,8 @@ export default function Investments() {
   const holdings = data?.holdings || [];
   const totals = data?.totals;
   const currency = data?.currency;
-  const showsFx = holdings.some((h) => h.displayCurrency !== h.quoteCurrency);
+  const hasRealized = Boolean(totals && (totals.realized || totals.dividends));
+  const showsFx = holdings.some(isConverted);
 
   return (
     <div className="max-w-6xl mx-auto p-4 space-y-5">
@@ -287,7 +346,12 @@ export default function Investments() {
 
       {/* Summary */}
       {totals && holdings.length > 0 && (
-        <section className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        <section
+          className={cn(
+            'grid grid-cols-2 gap-3',
+            hasRealized ? 'lg:grid-cols-5' : 'lg:grid-cols-4',
+          )}
+        >
           <SummaryTile
             label={t('investments.summary.value')}
             value={formatMoney(totals.value, currency)}
@@ -301,14 +365,52 @@ export default function Investments() {
             value={formatSignedMoney(totals.gain, currency)}
             sub={formatPercent(totals.gainPercent)}
             valueClass={gainClass(totals.gain)}
-          />
+          >
+            {showsFx && totals.gainFx != null && (
+              <GainSplit
+                price={totals.gainPrice}
+                fx={totals.gainFx}
+                currency={currency}
+                className="mt-1 tabular-nums"
+              />
+            )}
+          </SummaryTile>
           <SummaryTile
             label={t('investments.summary.today')}
             value={formatSignedMoney(totals.dayChange, currency)}
             sub={formatPercent(totals.dayChangePercent)}
             valueClass={gainClass(totals.dayChange)}
           />
+          {hasRealized && (
+            <SummaryTile
+              label={t('investments.summary.realized')}
+              value={formatSignedMoney(
+                totals.realized + totals.dividends,
+                currency,
+              )}
+              sub={
+                totals.dividends
+                  ? t('investments.summary.dividendsSub', {
+                      amount: formatMoney(totals.dividends, currency),
+                    })
+                  : undefined
+              }
+              valueClass={gainClass(totals.realized + totals.dividends)}
+            />
+          )}
         </section>
+      )}
+
+      {/* Evolution: one point per day */}
+      {totals && holdings.length > 0 && (
+        <PortfolioHistoryChart
+          currency={currency}
+          live={
+            holdings.some((h) => !h.fxUnavailable && h.valueUser != null)
+              ? { value: totals.value, cost: totals.cost }
+              : null
+          }
+        />
       )}
 
       {/* Allocation (only with 2+ priced holdings) */}
@@ -397,6 +499,10 @@ export default function Investments() {
                         <span className="text-xs text-[var(--muted-foreground)]">
                           {t('investments.table.noPurchases')}
                         </span>
+                      ) : h.soldOut ? (
+                        <span className="text-xs text-[var(--muted-foreground)]">
+                          {t('investments.table.soldOut')}
+                        </span>
                       ) : (
                         formatShares(h.shares)
                       )}
@@ -446,6 +552,15 @@ export default function Investments() {
                         {formatSignedMoney(h.gainUser, h.displayCurrency)}
                       </p>
                       <p className="text-xs">{formatPercent(h.gainPercent)}</p>
+                      {isConverted(h) && (
+                        <GainSplit
+                          price={h.gainPriceUser}
+                          fx={h.gainFxUser}
+                          currency={h.displayCurrency}
+                        />
+                      )}
+                      <RealizedLine holding={h} />
+                      <FxEstimatedNote holding={h} />
                     </td>
                     <td className="px-3 py-3 text-right tabular-nums text-[var(--muted-foreground)]">
                       {h.weight != null ? `${h.weight}%` : '—'}
@@ -483,13 +598,24 @@ export default function Investments() {
                         {formatSignedMoney(h.gainUser, h.displayCurrency)} (
                         {formatPercent(h.gainPercent)})
                       </p>
+                      {isConverted(h) && (
+                        <GainSplit
+                          price={h.gainPriceUser}
+                          fx={h.gainFxUser}
+                          currency={h.displayCurrency}
+                        />
+                      )}
+                      <RealizedLine holding={h} />
+                      <FxEstimatedNote holding={h} />
                     </div>
                   </div>
                   <div className="flex justify-between text-xs text-[var(--muted-foreground)] tabular-nums">
                     <span>
                       {h.purchasesCount === 0
                         ? t('investments.table.noPurchases')
-                        : `${formatShares(h.shares)} ${t('investments.table.sharesShort')}`}
+                        : h.soldOut
+                          ? t('investments.table.soldOut')
+                          : `${formatShares(h.shares)} ${t('investments.table.sharesShort')}`}
                     </span>
                     <span>
                       {h.priceUnavailable

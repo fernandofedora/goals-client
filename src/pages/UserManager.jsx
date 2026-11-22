@@ -570,6 +570,23 @@ function EditUserModal({ user, currentUserId, onClose, onSaved }) {
   const [tab, setTab] = useState('general');
 
   const isSelf = user.id === currentUserId;
+  const [twoFactorOn, setTwoFactorOn] = useState(!!user.twoFactorEnabled);
+  const [resettingTwoFactor, setResettingTwoFactor] = useState(false);
+
+  // Applied right away, not on "Save": it's a recovery action, not an edit.
+  const handleResetTwoFactor = async () => {
+    if (!window.confirm(t('admin.twoFactorConfirm', { name: user.name }))) return;
+    setResettingTwoFactor(true);
+    try {
+      await api.patch(`/admin/users/${user.id}/reset-2fa`);
+      setTwoFactorOn(false);
+      toast.success(t('admin.twoFactorResetDone'));
+    } catch (err) {
+      toast.error(translateServerError(err, t, 'admin.saveFailed'));
+    } finally {
+      setResettingTwoFactor(false);
+    }
+  };
 
   const handleSave = async () => {
     setLoading(true);
@@ -965,6 +982,53 @@ function EditUserModal({ user, currentUserId, onClose, onSaved }) {
                   </p>
                 )}
               </div>
+              {twoFactorOn && (
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    gap: 12,
+                    padding: '16px',
+                    borderRadius: 12,
+                    background: 'var(--muted)',
+                    border: '1px solid var(--border)',
+                  }}
+                >
+                  <div>
+                    <p style={{ margin: 0, fontSize: 14, fontWeight: 700 }}>
+                      {t('admin.twoFactor')}
+                    </p>
+                    <p
+                      style={{
+                        margin: '2px 0 0',
+                        fontSize: 12,
+                        color: 'var(--muted-foreground)',
+                      }}
+                    >
+                      {t('admin.twoFactorDesc')}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleResetTwoFactor}
+                    disabled={resettingTwoFactor}
+                    style={{
+                      flexShrink: 0,
+                      padding: '6px 12px',
+                      borderRadius: 8,
+                      border: '1px solid rgba(239,68,68,0.3)',
+                      background: 'rgba(239,68,68,0.06)',
+                      color: '#dc2626',
+                      cursor: 'pointer',
+                      fontSize: 12,
+                      fontWeight: 600,
+                    }}
+                  >
+                    {t('admin.twoFactorReset')}
+                  </button>
+                </div>
+              )}
             </div>
           )}
 

@@ -292,6 +292,18 @@
       "errorTitle": "Error de verificación",
       "backToLogin": "Volver al inicio de sesión",
       "failed": "Error al verificar la cuenta"
+    },
+    "twoFactor": {
+      "title": "Verificación en dos pasos",
+      "codeHint": "Ingresa el código de 6 dígitos de tu app autenticadora.",
+      "recoveryHint": "Ingresa uno de los códigos de recuperación que guardaste al activarla. Cada uno sirve una vez.",
+      "codeLabel": "Código de verificación",
+      "recoveryLabel": "Código de recuperación",
+      "verify": "Verificar",
+      "useRecovery": "Usar un código de recuperación",
+      "useApp": "Usar la app autenticadora",
+      "back": "Volver",
+      "failed": "No se pudo verificar el código"
     }
   },
   "transactions": {
@@ -613,7 +625,9 @@
       "value": "Valor total",
       "invested": "Invertido",
       "gain": "Ganancia / Pérdida",
-      "today": "Hoy"
+      "today": "Hoy",
+      "realized": "Ganancia realizada",
+      "dividendsSub": "Incluye {{amount}} en dividendos"
     },
     "table": {
       "asset": "Activo",
@@ -623,11 +637,15 @@
       "value": "Valor",
       "gain": "G/P",
       "weight": "Peso",
-      "addPurchase": "+ Compra",
-      "history": "Compras",
+      "addPurchase": "+ Movimiento",
+      "history": "Movimientos",
       "noPurchases": "Sin compras",
       "noPrice": "Sin precio",
-      "fxUnavailable": "Sin tipo de cambio"
+      "fxUnavailable": "Sin tipo de cambio",
+      "soldOut": "Vendida",
+      "realized": "Realizado {{amount}}",
+      "fxEstimated": "Costo al tipo de cambio de hoy",
+      "fxEstimatedHint": "Algunos movimientos son anteriores al historial de tipos de cambio (marzo de 2024) o no se pudo obtener el de su fecha, así que su costo usa el tipo de cambio de hoy."
     },
     "empty": {
       "title": "Aún no tienes inversiones",
@@ -651,18 +669,44 @@
       "amountRequired": "Indica el monto invertido.",
       "priceRequired": "No hay precio disponible; indica el precio por acción.",
       "saved": "Compra registrada",
-      "updated": "Compra actualizada",
-      "saveFailed": "No se pudo guardar la compra."
+      "updated": "Movimiento actualizado",
+      "saveFailed": "No se pudo guardar la compra.",
+      "typeLabel": "Tipo de movimiento",
+      "typeBuy": "Compra",
+      "typeSell": "Venta",
+      "typeDividend": "Dividendo",
+      "titleBuy": "Agregar compra",
+      "titleSell": "Registrar venta",
+      "titleDividend": "Registrar dividendo",
+      "titleEditBuy": "Editar compra",
+      "titleEditSell": "Editar venta",
+      "titleEditDividend": "Editar dividendo",
+      "amountSell": "Monto recibido por la venta",
+      "amountDividend": "Monto recibido",
+      "previewSell": "{{amount}} por {{shares}} acciones a {{price}}",
+      "dateSell": "Fecha de venta",
+      "dateDividend": "Fecha de pago",
+      "held": "Tienes {{shares}} acciones",
+      "sellAll": "Vender todas",
+      "savedBuy": "Compra registrada",
+      "savedSell": "Venta registrada",
+      "savedDividend": "Dividendo registrado"
     },
     "history": {
-      "title": "Historial de compras",
-      "empty": "Esta inversión no tiene compras registradas.",
-      "sharesAt": "{{shares}} acciones a {{price}}",
-      "deleteTitle": "¿Eliminar esta compra?",
-      "deleteHint": "Se recalcularán las acciones y el costo de la inversión.",
-      "deleted": "Compra eliminada",
-      "deleteFailed": "No se pudo eliminar la compra.",
-      "loadFailed": "No se pudo cargar el historial."
+      "title": "Evolución",
+      "rangeLabel": "Periodo",
+      "ranges": {
+        "1m": "1M",
+        "3m": "3M",
+        "6m": "6M",
+        "1y": "1A",
+        "all": "Todo"
+      },
+      "value": "Valor",
+      "invested": "Invertido",
+      "gain": "Ganancia/pérdida",
+      "loadFailed": "No se pudo cargar la evolución.",
+      "empty": "El gráfico suma un punto por día desde hoy. Vuelve mañana para ver cómo se mueve tu portafolio."
     },
     "attribution": {
       "prices": "Datos de mercado:",
@@ -680,7 +724,12 @@
       "other": "Otros ({{count}})",
       "aria": "Distribución del portafolio: {{items}}"
     },
-    "noAccess": "No tienes acceso al módulo de Inversiones. Es una beta cerrada; un Super Admin puede habilitarlo para tu cuenta."
+    "noAccess": "No tienes acceso al módulo de Inversiones. Es una beta cerrada; un Super Admin puede habilitarlo para tu cuenta.",
+    "split": {
+      "price": "Precio {{amount}}",
+      "fx": "Cambio {{amount}}",
+      "hint": "De la ganancia abierta, cuánto vino del precio y cuánto del tipo de cambio desde que compraste."
+    }
   },
   "savings": {
     "title": "Planes de Ahorro",
@@ -978,7 +1027,42 @@
     "budgetAlertsDesc": "Te escribimos cuando el gasto del mes en una categoría llega al 80% y al 100% de su presupuesto.",
     "budgetAlertsOn": "Alertas de presupuesto activadas",
     "budgetAlertsOff": "Alertas de presupuesto desactivadas",
-    "budgetAlertsFailed": "No se pudo guardar la preferencia"
+    "budgetAlertsFailed": "No se pudo guardar la preferencia",
+    "monthlySummary": "Resumen mensual",
+    "monthlySummaryDesc": "El día 1 te enviamos cómo te fue el mes anterior: ingresos, gastos, en qué gastaste más y tus metas.",
+    "monthlySummaryOn": "Resumen mensual activado",
+    "monthlySummaryOff": "Resumen mensual desactivado",
+    "twoFactor": {
+      "title": "Verificación en dos pasos",
+      "subtitle": "Un código de tu teléfono en cada inicio de sesión",
+      "on": "Activada",
+      "off": "Desactivada",
+      "onDesc": "Al iniciar sesión te pedimos un código de tu app autenticadora. Códigos de recuperación disponibles: {{count}}.",
+      "offDesc": "Suma a tu contraseña un código de una app como Google Authenticator o 1Password.",
+      "unavailable": "Todavía no está disponible en este servidor.",
+      "turnOn": "Activar",
+      "turnOff": "Desactivar",
+      "enableTitle": "Activar la verificación en dos pasos",
+      "disableTitle": "Desactivar la verificación en dos pasos",
+      "passwordHint": "Confirma tu contraseña para continuar.",
+      "continue": "Continuar",
+      "step1": "Escanea el código QR con tu app autenticadora o escribe la clave de abajo.",
+      "step2": "Ingresa el código de 6 dígitos que muestra la app.",
+      "qrAlt": "Código QR para agregar Goals a tu app autenticadora",
+      "manualKey": "¿No puedes escanearlo? Escribe esta clave:",
+      "confirm": "Confirmar y activar",
+      "codesTitle": "Guarda tus códigos de recuperación",
+      "codesHint": "Si pierdes el teléfono, cada uno de estos códigos te deja entrar una vez. Es la única vez que te los mostramos.",
+      "copy": "Copiar",
+      "download": "Descargar",
+      "copied": "Códigos copiados",
+      "copyFailed": "No se pudieron copiar; descárgalos",
+      "codesFileTitle": "códigos de recuperación",
+      "saved": "Ya los guardé",
+      "disableHint": "Ingresa tu contraseña y un código de la app (o un código de recuperación).",
+      "disabled": "Verificación en dos pasos desactivada",
+      "failed": "No se pudo completar el paso"
+    }
   },
   "admin": {
     "title": "Gestor de Usuarios",
@@ -1047,7 +1131,12 @@
     "investmentsAccess": "Módulo de Inversiones (beta)",
     "investmentsAccessDesc": "Permite a este usuario ver y usar el módulo de Inversiones.",
     "investmentsAccessSuperAdmin": "Los Super Admin siempre tienen acceso.",
-    "investmentsAccessWarning": "Los datos de mercado de Finnhub (plan gratis) son solo para uso personal. Dale acceso únicamente a tu propia cuenta; para otras personas se necesita autorización de Finnhub."
+    "investmentsAccessWarning": "Los datos de mercado de Finnhub (plan gratis) son solo para uso personal. Dale acceso únicamente a tu propia cuenta; para otras personas se necesita autorización de Finnhub.",
+    "twoFactor": "Verificación en dos pasos",
+    "twoFactorDesc": "Activada para este usuario. Restablécela solo si perdió el teléfono y los códigos de recuperación.",
+    "twoFactorReset": "Restablecer",
+    "twoFactorConfirm": "¿Restablecer la verificación en dos pasos de {{name}}? Entrará solo con la contraseña hasta que la vuelva a activar.",
+    "twoFactorResetDone": "Verificación en dos pasos restablecida"
   },
   "language": {
     "label": "Idioma",
@@ -1141,7 +1230,13 @@
       "investmentFutureDate": "La fecha no puede ser futura.",
       "investmentNotFound": "Inversión no encontrada.",
       "purchaseNotFound": "Compra no encontrada.",
-      "investmentsNoAccess": "No tienes acceso al módulo de Inversiones."
+      "investmentsNoAccess": "No tienes acceso al módulo de Inversiones.",
+      "invalidCode": "Ese código no es válido. Revisa la app e inténtalo de nuevo.",
+      "twoFactorExpired": "Pasó demasiado tiempo. Vuelve a iniciar sesión.",
+      "twoFactorUnavailable": "La verificación en dos pasos todavía no está disponible.",
+      "twoFactorAlreadyOn": "La verificación en dos pasos ya está activada.",
+      "investmentNotEnoughShares": "No tenías tantas acciones para vender en esa fecha.",
+      "investmentDividendAmount": "Indica el monto recibido."
     }
   },
   "quickAdd": {
@@ -1505,5 +1600,18 @@
     "description": "Lo que escribiste en esta transacción no se ha guardado. Si cierras ahora, se perderá.",
     "confirm": "Descartar",
     "keepEditing": "Seguir editando"
+  },
+  "unsubscribe": {
+    "working": "Un momento…",
+    "doneTitle": "Ya no recibirás el resumen mensual",
+    "doneBody": "Puedes volver a activarlo cuando quieras en tu perfil, en Notificaciones.",
+    "errorTitle": "No pudimos procesar el enlace",
+    "errorBody": "Puede que esté incompleto. Puedes desactivar el resumen desde tu perfil, en Notificaciones.",
+    "toProfile": "Ir a mi perfil",
+    "toLogin": "Iniciar sesión"
+  },
+  "pwa": {
+    "updateAvailable": "Hay una versión nueva de Goals",
+    "reload": "Recargar"
   }
 }
