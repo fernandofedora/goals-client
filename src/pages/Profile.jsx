@@ -5,6 +5,7 @@ import Button from '../components/ui/button';
 import Input from '../components/ui/input';
 import Alert from '../components/ui/alert';
 import Switch from '../components/ui/switch';
+import TwoFactorSection from '../components/profile/TwoFactorSection';
 import { cn } from '../lib/utils';
 import { intlLocale } from '../utils/dateLocale';
 import { translateServerError } from '../utils/serverError';
@@ -246,6 +247,7 @@ export default function Profile() {
   const [statusType, setStatusType] = useState('success');
   // null until /user/me answers, so the switch never flips on load.
   const [budgetAlerts, setBudgetAlerts] = useState(null);
+  const [monthlySummary, setMonthlySummary] = useState(null);
   const [savingAlerts, setSavingAlerts] = useState(false);
 
   // ── Load user ─────────────────────────────────────────────────────────────
@@ -261,6 +263,7 @@ export default function Profile() {
         setCreatedAt(data.createdAt || '');
         setLastLoginAt(data.lastLoginAt || '');
         setBudgetAlerts(data.budgetAlertsEnabled !== false);
+        setMonthlySummary(data.monthlySummaryEnabled !== false);
       })
       .catch(() => {});
     return () => {
@@ -313,27 +316,39 @@ export default function Profile() {
     }
   };
 
-  // ── Budget alerts preference (saved on toggle) ───────────────────────────
-  const onToggleBudgetAlerts = async (next) => {
-    setBudgetAlerts(next);
+  // ── Email preferences (saved on toggle) ──────────────────────────────────
+  const saveEmailPref = async (field, next, setValue, onKey, offKey) => {
+    setValue(next);
     setSavingAlerts(true);
     try {
-      const { data } = await api.put('/user/profile', {
-        budgetAlertsEnabled: next,
-      });
-      setBudgetAlerts(data.budgetAlertsEnabled);
+      const { data } = await api.put('/user/profile', { [field]: next });
+      setValue(data[field]);
       setStatusType('success');
-      setStatusMsg(
-        next ? t('profile.budgetAlertsOn') : t('profile.budgetAlertsOff'),
-      );
+      setStatusMsg(next ? t(onKey) : t(offKey));
     } catch (err) {
-      setBudgetAlerts(!next);
+      setValue(!next);
       setStatusType('error');
       setStatusMsg(translateServerError(err, t, 'profile.budgetAlertsFailed'));
     } finally {
       setSavingAlerts(false);
     }
   };
+  const onToggleBudgetAlerts = (next) =>
+    saveEmailPref(
+      'budgetAlertsEnabled',
+      next,
+      setBudgetAlerts,
+      'profile.budgetAlertsOn',
+      'profile.budgetAlertsOff',
+    );
+  const onToggleMonthlySummary = (next) =>
+    saveEmailPref(
+      'monthlySummaryEnabled',
+      next,
+      setMonthlySummary,
+      'profile.monthlySummaryOn',
+      'profile.monthlySummaryOff',
+    );
 
   // ── Change password ───────────────────────────────────────────────────────
   const onChangePassword = async (e) => {
@@ -679,6 +694,15 @@ export default function Profile() {
           </Card>
 
           <Card
+            icon="🛡️"
+            accent={heroColor}
+            title={t('profile.twoFactor.title')}
+            subtitle={t('profile.twoFactor.subtitle')}
+          >
+            <TwoFactorSection />
+          </Card>
+
+          <Card
             icon="🔔"
             accent={heroColor}
             title={t('profile.notifications')}
@@ -705,6 +729,30 @@ export default function Profile() {
                 onCheckedChange={onToggleBudgetAlerts}
                 aria-labelledby="budget-alerts-label"
                 aria-describedby="budget-alerts-desc"
+                className="mt-0.5"
+              />
+            </div>
+            <div className="flex items-start justify-between gap-4 mt-5 pt-5 border-t border-[var(--border)]">
+              <div>
+                <p
+                  id="monthly-summary-label"
+                  className="text-sm font-medium text-gray-800 dark:text-gray-100"
+                >
+                  {t('profile.monthlySummary')}
+                </p>
+                <p
+                  id="monthly-summary-desc"
+                  className="text-xs text-gray-600 dark:text-gray-300 mt-1"
+                >
+                  {t('profile.monthlySummaryDesc')}
+                </p>
+              </div>
+              <Switch
+                checked={Boolean(monthlySummary)}
+                disabled={monthlySummary === null || savingAlerts}
+                onCheckedChange={onToggleMonthlySummary}
+                aria-labelledby="monthly-summary-label"
+                aria-describedby="monthly-summary-desc"
                 className="mt-0.5"
               />
             </div>
