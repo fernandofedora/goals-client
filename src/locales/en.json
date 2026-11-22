@@ -693,14 +693,20 @@
       "savedDividend": "Dividend recorded"
     },
     "history": {
-      "title": "Movement history",
-      "empty": "This holding has no movements yet.",
-      "sharesAt": "{{shares}} shares at {{price}}",
-      "deleteTitle": "Delete this movement?",
-      "deleteHint": "Shares, cost and realized gain will be recalculated.",
-      "deleted": "Movement deleted",
-      "deleteFailed": "Couldn't delete the movement.",
-      "loadFailed": "Could not load the history."
+      "title": "Evolution",
+      "rangeLabel": "Period",
+      "ranges": {
+        "1m": "1M",
+        "3m": "3M",
+        "6m": "6M",
+        "1y": "1Y",
+        "all": "All"
+      },
+      "value": "Value",
+      "invested": "Invested",
+      "gain": "Gain/loss",
+      "loadFailed": "Couldn't load the evolution.",
+      "empty": "The chart adds one point per day, starting today. Come back tomorrow to see how your portfolio moves."
     },
     "attribution": {
       "prices": "Market data:",

@@ -7,6 +7,7 @@ import SymbolSearch from '../components/investments/SymbolSearch';
 import PurchaseDialog from '../components/investments/PurchaseDialog';
 import PurchasesDialog from '../components/investments/PurchasesDialog';
 import AllocationBar from '../components/investments/AllocationBar';
+import PortfolioHistoryChart from '../components/investments/PortfolioHistoryChart';
 import {
   formatDate,
   formatMoney,
@@ -398,6 +399,18 @@ export default function Investments() {
             />
           )}
         </section>
+      )}
+
+      {/* Evolution: one point per day */}
+      {totals && holdings.length > 0 && (
+        <PortfolioHistoryChart
+          currency={currency}
+          live={
+            holdings.some((h) => !h.fxUnavailable && h.valueUser != null)
+              ? { value: totals.value, cost: totals.cost }
+              : null
+          }
+        />
       )}
 
       {/* Allocation (only with 2+ priced holdings) */}
