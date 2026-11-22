@@ -643,7 +643,9 @@
       "noPrice": "Sin precio",
       "fxUnavailable": "Sin tipo de cambio",
       "soldOut": "Vendida",
-      "realized": "Realizado {{amount}}"
+      "realized": "Realizado {{amount}}",
+      "fxEstimated": "Costo al tipo de cambio de hoy",
+      "fxEstimatedHint": "Algunos movimientos son anteriores al historial de tipos de cambio (marzo de 2024) o no se pudo obtener el de su fecha, así que su costo usa el tipo de cambio de hoy."
     },
     "empty": {
       "title": "Aún no tienes inversiones",

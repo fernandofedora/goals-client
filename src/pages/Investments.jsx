@@ -68,6 +68,20 @@ function GainSplit({ price, fx, currency, className }) {
   );
 }
 
+/** Some old movement had no rate for its date: its cost uses today's. */
+function FxEstimatedNote({ holding: h }) {
+  const { t } = useTranslation();
+  if (!h.costFxEstimated) return null;
+  return (
+    <p
+      className="text-xs text-amber-700 dark:text-amber-400"
+      title={t('investments.table.fxEstimatedHint')}
+    >
+      {t('investments.table.fxEstimated')}
+    </p>
+  );
+}
+
 const isConverted = (h) => h.displayCurrency !== h.quoteCurrency;
 
 function SummaryTile({ label, value, sub, valueClass, children }) {
@@ -533,6 +547,7 @@ export default function Investments() {
                         />
                       )}
                       <RealizedLine holding={h} />
+                      <FxEstimatedNote holding={h} />
                     </td>
                     <td className="px-3 py-3 text-right tabular-nums text-[var(--muted-foreground)]">
                       {h.weight != null ? `${h.weight}%` : '—'}
@@ -578,6 +593,7 @@ export default function Investments() {
                         />
                       )}
                       <RealizedLine holding={h} />
+                      <FxEstimatedNote holding={h} />
                     </div>
                   </div>
                   <div className="flex justify-between text-xs text-[var(--muted-foreground)] tabular-nums">

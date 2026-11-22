@@ -643,7 +643,9 @@
       "noPrice": "No price",
       "fxUnavailable": "No exchange rate",
       "soldOut": "Sold",
-      "realized": "Cashed {{amount}}"
+      "realized": "Cashed {{amount}}",
+      "fxEstimated": "Cost at today's rate",
+      "fxEstimatedHint": "Some movements are from before the exchange-rate history (March 2024) or their date's rate couldn't be loaded, so their cost uses today's rate."
     },
     "empty": {
       "title": "You don't have any investments yet",
