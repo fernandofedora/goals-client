@@ -42,7 +42,35 @@ function RealizedLine({ holding: h }) {
   );
 }
 
-function SummaryTile({ label, value, sub, valueClass }) {
+/**
+ * "Price +$X · FX +$Y" under an open gain shown in a converted currency, so
+ * the user sees how much came from the stock and how much from the rate.
+ */
+function GainSplit({ price, fx, currency, className }) {
+  const { t } = useTranslation();
+  if (price == null || fx == null) return null;
+  return (
+    <p
+      className={cn('text-xs text-[var(--muted-foreground)]', className)}
+      title={t('investments.split.hint')}
+    >
+      {/* Each half wraps as a whole, never "· Cambio" / "+C$…" apart. */}
+      <span className="whitespace-nowrap">
+        {t('investments.split.price', {
+          amount: formatSignedMoney(price, currency),
+        })}
+      </span>
+      {' · '}
+      <span className="whitespace-nowrap">
+        {t('investments.split.fx', { amount: formatSignedMoney(fx, currency) })}
+      </span>
+    </p>
+  );
+}
+
+const isConverted = (h) => h.displayCurrency !== h.quoteCurrency;
+
+function SummaryTile({ label, value, sub, valueClass, children }) {
   return (
     <div className="bg-white dark:bg-slate-900 rounded-2xl border border-[var(--border)] shadow-sm px-4 py-3">
       <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-widest">
@@ -54,6 +82,7 @@ function SummaryTile({ label, value, sub, valueClass }) {
       {sub && (
         <p className={cn('text-xs mt-0.5 tabular-nums', valueClass)}>{sub}</p>
       )}
+      {children}
     </div>
   );
 }
@@ -200,7 +229,7 @@ export default function Investments() {
   const totals = data?.totals;
   const currency = data?.currency;
   const hasRealized = Boolean(totals && (totals.realized || totals.dividends));
-  const showsFx = holdings.some((h) => h.displayCurrency !== h.quoteCurrency);
+  const showsFx = holdings.some(isConverted);
 
   return (
     <div className="max-w-6xl mx-auto p-4 space-y-5">
@@ -321,7 +350,16 @@ export default function Investments() {
             value={formatSignedMoney(totals.gain, currency)}
             sub={formatPercent(totals.gainPercent)}
             valueClass={gainClass(totals.gain)}
-          />
+          >
+            {showsFx && totals.gainFx != null && (
+              <GainSplit
+                price={totals.gainPrice}
+                fx={totals.gainFx}
+                currency={currency}
+                className="mt-1 tabular-nums"
+              />
+            )}
+          </SummaryTile>
           <SummaryTile
             label={t('investments.summary.today')}
             value={formatSignedMoney(totals.dayChange, currency)}
@@ -487,6 +525,13 @@ export default function Investments() {
                         {formatSignedMoney(h.gainUser, h.displayCurrency)}
                       </p>
                       <p className="text-xs">{formatPercent(h.gainPercent)}</p>
+                      {isConverted(h) && (
+                        <GainSplit
+                          price={h.gainPriceUser}
+                          fx={h.gainFxUser}
+                          currency={h.displayCurrency}
+                        />
+                      )}
                       <RealizedLine holding={h} />
                     </td>
                     <td className="px-3 py-3 text-right tabular-nums text-[var(--muted-foreground)]">
@@ -525,6 +570,13 @@ export default function Investments() {
                         {formatSignedMoney(h.gainUser, h.displayCurrency)} (
                         {formatPercent(h.gainPercent)})
                       </p>
+                      {isConverted(h) && (
+                        <GainSplit
+                          price={h.gainPriceUser}
+                          fx={h.gainFxUser}
+                          currency={h.displayCurrency}
+                        />
+                      )}
                       <RealizedLine holding={h} />
                     </div>
                   </div>

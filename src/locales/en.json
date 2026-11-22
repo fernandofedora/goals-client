@@ -716,7 +716,12 @@
       "other": "Other ({{count}})",
       "aria": "Portfolio allocation: {{items}}"
     },
-    "noAccess": "You don't have access to the Investments module. It is a closed beta; a Super Admin can enable it for your account."
+    "noAccess": "You don't have access to the Investments module. It is a closed beta; a Super Admin can enable it for your account.",
+    "split": {
+      "price": "Price {{amount}}",
+      "fx": "FX {{amount}}",
+      "hint": "Of the open gain, how much came from the price and how much from the exchange rate since you bought."
+    }
   },
   "savings": {
     "title": "Savings Plans",

@@ -716,7 +716,12 @@
       "other": "Otros ({{count}})",
       "aria": "Distribución del portafolio: {{items}}"
     },
-    "noAccess": "No tienes acceso al módulo de Inversiones. Es una beta cerrada; un Super Admin puede habilitarlo para tu cuenta."
+    "noAccess": "No tienes acceso al módulo de Inversiones. Es una beta cerrada; un Super Admin puede habilitarlo para tu cuenta.",
+    "split": {
+      "price": "Precio {{amount}}",
+      "fx": "Cambio {{amount}}",
+      "hint": "De la ganancia abierta, cuánto vino del precio y cuánto del tipo de cambio desde que compraste."
+    }
   },
   "savings": {
     "title": "Planes de Ahorro",
